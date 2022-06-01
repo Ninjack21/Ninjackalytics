@@ -1,6 +1,3 @@
-#pps = python-postgres
-# from tabnanny import check
-from tabnanny import check
 import psycopg2 as pps
 import requests
 from datetime import date
