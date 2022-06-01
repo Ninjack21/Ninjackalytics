@@ -1,5 +1,3 @@
-#pps = python-postgres
-# from tabnanny import check
 import psycopg2 as pps
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
