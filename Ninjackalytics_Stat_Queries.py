@@ -1,4 +1,31 @@
 import psycopg2 as pps
+import numpy as np
+import matplotlib.pyplot as plt
+
+def Generate_Pie_Chart(infodict):
+    """
+    This function will take a dictionary as created by the other query functions and generate a PI Chart which is sorted to show
+    largest contributors to smallest contributors using a pleasing and consistent color palette
+    """
+    #if this pie chart is generated for a dataset where total will be displayed above the chart we should first remove it from our infodict
+    del infodict['Total']
+    #we want to sort the data going from largest contributors to lowest contributors
+    info = sorted(infodict.items(), key=lambda item : item[1], reverse=True)
+    label,value = zip(*info)
+    #let's remove any 0's from our data since it will not have any impact on the pi chart but will clutter the names
+    cleanlabels = []
+    cleanvalues = []
+    i = 0
+    for val in value:
+        if val != 0:
+            cleanlabels.append(label[i])
+            cleanvalues.append(value[i])
+        i = i+1
+    fig = plt.figure(1, figsize = (5,5))
+    explode = []
+    for val in cleanvalues:
+        explode.append(0.03)
+    plt.pie(cleanvalues, labels=cleanlabels, explode = explode)
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
     """
