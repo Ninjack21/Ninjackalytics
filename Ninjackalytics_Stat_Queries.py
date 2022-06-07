@@ -31,6 +31,8 @@ def Generate_Bar_Chart(infodict):
 
     df = pd.DataFrame.from_dict(infodict)
     sns.set_theme(palette = 'Spectral')
+    sns.set_context('poster', font_scale = 0.75)
+    sns.set_style(rc={'figure.facecolor' : 'black'})
     ax = sns.barplot(x='clean values', y='clean labels', data = df, ci = None, orient = 'h')
     ax.set(xlabel = units, ylabel = None)
 
