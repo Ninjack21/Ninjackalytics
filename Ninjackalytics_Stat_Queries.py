@@ -1,14 +1,20 @@
+from ast import increment_lineno
 import psycopg2 as pps
-import numpy as np
+import seaborn as sns
+import pandas as pd
 import matplotlib.pyplot as plt
 
-def Generate_Pie_Chart(infodict):
+def Generate_Bar_Chart(infodict):
     """
     This function will take a dictionary as created by the other query functions and generate a PI Chart which is sorted to show
     largest contributors to smallest contributors using a pleasing and consistent color palette
     """
-    #if this pie chart is generated for a dataset where total will be displayed above the chart we should first remove it from our infodict
-    del infodict['Total']
+    units = infodict['Units']
+    if 'Total' in list(infodict):
+        del infodict['Total']
+    
+    del infodict['Units']
+
     #we want to sort the data going from largest contributors to lowest contributors
     info = sorted(infodict.items(), key=lambda item : item[1], reverse=True)
     label,value = zip(*info)
@@ -21,11 +27,20 @@ def Generate_Pie_Chart(infodict):
             cleanlabels.append(label[i])
             cleanvalues.append(value[i])
         i = i+1
-    fig = plt.figure(1, figsize = (5,5))
-    explode = []
-    for val in cleanvalues:
-        explode.append(0.03)
-    plt.pie(cleanvalues, labels=cleanlabels, explode = explode)
+
+    infodict = {'clean labels' : cleanlabels,
+    'clean values' : cleanvalues}
+
+    df = pd.DataFrame.from_dict(infodict)
+    sns.set_theme(palette = 'Spectral')
+    sns.set_context('poster', font_scale = 0.7)
+    sns.set_style(rc={'figure.facecolor' : '#000000', 'axes.facecolor' : '#000000', 'axes.labelcolor' : 'white', 'text.color' : 'white', 'xtick.color' : 'white'
+    , 'ytick.color' : 'white', 'axes.spines.right' : 'False', 'axes.spines.top' : 'False', 'patch.edgecolor' : '#000000', 'xtick.bottom' : 'True'})
+    fig = plt.figure(figsize=(6,4))
+    fig = fig.set_facecolor('black')
+    ax = sns.barplot(x='clean values', y='clean labels', data = df, ci = None, orient = 'h')
+    ax.grid(False)
+    ax.set(xlabel = units, ylabel = None)
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
     """
@@ -64,7 +79,7 @@ def Healing_Per_Entrance(battle_id, pnum, core_info):
         #ignore any pokemon who did not enter
         if totentrances != 0:
             hpes[mon] = (totheal / totentrances)
-    
+    hpes['Units'] = '% HP Recovery'
     return(hpes)
 
 def Damage_Per_Entrance(battle_id, pnum, core_info):
@@ -104,7 +119,7 @@ def Damage_Per_Entrance(battle_id, pnum, core_info):
         #ignore any pokemon who did not enter
         if totentrances != 0:
             dpes[mon] = (totdmg / totentrances)
-    
+    dpes['Units'] = '% HP Damage Dealt'
     return(dpes)   
 
 def Turn_Action_Breakdown(battle_id, pnum, core_info):
@@ -145,7 +160,7 @@ def Turn_Action_Breakdown(battle_id, pnum, core_info):
     #the discrepancy between the number of turns and the sum of turns switching and using moves is how many turns were spent doing nothing
     turnsnothing = totturns - turnsnotnothing
     actions['nothing'] = turnsnothing
-
+    actions['Units'] = '# of Turns Action Selected'
     return(actions)
 
 def Heal_Type_Breakdown(battle_id, pnum, core_info):
@@ -192,7 +207,7 @@ def Heal_Type_Breakdown(battle_id, pnum, core_info):
     sumtotal = sum(total)
 
     healing['Total'] = sumtotal
-
+    healing['Units'] = '% HP Recovery'
     return(healing)
 
 def Healing_Breakdown(battle_id, pnum, core_info):
@@ -233,7 +248,7 @@ def Healing_Breakdown(battle_id, pnum, core_info):
     sumtotal = sum(total)
 
     healing['Total'] = sumtotal
-
+    healing['Units'] = '% HP Recovery'
     return(healing)
 
 def Dmg_Type_Breakdown(battle_id, pnum, core_info):
@@ -280,7 +295,7 @@ def Dmg_Type_Breakdown(battle_id, pnum, core_info):
     sumtotal = sum(total)
 
     damages['Total'] = sumtotal
-
+    damages['Units'] = '% HP Damage Dealt'
     return(damages)
 
 def Dmg_Received_Breakdown(battle_id, pnum, core_info):
@@ -321,7 +336,7 @@ def Dmg_Received_Breakdown(battle_id, pnum, core_info):
     sumtotal = sum(total)
 
     damages['Total'] = sumtotal
-
+    damages['Units'] = '% HP Damage Received'
     return(damages)
 
 def Dmg_Dealt_Breakdown(battle_id, pnum, core_info):
@@ -390,7 +405,7 @@ def Dmg_Dealt_Breakdown(battle_id, pnum, core_info):
     sumtotal = sum(total)
 
     damages['Total'] = sumtotal
-
+    damages['Units'] = '% HP Damage Dealt'
     return(damages)
 
 def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
