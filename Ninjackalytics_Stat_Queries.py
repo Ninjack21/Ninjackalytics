@@ -1,6 +1,8 @@
+from ast import increment_lineno
 import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def Generate_Bar_Chart(infodict):
     """
@@ -31,9 +33,13 @@ def Generate_Bar_Chart(infodict):
 
     df = pd.DataFrame.from_dict(infodict)
     sns.set_theme(palette = 'Spectral')
-    sns.set_context('poster', font_scale = 0.75)
-    sns.set_style(rc={'figure.facecolor' : 'black'})
+    sns.set_context('poster', font_scale = 0.7)
+    sns.set_style(rc={'figure.facecolor' : '#000000', 'axes.facecolor' : '#000000', 'axes.labelcolor' : 'white', 'text.color' : 'white', 'xtick.color' : 'white'
+    , 'ytick.color' : 'white', 'axes.spines.right' : 'False', 'axes.spines.top' : 'False', 'patch.edgecolor' : '#000000', 'xtick.bottom' : 'True'})
+    fig = plt.figure(figsize=(6,4))
+    fig = fig.set_facecolor('black')
     ax = sns.barplot(x='clean values', y='clean labels', data = df, ci = None, orient = 'h')
+    ax.grid(False)
     ax.set(xlabel = units, ylabel = None)
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
