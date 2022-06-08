@@ -120,15 +120,15 @@ def Generate_Insert_Statement(col_names, values, val_types):
     """
     
     #first, let's encapsulate the columns and generate the string to be provided to our add to sql function
-    encap_col = '"'
-    
+    strtencap_col = '"'
+    endencap_col = '"'
     col_string = ''
     
     for column in col_names:
         if col_string =='':
-            col_string = encap_col + column + encap_col
+            col_string = strtencap_col + column + endencap_col
         else:
-            col_string = col_string + ',' + encap_col + column + encap_col
+            col_string = col_string + ',' + strtencap_col + column + endencap_col
     
     response = [col_string]
     
@@ -169,9 +169,10 @@ def Add_sql(table_name, GIS_response):
     conn = pps.connect(database='Ninjackalytics', user = 'postgres', password = 'Bja00Qx6pOnsikoOju10')
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
-    encap = '"'
-    
-    sql = 'INSERT INTO ' + schema + encap + table_name + encap + '(' + GIS_response[0] + ')' + ' VALUES (' + GIS_response[1] + ');'
+    strtencap = '"'
+    endencap = '"'
+
+    sql = 'INSERT INTO ' + schema + strtencap + table_name + endencap + '(' + GIS_response[0] + ')' + ' VALUES (' + GIS_response[1] + ');'
     #let's attempt what we have just written
     try:
         #create a new cursor
@@ -217,9 +218,10 @@ def Generate_Select_Statement(col_name, value, val_type):
     """
     
     #first, let's encapsulate the columns and generate the string to be provided to our add to sql function
-    encap_col = '"'
-    
-    col_string = encap_col + col_name + encap_col
+    strtencap_col = '"'
+    endencap_col = '"'
+
+    col_string = strtencap_col + col_name + endencap_col
     
     response = [col_string]
     
@@ -247,9 +249,10 @@ def Select_sql(table_name, GSS_response):
     
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
-    encap = '"'
+    strtencap = '"'
+    endencap = '"'
     
-    sql = 'Select ' + GSS_response[0] + ' From ' + schema + encap + table_name + encap + ' Where ' + GSS_response[0] + ' = ' + GSS_response[1] + ';'
+    sql = 'Select ' + GSS_response[0] + ' From ' + schema + strtencap + table_name + endencap + ' Where ' + GSS_response[0] + ' = ' + GSS_response[1] + ';'
         
     #let's attempt what we have just written
     try:
@@ -405,7 +408,7 @@ def Get_BID_Info(response, baselogmsg):
         # p2_to_sql = Add_sql(table_name, add_p2)
         return (1, bidsql)
     except Exception as error:
-        usermsg = "Oops! Something went wrong while gathering the battle's basic information!\nThe Beheeyem employed have been notified of the error and will take a look!"
+        usermsg = "Error = Oops! Something went wrong while gathering the battle's basic information!\nThe Beheeyem employed have been notified of the error and will take a look!"
         logmsg = logmsg + '\n' + str(error)
         logging.error(logmsg)
         return(0, usermsg)
@@ -516,7 +519,7 @@ def Get_Team_Info(response, baselogmsg):
 
         return(1, teaminfosql, nicknames)
     except Exception as error:
-        usermsg = "Oops! Something went wrong while gathering the info for each Team!\nThe Beheeyem employed have been notified of the error and will take a look!"
+        usermsg = "Error = Oops! Something went wrong while gathering the info for each Team!\nThe Beheeyem employed have been notified of the error and will take a look!"
         logmsg = logmsg + '\n' + str(error)
         logging.error(logmsg)
         return(0, usermsg)
@@ -788,7 +791,7 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
         dmghealresponse = [finaldmgsql, finalhealsql]
         return([1, finaldmgsql, finalhealsql])
     except Exception as error:
-        usermsg = "Oops! Something went wrong while gathering this battle's damage and healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        usermsg = "Error = Oops! Something went wrong while gathering this battle's damage and healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
         logmsg = logmsg + logmsgturntracker
         logmsg = logmsg + '\n' + str(error)
         logging.error(logmsg)
@@ -1533,7 +1536,7 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
         return([1, switchinfo])
 
     except Exception as error:
-        usermsg = "Oops! Something went wrong while gathering the battle's switching info!\nThe Beheeyem employed have been notified of the error and will take a look!"
+        usermsg = "Error = Oops! Something went wrong while gathering the battle's switching info!\nThe Beheeyem employed have been notified of the error and will take a look!"
         logmsg = logmsg + logmsgturntracker
         logmsg = logmsg + '\n' + str(error)
         logging.error(logmsg)
@@ -1615,7 +1618,7 @@ def Get_Action_Info(response, baselogmsg):
         actioninfo[table_name] = actionsql
         return(1, actioninfo)     
     except Exception as error:
-        usermsg = "Oops! Something went wrong while gathering the battle's action selection info!\nThe Beheeyem employed have been notified of the error and will take a look!"
+        usermsg = "Error = Oops! Something went wrong while gathering the battle's action selection info!\nThe Beheeyem employed have been notified of the error and will take a look!"
         logmsg = logmsg + logmsgturntracker
         logmsg = logmsg + '\n' + str(error)
         logging.error(logmsg)

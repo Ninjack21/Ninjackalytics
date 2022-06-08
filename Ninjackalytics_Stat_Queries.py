@@ -424,23 +424,26 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
-    encap = '"'
+    strtencap_col = '"'
+    endencap_col = '"'
+    strtencap_tbl = '"'
+    endencap_tbl = '"'
     valencap = "'"
     
     #create the initial sql statement that we'll be adding where clauses to from conditionals
-    sql = 'Select ' + encap + col + encap + ' From ' + schema + encap + table_name + encap + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
+    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
 
     if basiccond != 0:
         for clause in basiccond: 
             cur_col = clause[0]
             cur_val = clause[1]
-            sql = sql + ' AND ' + encap + cur_col + encap + ' = ' + valencap + cur_val + valencap
+            sql = sql + ' AND ' + strtencap_col + cur_col + endencap_col + ' = ' + valencap + cur_val + valencap
 
     for advclause in advcond:
         cur_col = advclause[0]
         cur_type = advclause[1]
         cur_str = advclause[2]
-        sql = sql + ' AND ' + encap + cur_col + encap + ' '  + cur_type + ' ' + valencap + cur_str + valencap
+        sql = sql + ' AND ' + strtencap_col + cur_col + endencap_col + ' '  + cur_type + ' ' + valencap + cur_str + valencap
 
     sql = sql + ';'
         
@@ -529,9 +532,7 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     
     """
     This function selects from "table_name" - "col" where "battle_id" and "conditionals"[0] equals "conditionals"[1]
-
     conditionals is a list of lists - [column, value] to be used in additional where clauses
-
     This function will return the response as a list
     """
     #first connect to the database
@@ -539,16 +540,19 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
-    encap = '"'
+    strtencap_col = '"'
+    endencap_col = '"'
+    strtencap_tbl = '"'
+    endencap_tbl = '"'
     valencap = "'"
     
     #create the initial sql statement that we'll be adding where clauses to from conditionals
-    sql = 'Select ' + encap + col + encap + ' From ' + schema + encap + table_name + encap + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
+    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
 
     for clause in conditionals: 
         cur_col = clause[0]
         cur_val = clause[1]
-        sql = sql + ' AND ' + encap + cur_col + encap + ' = ' + valencap + cur_val + valencap
+        sql = sql + ' AND ' + strtencap_col + cur_col + endencap_col + ' = ' + valencap + cur_val + valencap
     
     sql = sql + ';'
         
