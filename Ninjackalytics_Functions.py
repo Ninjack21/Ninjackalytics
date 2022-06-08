@@ -1,3 +1,4 @@
+from msilib.schema import Error
 import psycopg2 as pps
 import requests
 from datetime import date
@@ -78,12 +79,33 @@ def Run_Ninjackalytics(url):
                 return(battle_id)
             #if this battle doesn't already exist then go ahead and add everything!
             else:
-                for i, table in enumerate(list(totalsql)):
-                    for i, stmt in enumerate(totalsql[table]):
-                        Add_sql(table, stmt)
-            #if all succeeds then we want to be redirected to the page with the battle statistics
-            #otherwise we want to see a custom message
-            return(battle_id)
+                # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
+                # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
+                # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
+                # be able to avoid this.
+                try: 
+                    checkdb = list(totalsql)[1]
+                    Add_sql(checkdb, totalsql[checkdb][0])
+                    fnl_check = 'add'
+                #if this fails then simply return the battle_id as it already exists now.
+                except:
+                    fnl_check = 'do not add'
+                    print('failure')
+                    return(battle_id)
+
+                # now we just check fnl_check and follow it's instructions
+                finally:
+                    if fnl_check == 'add':
+                        #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
+                        del totalsql['Unique_Battle_IDs']
+                        for i, table in enumerate(list(totalsql)):
+                            for i, stmt in enumerate(totalsql[table]):
+                                Add_sql(table, stmt)
+                        #if all succeeds then we want to be redirected to the page with the battle statistics
+                        #otherwise we want to see a custom message
+                        return(battle_id)
+                    else:
+                        return(battle_id)
     #if there was no response from the url provided the battle_id will instead be the user message saying as much
     else:
         return(battle_id)
@@ -143,16 +165,13 @@ def Add_sql(table_name, GIS_response):
     """
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
-    
     #first connect to the database
     conn = pps.connect(database='Ninjackalytics', user = 'postgres', password = 'Bja00Qx6pOnsikoOju10')
-    
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     encap = '"'
     
     sql = 'INSERT INTO ' + schema + encap + table_name + encap + '(' + GIS_response[0] + ')' + ' VALUES (' + GIS_response[1] + ');'
-        
     #let's attempt what we have just written
     try:
         #create a new cursor
@@ -1497,7 +1516,7 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
 
                             GIS_response = Generate_Insert_Statement(col_names, values, val_types)
 
-                            Add_sql(table_name, GIS_response)
+                            switchsql.append(GIS_response)
                         else:
                             #note, this will count even eject button / eject pack as an action but it is reported literally identically to a hard swap action
                             #perhaps in the future I can go back and add that information but for now, I won't worry about it
