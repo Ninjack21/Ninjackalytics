@@ -1,0 +1,26 @@
+{% extends 'base.html' %} 
+
+{% block title %}Submit Replay{% endblock %} 
+
+{% block content %}
+    <div class="container-fluid p-3"
+        style = "background-color: black; width:100%;">
+        <div class = 'row'>
+            <div class = 'col-8'>
+                <h1 class = 'display-1' style="text-align:center;color:#fefe01">Welcome</h1>
+                <h1 class = 'display-1' style="text-align:center;color:#fefe01">To</h1>
+                <h1 class = 'display-1' style="text-align:center;color:#fefe01">Ninjackalytics!</h1>
+            </div>
+            <div class = 'col-4'>
+                <img class='img-fluid' src = '..\..\images\Ninjack - Transparent.png'>
+            </div>
+        </div>
+    </div>
+    <div class="container-fluid p-3"
+        style = "background-color: black; width:100%;">
+        <form method="post">
+            <label for="url" class = 'display-1' style="text-align:center;color:#fefe01">Submit Battle:</label>
+            <input name="url" id="url" required>
+        </form>
+    </div>
+{% endblock %}
