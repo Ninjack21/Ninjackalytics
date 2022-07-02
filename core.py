@@ -41,6 +41,7 @@ def error():
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):
     core_info = nsq.Core_Info(bid)
+    
     # FINISH THIS ONE LATER - EASILY THE HARDEST
 
 @bp.route('/generalerror')

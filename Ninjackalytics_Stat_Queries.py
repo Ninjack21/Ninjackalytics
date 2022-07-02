@@ -3,11 +3,14 @@ import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+import shutil
+import os
 
-def Generate_Bar_Chart(infodict):
+def Generate_Bar_Chart(battle_id, gname, pnum, infodict):
     """
     This function will take a dictionary as created by the other query functions and generate a PI Chart which is sorted to show
     largest contributors to smallest contributors using a pleasing and consistent color palette
+    It then uses battle_id + gname to create a unique filename to save the file under
     """
     units = infodict['Units']
     if 'Total' in list(infodict):
@@ -31,6 +34,10 @@ def Generate_Bar_Chart(infodict):
     infodict = {'clean labels' : cleanlabels,
     'clean values' : cleanvalues}
 
+    if len(infodict['clean values']) == 0:
+        infodict = {'clean labels' : ['None! - Ignore!'],
+        'clean values' : [0.01]}
+
     df = pd.DataFrame.from_dict(infodict)
     sns.set_theme(palette = 'Spectral')
     sns.set_context('poster', font_scale = 0.7)
@@ -38,9 +45,17 @@ def Generate_Bar_Chart(infodict):
     , 'ytick.color' : 'white', 'axes.spines.right' : 'False', 'axes.spines.top' : 'False', 'patch.edgecolor' : '#000000', 'xtick.bottom' : 'True'})
     fig = plt.figure(figsize=(6,4))
     fig = fig.set_facecolor('black')
+    #if there is no plot at all
     ax = sns.barplot(x='clean values', y='clean labels', data = df, ci = None, orient = 'h')
     ax.grid(False)
     ax.set(xlabel = units, ylabel = None)
+    filename = str(gname) + ' ' + str(pnum) + ' battle id = ' + str(battle_id) + '.png'
+    plt.savefig(str(filename), trasnparent=True, bbox_inches='tight')
+
+    #now let's move the file to static/battlestats
+    src_path = os.getcwd() + '\\' + str(filename)
+    dst_path = os.getcwd() + '\\static\\battlestats\\' + str(filename)
+    shutil.move(src_path, dst_path)
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
     """
