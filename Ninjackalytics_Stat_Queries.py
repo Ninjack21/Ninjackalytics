@@ -3,10 +3,9 @@ import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import shutil
 import os
 
-def Generate_Bar_Chart(battle_id, gname, pnum, infodict):
+def Generate_Bar_Chart(infodict):
     """
     This function will take a dictionary as created by the other query functions and generate a PI Chart which is sorted to show
     largest contributors to smallest contributors using a pleasing and consistent color palette
@@ -20,23 +19,28 @@ def Generate_Bar_Chart(battle_id, gname, pnum, infodict):
 
     #we want to sort the data going from largest contributors to lowest contributors
     info = sorted(infodict.items(), key=lambda item : item[1], reverse=True)
-    label,value = zip(*info)
-    #let's remove any 0's from our data since it will not have any impact on the pi chart but will clutter the names
-    cleanlabels = []
-    cleanvalues = []
-    i = 0
-    for val in value:
-        if val != 0:
-            cleanlabels.append(label[i])
-            cleanvalues.append(value[i])
-        i = i+1
+    #we try to zip and if it fails we create the fake infodict from when all values are 0
+    try: 
+        label,value = zip(*info)
+        #let's remove any 0's from our data since it will not have any impact on the pi chart but will clutter the names
+        cleanlabels = []
+        cleanvalues = []
+        i = 0
+        for val in value:
+            if val != 0:
+                cleanlabels.append(label[i])
+                cleanvalues.append(value[i])
+            i = i+1
 
-    infodict = {'clean labels' : cleanlabels,
-    'clean values' : cleanvalues}
+        infodict = {'clean labels' : cleanlabels,
+        'clean values' : cleanvalues}
 
-    if len(infodict['clean values']) == 0:
+        if len(infodict['clean values']) == 0:
+            infodict = {'clean labels' : ['None! - Ignore!'],
+            'clean values' : [0.01]}
+    except:
         infodict = {'clean labels' : ['None! - Ignore!'],
-        'clean values' : [0.01]}
+            'clean values' : [0.01]}
 
     df = pd.DataFrame.from_dict(infodict)
     sns.set_theme(palette = 'Spectral')
@@ -49,13 +53,6 @@ def Generate_Bar_Chart(battle_id, gname, pnum, infodict):
     ax = sns.barplot(x='clean values', y='clean labels', data = df, ci = None, orient = 'h')
     ax.grid(False)
     ax.set(xlabel = units, ylabel = None)
-    filename = str(gname) + ' ' + str(pnum) + ' battle id = ' + str(battle_id) + '.png'
-    plt.savefig(str(filename), trasnparent=True, bbox_inches='tight')
-
-    #now let's move the file to static/battlestats
-    src_path = os.getcwd() + '\\' + str(filename)
-    dst_path = os.getcwd() + '\\static\\battlestats\\' + str(filename)
-    shutil.move(src_path, dst_path)
 
 def Healing_Per_Entrance(battle_id, pnum, core_info):
     """

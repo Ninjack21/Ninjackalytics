@@ -1,13 +1,12 @@
-import functools
-
+from io import BytesIO
+import matplotlib.pyplot as plt
+import base64
 from flask import (
     Blueprint, redirect, render_template, url_for, request
 )
-
+from numpy import float64
 from . import Ninjackalytics_Stat_Queries as nsq
 from . import Ninjackalytics_Functions as nf
-
-
 
 bp = Blueprint('core', __name__, url_prefix='/core')
 
@@ -40,10 +39,99 @@ def error():
 
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):
+    # prepare the basic information and the graphs variable to be passed to the battlestats.html
     core_info = nsq.Core_Info(bid)
-    
-    # FINISH THIS ONE LATER - EASILY THE HARDEST
+    pnums = ['P1', 'P2']
+    graphs = {}
+    totals = {}
+    #generate the plots for this battle
+    for player in pnums:
+        #https://www.pythonanywhere.com/forums/topic/5017/
+        healentr = nsq.Healing_Per_Entrance(bid, player, core_info)
+        nsq.Generate_Bar_Chart(healentr)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Healing Per Entrance'] = figdata_png
 
-@bp.route('/generalerror')
-def generalerror():
-    return render_template('core/generalerror.html')
+        dmgentr = nsq.Damage_Per_Entrance(bid, player, core_info)
+        nsq.Generate_Bar_Chart(dmgentr)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Dmg Per Entrance'] = figdata_png
+
+        turnact = nsq.Turn_Action_Breakdown(bid, player, core_info)
+        #sum up the number of turns in this battle for this player
+        totalturns=0
+        for i in turnact.values():
+            if i != '# of Turns Action Selected':
+                totalturns += int(i)
+        totals[str(player) + ' - Total Turns'] = totalturns
+
+        nsq.Generate_Bar_Chart(turnact)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Turn Action Breakdown'] = figdata_png
+        
+
+        healtype = nsq.Heal_Type_Breakdown(bid, player, core_info)
+        totals[str(player) + ' - Total Healing Heal Type Breakdown'] = healtype['Total']
+
+        nsq.Generate_Bar_Chart(healtype)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Heal Type Breakdown'] = figdata_png
+        
+
+        healbrkdwn = nsq.Healing_Breakdown(bid, player, core_info)
+        totals[str(player) + ' - Total Healing Breakdown'] = healbrkdwn['Total']
+
+        nsq.Generate_Bar_Chart(healbrkdwn)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Healing Breakdown'] = figdata_png
+        
+
+        dmgtype = nsq.Dmg_Type_Breakdown(bid, player, core_info)
+        totals[str(player) + ' - Total Dmg Type Breakdown'] = dmgtype['Total']
+
+        nsq.Generate_Bar_Chart(dmgtype)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Dmg Type Breakdown'] = figdata_png
+        
+
+        dmgrecbrkdwn = nsq.Dmg_Received_Breakdown(bid, player, core_info)
+        totals[str(player) + ' - Total Dmg Received Breakdown'] = dmgrecbrkdwn['Total']
+
+        nsq.Generate_Bar_Chart(dmgrecbrkdwn)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Dmg Received Breakdown'] = figdata_png
+        
+        dmgdealtbrkdwn = nsq.Dmg_Dealt_Breakdown(bid, player, core_info)
+        totals[str(player) + ' - Total Dmg Dealt Breakdown'] = dmgdealtbrkdwn['Total']
+        
+        nsq.Generate_Bar_Chart(dmgdealtbrkdwn)
+        figfile = BytesIO()
+        plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
+        figfile.seek(0)
+        figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
+        graphs[str(player) + ' - Dmg Dealt Breakdown'] = figdata_png
+        
+
+    return render_template('core/battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
+
