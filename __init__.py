@@ -23,8 +23,5 @@ def create_app(test_config=None):
     from . import core
     app.register_blueprint(core.bp)
 
-    images = os.path.join('images', 'Ninjack - Transparent')
-    app.config['Ninjack'] = images
-    ninjack_filename = os.path.join(app.config['Ninjack'], 'Ninjack - Transparent.png')
-
     return app
+

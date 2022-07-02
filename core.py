@@ -11,7 +11,7 @@ from . import Ninjackalytics_Functions as nf
 
 bp = Blueprint('core', __name__, url_prefix='/core')
 
-@bp.route('/submit', methods = ('GET', 'POST',))
+@bp.route('/submit', methods = ('POST', 'GET'))
 def submit():
     #if the user is submitting their battle url then use run_ninjackalytics
     if request.method == 'POST':
@@ -21,19 +21,22 @@ def submit():
             redirect_response = nf.Run_Ninjackalytics(url)
             #if we got an error then redirect to url_for error page with message after 'Error = '
             if 'Error' in redirect_response:
+                #we can get the more specific error here later on, but for now we'll use a general error message
                 errormsg = redirect_response[8:]
-                redirect(url_for('core.error', msg = errormsg))
+                return redirect(url_for('core.error'))
             #if there is no error, then we redirect to the stats page
             else:
-                redirect(url_for('core.battlestats', bid = redirect_response))
+                return redirect(url_for('core.battlestats', bid = redirect_response))
         except: 
-            redirect(url_for('core.generalerror'))
+            return redirect(url_for('core.error'))
 
     return render_template('core/submit.html')
 
-@bp.route('/error/<msg>')
-def error(msg):
-    return render_template('core/error.html', msg = msg)
+@bp.route('/error', methods = ('GET',))
+def error():
+    # color palette: #FE0180, #0101FE, #01FE80, #FEFE01
+
+    return render_template('core/error.html')
 
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):

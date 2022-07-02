@@ -291,7 +291,7 @@ def Get_Response(url):
         return(response, battle_id)
 
     else:
-        usermsg = 'no response from: ' + url + ' - check that you entered it correctly'
+        usermsg = 'Error = Oops! no response from: ' + url + ' - check that you entered it correctly'
         response = usermsg
         return(0, usermsg)
     

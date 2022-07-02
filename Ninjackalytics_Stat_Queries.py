@@ -431,7 +431,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     valencap = "'"
     
     #create the initial sql statement that we'll be adding where clauses to from conditionals
-    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
+    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + strtencap_col + 'Battle_ID' + endencap_col + ' = ' +  valencap + battle_id + valencap
 
     if basiccond != 0:
         for clause in basiccond: 
@@ -547,7 +547,7 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     valencap = "'"
     
     #create the initial sql statement that we'll be adding where clauses to from conditionals
-    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + encap + 'Battle_ID' + encap + ' = ' +  valencap + battle_id + valencap
+    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + strtencap_col + 'Battle_ID' + endencap_col + ' = ' +  valencap + battle_id + valencap
 
     for clause in conditionals: 
         cur_col = clause[0]
