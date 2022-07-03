@@ -80,7 +80,7 @@ def battlestats(bid):
         
 
         healtype = nsq.Heal_Type_Breakdown(bid, player, core_info)
-        totals[str(player) + ' - Total Healing Heal Type Breakdown'] = healtype['Total']
+        totals[str(player) + ' - Total Healing Heal Type Breakdown'] = round(healtype['Total'],2)
 
         nsq.Generate_Bar_Chart(healtype)
         figfile = BytesIO()
@@ -91,8 +91,7 @@ def battlestats(bid):
         
 
         healbrkdwn = nsq.Healing_Breakdown(bid, player, core_info)
-        totals[str(player) + ' - Total Healing Breakdown'] = healbrkdwn['Total']
-
+        totals[str(player) + ' - Total Healing Breakdown'] = round(healbrkdwn['Total'],2)
         nsq.Generate_Bar_Chart(healbrkdwn)
         figfile = BytesIO()
         plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
@@ -102,7 +101,7 @@ def battlestats(bid):
         
 
         dmgtype = nsq.Dmg_Type_Breakdown(bid, player, core_info)
-        totals[str(player) + ' - Total Dmg Type Breakdown'] = dmgtype['Total']
+        totals[str(player) + ' - Total Dmg Type Breakdown'] = round(dmgtype['Total'],2)
 
         nsq.Generate_Bar_Chart(dmgtype)
         figfile = BytesIO()
@@ -113,7 +112,7 @@ def battlestats(bid):
         
 
         dmgrecbrkdwn = nsq.Dmg_Received_Breakdown(bid, player, core_info)
-        totals[str(player) + ' - Total Dmg Received Breakdown'] = dmgrecbrkdwn['Total']
+        totals[str(player) + ' - Total Dmg Received Breakdown'] = round(dmgrecbrkdwn['Total'],2)
 
         nsq.Generate_Bar_Chart(dmgrecbrkdwn)
         figfile = BytesIO()
@@ -123,7 +122,7 @@ def battlestats(bid):
         graphs[str(player) + ' - Dmg Received Breakdown'] = figdata_png
         
         dmgdealtbrkdwn = nsq.Dmg_Dealt_Breakdown(bid, player, core_info)
-        totals[str(player) + ' - Total Dmg Dealt Breakdown'] = dmgdealtbrkdwn['Total']
+        totals[str(player) + ' - Total Dmg Dealt Breakdown'] = round(dmgdealtbrkdwn['Total'],2)
         
         nsq.Generate_Bar_Chart(dmgdealtbrkdwn)
         figfile = BytesIO()
