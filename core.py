@@ -10,6 +10,7 @@ from . import Ninjackalytics_Functions as nf
 
 bp = Blueprint('core', __name__, url_prefix='/core')
 
+
 @bp.route('/submit', methods = ('POST', 'GET'))
 def submit():
     #if the user is submitting their battle url then use run_ninjackalytics

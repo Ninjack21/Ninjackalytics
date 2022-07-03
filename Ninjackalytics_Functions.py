@@ -166,7 +166,7 @@ def Add_sql(table_name, GIS_response):
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
     #first connect to the database
-    conn = pps.connect(database='Ninjackalytics', user = 'postgres', password = 'Bja00Qx6pOnsikoOju10')
+    conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap = '"'
@@ -245,7 +245,7 @@ def Select_sql(table_name, GSS_response):
     """
     
     #first connect to the database
-    conn = pps.connect(database='Ninjackalytics', user = 'postgres', password = 'Bja00Qx6pOnsikoOju10')
+    conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
     
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
