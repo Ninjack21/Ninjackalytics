@@ -1,1 +1,1 @@
-web: gunicorn app:ninjack
+web: gunicorn ninjack:app
