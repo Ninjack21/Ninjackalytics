@@ -433,7 +433,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     """
     #first connect to the database
     conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
-    
+    table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap_col = '"'
@@ -490,17 +490,14 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
                 cleanresponse.append(integer)
 
         conn.commit()
-        
-        cur.close()
+
+        return(cleanresponse)
     
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
-    
-    #close the connection
-    finally:
-        conn.close()
-        return(cleanresponse)
+
+
 
 def Core_Info(battle_id):
     """
@@ -511,20 +508,20 @@ def Core_Info(battle_id):
     """
     core_info = {}
 
-    players = Basic_Select('Battle_Info', 'Player', battle_id, [])
+    players = Basic_Select('battle_info', 'Player', battle_id, [])
     p1 = players[0]
     p2 = players[1]
-    winner = Basic_Select('Battle_Info', 'Winner', battle_id, [])
+    winner = Basic_Select('battle_info', 'Winner', battle_id, [])
     winner = winner[0]
 
     p1cond = [['Player', p1]]
-    team1 = Basic_Select('Team', 'Pokemon', battle_id, p1cond)
+    team1 = Basic_Select('team', 'Pokemon', battle_id, p1cond)
     player1 = {'name' : p1,
     'team' : team1
     }
 
     p2cond = [['Player', p2]]
-    team2 = Basic_Select('Team', 'Pokemon', battle_id, p2cond)
+    team2 = Basic_Select('team', 'Pokemon', battle_id, p2cond)
     player2 = {'name' : p2,
     'team' : team2
     }
@@ -550,6 +547,9 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     #first connect to the database
     conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
     
+    #heroku database uses all lowercase table names
+    table_name = table_name.lower()
+
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap_col = '"'
@@ -599,14 +599,9 @@ def Basic_Select(table_name, col, battle_id, conditionals):
                 cleanresponse.append(integer)
 
         conn.commit()
-        
-        cur.close()
+
+        return(cleanresponse)
     
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
-    
-    #close the connection
-    finally:
-        conn.close()
-        return(cleanresponse)

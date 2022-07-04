@@ -9,107 +9,116 @@ logging.basicConfig(filename = 'NinjackalyticsErrors.log', level = logging.ERROR
                 format = '%(asctime)s:%(funcName)s:%(message)s')
 
 def Run_Ninjackalytics(url):
-    totalsql = {}
-    baselogmsg = 'url: ' + url + '\n\n'
-    response = Get_Response(url)
-    logresponse = response[0]
-    battle_id = response[1]
-    if logresponse != 0:
-        #now check if it's a new battle or already in the database
-        new = Check_New_Battle(battle_id)
-        #if this battle already exists then go ahead and link to the page
-        if new == 'no':
-            return(battle_id)
-        #if this battle is new then continue with ninjackalytics
-        else:
-
-            bidstat = Get_BID_Info(logresponse, baselogmsg)
-            if bidstat[0] == 0:
-                return(bidstat[1])
-            else:
-                table = list(bidstat[1])[0]
-                stmts = list(bidstat[1][table])
-                totalsql[table] = stmts
-
-                tablecheck = list(bidstat[1])[1]
-                stmtscheck = list(bidstat[1][tablecheck])
-                totalsql[tablecheck] = stmtscheck
-            
-            teaminfostat = Get_Team_Info(logresponse, baselogmsg)
-            if teaminfostat[0] == 0:
-                return(teaminfostat[1])
-            else:
-                table = list(teaminfostat[1])[0]
-                stmts = list(teaminfostat[1][table])
-                totalsql[table] = stmts
-                nicknames = teaminfostat[2]
-
-            dmghealstat = Get_Damage_and_Healing_Info(logresponse, nicknames, baselogmsg)
-            if dmghealstat[0] == 0:
-                return(dmghealstat[1])
-            else:
-                tabledmg = list(dmghealstat[1])[0]
-                stmtsdmg = list(dmghealstat[1][tabledmg])
-                totalsql[tabledmg] = stmtsdmg
-
-                tableheal = list(dmghealstat[2])[0]
-                stmtsheal = list(dmghealstat[2][tableheal])
-                totalsql[tableheal] = stmtsheal
-
-            switchstat = Get_Switch_Info(logresponse, nicknames, baselogmsg)
-            if switchstat[0] == 0:
-                return(switchstat[1])
-            else:
-                table = list(switchstat[1])[0]
-                stmts = list(switchstat[1][table])
-                totalsql[table] = stmts
-
-            actionstat = Get_Action_Info(logresponse, baselogmsg)
-            if actionstat[0] == 0:
-                return(actionstat[1])
-            else:
-                table = list(actionstat[1])[0]
-                stmts = list(actionstat[1][table])
-                totalsql[table] = stmts
-
-            #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
+    print('start data gather')
+    conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
+    cur = conn.cursor()
+    try:
+        totalsql = {}
+        baselogmsg = 'url: ' + url + '\n\n'
+        response = Get_Response(url)
+        logresponse = response[0]
+        battle_id = response[1]
+        if logresponse != 0:
+            #now check if it's a new battle or already in the database
             new = Check_New_Battle(battle_id)
-            
+            #if this battle already exists then go ahead and link to the page
             if new == 'no':
                 return(battle_id)
-            #if this battle doesn't already exist then go ahead and add everything!
+            #if this battle is new then continue with ninjackalytics
             else:
-                # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
-                # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
-                # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
-                # be able to avoid this.
-                try: 
-                    checkdb = list(totalsql)[1]
-                    Add_sql(checkdb, totalsql[checkdb][0])
-                    fnl_check = 'add'
-                #if this fails then simply return the battle_id as it already exists now.
-                except:
-                    fnl_check = 'do not add'
-                    print('failure')
-                    return(battle_id)
 
-                # now we just check fnl_check and follow it's instructions
-                finally:
-                    if fnl_check == 'add':
-                        #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
-                        del totalsql['Unique_Battle_IDs']
-                        for i, table in enumerate(list(totalsql)):
-                            for i, stmt in enumerate(totalsql[table]):
-                                Add_sql(table, stmt)
-                        #if all succeeds then we want to be redirected to the page with the battle statistics
-                        #otherwise we want to see a custom message
+                bidstat = Get_BID_Info(logresponse, baselogmsg)
+                if bidstat[0] == 0:
+                    return(bidstat[1])
+                else:
+                    table = list(bidstat[1])[0]
+                    stmts = list(bidstat[1][table])
+                    totalsql[table] = stmts
+
+                    tablecheck = list(bidstat[1])[1]
+                    stmtscheck = list(bidstat[1][tablecheck])
+                    totalsql[tablecheck] = stmtscheck
+                
+                teaminfostat = Get_Team_Info(logresponse, baselogmsg)
+                if teaminfostat[0] == 0:
+                    return(teaminfostat[1])
+                else:
+                    table = list(teaminfostat[1])[0]
+                    stmts = list(teaminfostat[1][table])
+                    totalsql[table] = stmts
+                    nicknames = teaminfostat[2]
+
+                dmghealstat = Get_Damage_and_Healing_Info(logresponse, nicknames, baselogmsg)
+                if dmghealstat[0] == 0:
+                    return(dmghealstat[1])
+                else:
+                    tabledmg = list(dmghealstat[1])[0]
+                    stmtsdmg = list(dmghealstat[1][tabledmg])
+                    totalsql[tabledmg] = stmtsdmg
+
+                    tableheal = list(dmghealstat[2])[0]
+                    stmtsheal = list(dmghealstat[2][tableheal])
+                    totalsql[tableheal] = stmtsheal
+
+                switchstat = Get_Switch_Info(logresponse, nicknames, baselogmsg)
+                if switchstat[0] == 0:
+                    return(switchstat[1])
+                else:
+                    table = list(switchstat[1])[0]
+                    stmts = list(switchstat[1][table])
+                    totalsql[table] = stmts
+
+                actionstat = Get_Action_Info(logresponse, baselogmsg)
+                if actionstat[0] == 0:
+                    return(actionstat[1])
+                else:
+                    table = list(actionstat[1])[0]
+                    stmts = list(actionstat[1][table])
+                    totalsql[table] = stmts
+
+                #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
+                new = Check_New_Battle(battle_id)
+                print('double check that is new battle')
+                if new == 'no':
+                    return(battle_id)
+                #if this battle doesn't already exist then go ahead and add everything!
+                else:
+                    # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
+                    # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
+                    # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
+                    # be able to avoid this.
+                    try: 
+                        checkdb = list(totalsql)[1]
+                        Add_sql(checkdb, totalsql[checkdb][0])
+                        fnl_check = 'add'
+                    #if this fails then simply return the battle_id as it already exists now.
+                    except:
+                        fnl_check = 'do not add'
+
                         return(battle_id)
-                    else:
-                        return(battle_id)
-    #if there was no response from the url provided the battle_id will instead be the user message saying as much
-    else:
-        return(battle_id)
+
+                    # now we just check fnl_check and follow it's instructions
+                    finally:
+                        if fnl_check == 'add':
+                            #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
+                            print('now add data to db')
+                            del totalsql['unique_battle_ids']
+                            for i, table in enumerate(list(totalsql)):
+                                for i, stmt in enumerate(totalsql[table]):
+                                    Add_sql(table, stmt)
+                            #if all succeeds then we want to be redirected to the page with the battle statistics
+                            #otherwise we want to see a custom message
+                            return(battle_id)
+                        else:
+                            return(battle_id)
+        #if there was no response from the url provided the battle_id will instead be the user message saying as much
+        else:
+            return(battle_id)
     
+    finally:
+        print('close connection')
+        cur.close()
+        conn.close()
 #--------------------START WITH SQL INTERACTION FUNCTIONS ------------------------------------------------------
 def Generate_Insert_Statement(col_names, values, val_types):
     
@@ -171,7 +180,7 @@ def Add_sql(table_name, GIS_response):
     schema = 'public.'
     strtencap = '"'
     endencap = '"'
-
+    
     sql = 'INSERT INTO ' + schema + strtencap + table_name + endencap + '(' + GIS_response[0] + ')' + ' VALUES (' + GIS_response[1] + ');'
     #let's attempt what we have just written
     try:
@@ -182,29 +191,24 @@ def Add_sql(table_name, GIS_response):
         cur.execute(sql)
         
         conn.commit()
-        
-        cur.close()
     
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(sql)
         print(error)
-    
-    #close the connection
-    finally:
-        conn.close()     
+     
 
 def Check_New_Battle(battle_id):
     """
     take the provided battle_id and see if this battle exists in the Ninjackalytics' database already or not
     (responses are to the variable name used of "new")
     """
-    table_name = 'Unique_Battle_IDs'
+    table_name = 'unique_battle_ids'
     col_name = 'Battle_ID'
     GSS_response = Generate_Select_Statement(col_name, battle_id, 'Text')
-
-    check_for_bid = Select_sql(table_name, GSS_response)
     
+    check_for_bid = Select_sql(table_name, GSS_response)
+
     if check_for_bid:
         return('no')
     else:
@@ -266,16 +270,12 @@ def Select_sql(table_name, GSS_response):
 
         conn.commit()
         
-        cur.close()
-    
+        return(response)
+
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
     
-    #close the connection
-    finally:
-        conn.close()
-        return(response)
 # ---------------------------- BEGIN DB DATA GATHERING FUNCTIONS HERE ------------
 def Get_Response(url):
     """
@@ -383,14 +383,15 @@ def Get_BID_Info(response, baselogmsg):
         bidp2 = [battle_id, date_sub, battle_format, p2, p2_rank, private, winner]
         types = ['Text', 'Date', 'Text', 'Text', 'Number', 'Text', 'Text']
 
-        table_name = 'Battle_Info'
+        table_name = 'battle_info'
         col_names = ['Battle_ID', 'Date_Submitted', 'Format', 'Player', 'Rank', 'Private', 'Winner']
 
         logmsg = logmsg + 'now create the insert statement for adding BID info to the sql database \n'
         add_p1 = Generate_Insert_Statement(col_names, bidp1, types)
         add_p2 = Generate_Insert_Statement(col_names, bidp2, types)
 
-        table_name_check = 'Unique_Battle_IDs'
+        table_name_check = 'unique_battle_ids'
+
         col_names_check = ['Battle_ID']
         values_check = [battle_id]
         types_check = ['Text']
@@ -426,7 +427,7 @@ def Get_Team_Info(response, baselogmsg):
         p2 = response['p2id']
         log = response['log']
         col_names = ['Battle_ID', 'Player', 'Pokemon']
-        table_name = 'Team'
+        table_name = 'team'
 
         logmsg = logmsg + 'Prepare for gathering pokemon in team preview \n'
         mon_preview = log.split('|clearpoke\n')
@@ -640,7 +641,7 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                     
                     if is_damage == 'yes':
                         col_names = ['Battle_ID', 'Turn', 'Type', 'Dealer', 'Name', 'Receiver', 'Damage']
-                        table_name = 'Damage'
+                        table_name = 'damage'
                         
                         is_not_move = Search('[from]', line)
                         #ik ik, double negatives, it works, though
@@ -696,7 +697,7 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                     elif is_faint == 'yes':
                         dmg_type = 'passive'
                         col_names = ['Battle_ID', 'Turn', 'Type', 'Dealer', 'Name', 'Receiver', 'Damage']
-                        table_name = 'Damage'
+                        table_name = 'damage'
                         
                         # https://replay.pokemonshowdown.com/gen8ou-1510969757 -> |faint|p1a: Al'Queda
                         
@@ -727,7 +728,7 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                     #now let's check for if the heal keyword is present            
                     elif is_heal == 'yes':
                         col_names = ['Battle_ID', 'Turn', 'Type', 'Name', 'Receiver', 'Recovery']
-                        table_name = 'Healing'
+                        table_name = 'healing'
                         is_item = Search('[from] item', line)
                         is_ability = Search('[from] ability', line)
                         is_passive = Search('[silent]', line)
@@ -775,7 +776,7 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                                 heal_type = 'ability'
 
                                 col_names = ['Battle_ID', 'Turn', 'Type', 'Name', 'Receiver', 'Recovery']
-                                table_name = 'Healing'
+                                table_name = 'healing'
 
                                 heal_static_vals = [battle_id, turn_num, heal_type, col_names, table_name]
                                 ahi_response = Add_Healing_Info(heal_static_vals, line, turn, nicknames, hp, baselogmsg)
@@ -786,8 +787,8 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
 
         finaldmgsql = {}
         finalhealsql = {}
-        finaldmgsql['Damage'] = dmgsql
-        finalhealsql['Healing'] = healsql
+        finaldmgsql['damage'] = dmgsql
+        finalhealsql['healing'] = healsql
         dmghealresponse = [finaldmgsql, finalhealsql]
         return([1, finaldmgsql, finalhealsql])
     except Exception as error:
@@ -1465,7 +1466,7 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
         logmsg = baselogmsg
         switchsql = []
         col_names = ['Battle_ID', 'Turn', 'Player', 'Pokemon_Enter' , 'Source']
-        table_name = 'Switch'
+        table_name = 'switch'
         
         battle_id = response['id']
         p1 = response['p1id']
@@ -1547,7 +1548,7 @@ def Get_Action_Info(response, baselogmsg):
         logmsg = baselogmsg
         actionsql = []
         col_names = ['Battle_ID', 'Turn', 'Player', 'Action']
-        table_name = 'Actions'
+        table_name = 'actions'
         
         battle_id = response['id']
         p1 = response['p1id']
