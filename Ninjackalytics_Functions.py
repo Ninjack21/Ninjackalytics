@@ -9,7 +9,6 @@ logging.basicConfig(filename = 'NinjackalyticsErrors.log', level = logging.ERROR
                 format = '%(asctime)s:%(funcName)s:%(message)s')
 
 def Run_Ninjackalytics(url):
-    print('start data gather')
     conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
     cur = conn.cursor()
     try:
@@ -78,7 +77,6 @@ def Run_Ninjackalytics(url):
 
                 #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
                 new = Check_New_Battle(battle_id)
-                print('double check that is new battle')
                 if new == 'no':
                     return(battle_id)
                 #if this battle doesn't already exist then go ahead and add everything!
@@ -101,7 +99,6 @@ def Run_Ninjackalytics(url):
                     finally:
                         if fnl_check == 'add':
                             #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
-                            print('now add data to db')
                             del totalsql['unique_battle_ids']
                             for i, table in enumerate(list(totalsql)):
                                 for i, stmt in enumerate(totalsql[table]):
@@ -116,7 +113,6 @@ def Run_Ninjackalytics(url):
             return(battle_id)
     
     finally:
-        print('close connection')
         cur.close()
         conn.close()
 #--------------------START WITH SQL INTERACTION FUNCTIONS ------------------------------------------------------

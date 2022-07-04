@@ -8,10 +8,10 @@ from . import Ninjackalytics_Stat_Queries as nsq
 from . import Ninjackalytics_Functions as nf
 import psycopg2 as pps
 
-bp = Blueprint('core', __name__, url_prefix='/core')
+bp = Blueprint('core', __name__)
 
 
-@bp.route('/submit', methods = ('POST', 'GET'))
+@bp.route('/', methods = ('POST', 'GET'))
 def submit():
     #if the user is submitting their battle url then use run_ninjackalytics
     if request.method == 'POST':
@@ -45,7 +45,6 @@ def battlestats(bid):
     conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
     cur = conn.cursor()
     try:
-        print('begin generating stat plots')
         core_info = nsq.Core_Info(bid)
         pnums = ['P1', 'P2']
         graphs = {}
@@ -137,7 +136,6 @@ def battlestats(bid):
             figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
             graphs[str(player) + ' - Dmg Dealt Breakdown'] = figdata_png
         
-        print('finished generating stat plots')
         return render_template('core/battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
 
     finally:
