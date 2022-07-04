@@ -4,7 +4,6 @@ import base64
 from flask import (
     Blueprint, redirect, render_template, url_for, request
 )
-from numpy import float64
 from . import Ninjackalytics_Stat_Queries as nsq
 from . import Ninjackalytics_Functions as nf
 

@@ -1,8 +1,5 @@
 import os
-import gunicorn
-
-from flask import Flask
-from numpy import _FlatIterSelf
+from flask import Flask 
 
 
 def create_app(test_config=None):

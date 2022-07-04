@@ -141,7 +141,7 @@ def Turn_Action_Breakdown(battle_id, pnum, core_info):
     May change this to send a graphic in the future to be reflected on the website
     """
 
-    table_name = 'Action'
+    table_name = 'Actions'
     col_name = 'Action'
 
     pname = core_info[pnum]['name']

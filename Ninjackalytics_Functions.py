@@ -1547,7 +1547,7 @@ def Get_Action_Info(response, baselogmsg):
         logmsg = baselogmsg
         actionsql = []
         col_names = ['Battle_ID', 'Turn', 'Player', 'Action']
-        table_name = 'Action'
+        table_name = 'Actions'
         
         battle_id = response['id']
         p1 = response['p1id']
