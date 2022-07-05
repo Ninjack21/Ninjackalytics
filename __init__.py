@@ -26,3 +26,4 @@ def create_app(test_config=None):
 
 app = create_app()
 app.logger.setLevel(logging.ERROR)
+app.logger.addHandler(logging.StreamHandler(sys.stdout))
