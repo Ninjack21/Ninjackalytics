@@ -7,19 +7,14 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
                 format = '%(asctime)s:%(funcName)s')
 
 
+
 def create_app():
     # create and configure the app
-
-    app = Flask(__name__)
+    templates_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+    app = Flask(__name__, template_folder = templates_folder)
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
-
-    my_loader = jinja2.ChoiceLoader([
-        app.jinja_loader,
-        jinja2.FileSystemLoader(['Ninjackalytics/templates']),
-    ])
-    app.jinja_loader = my_loader
 
     # if test_config is None:
     #     # load the instance config, if it exists, when not testing

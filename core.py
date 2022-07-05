@@ -7,8 +7,10 @@ from flask import (
 import Ninjackalytics_Stat_Queries as nsq
 import Ninjackalytics_Functions as nf
 import psycopg2 as pps
+import os
 
-bp = Blueprint('core', __name__)
+templates_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+bp = Blueprint('core', __name__, template_folder = templates_folder)
 
 
 @bp.route('/', methods = ('POST', 'GET'))
