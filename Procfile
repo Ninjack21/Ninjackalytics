@@ -1,1 +1,1 @@
-web: gunicorn Ninjackalytics.__init__:app
+web: gunicorn app.base:app
