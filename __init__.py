@@ -1,8 +1,7 @@
 from flask import Flask 
 import logging
 
-app.logger.addHandler(logging.Streamhandler(sys.stdout))
-app.logger.setLevel(logging.Error)
+
 
 def create_app(test_config=None):
     # create and configure the app
@@ -24,3 +23,6 @@ def create_app(test_config=None):
     return app
 
 app = create_app()
+
+app.logger.addHandler(logging.Streamhandler(sys.stdout))
+app.logger.setLevel(logging.Error)
