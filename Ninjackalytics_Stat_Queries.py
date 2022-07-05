@@ -1,9 +1,7 @@
-from ast import increment_lineno
 import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
 
 def Generate_Bar_Chart(infodict):
     """

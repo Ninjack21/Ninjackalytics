@@ -1,4 +1,3 @@
-from msilib.schema import Error
 import psycopg2 as pps
 import requests
 from datetime import date
