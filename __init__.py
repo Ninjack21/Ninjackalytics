@@ -9,10 +9,11 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
 
 def create_app():
     # create and configure the app
-    app = Flask(__name__, template_folder='templates')
+    app = Flask(__name__, template_folder='templates', EXPLAIN_TEMPLATE_LLOADING = True)
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
+    app.config['EXPLAIN_TEMPLATE_LOADING'] = True
 
     # if test_config is None:
     #     # load the instance config, if it exists, when not testing
@@ -27,5 +28,5 @@ def create_app():
     return app
 
 app = create_app()
-app.logger.setLevel(logging.ERROR)
+app.logger.setLevel(logging.INFO)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))
