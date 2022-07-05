@@ -7,7 +7,7 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
                 format = '%(asctime)s:%(funcName)s')
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-template_dir = os.path.join(dir_path, "website/endpoint")
+template_dir = os.path.join(dir_path, "templates")
 
 def create_app():
     # create and configure the app
