@@ -6,9 +6,9 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
                 format = '%(asctime)s:%(funcName)s')
 
 
-def create_app(test_config=None):
+def create_app():
     # create and configure the app
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__)
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
