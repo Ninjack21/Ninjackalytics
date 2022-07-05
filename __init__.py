@@ -9,7 +9,7 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
 
 def create_app():
     # create and configure the app
-    app = Flask(__name__, template_folder='templates', EXPLAIN_TEMPLATE_LLOADING = True)
+    app = Flask(__name__, template_folder='templates')
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
