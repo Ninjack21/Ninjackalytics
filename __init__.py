@@ -9,12 +9,12 @@ def create_app(test_config=None):
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
 
-    if test_config is None:
-        # load the instance config, if it exists, when not testing
-        app.config.from_pyfile('config.py', silent=True)
-    else:
-        # load the test config if passed in
-        app.config.from_mapping(test_config)
+    # if test_config is None:
+    #     # load the instance config, if it exists, when not testing
+    #     app.config.from_pyfile('config.py', silent=True)
+    # else:
+    #     # load the test config if passed in
+    #     app.config.from_mapping(test_config)
         
     from . import core
     app.register_blueprint(core.bp)
