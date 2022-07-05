@@ -1,1 +1,1 @@
-web: gunicorn app.base:app
+web: gunicorn __init__:app
