@@ -10,8 +10,7 @@ logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR,
 
 def create_app():
     # create and configure the app
-    templates_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-    app = Flask(__name__, template_folder = templates_folder)
+    app = Flask(__name__)
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
