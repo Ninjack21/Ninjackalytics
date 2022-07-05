@@ -430,7 +430,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     This function will return the response as a list
     """
     #first connect to the database
-    conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
+    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
     table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
@@ -543,7 +543,7 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     This function will return the response as a list
     """
     #first connect to the database
-    conn = pps.connect(host = 'ec2-44-196-174-238.compute-1.amazonaws.com', database = 'd39sfuos9nk0v3', user = 'geodgxbrnykumu', password = '6f97a508f497d1a7354e4e82791772b0837c4e66ca361090483e96fdce55e4c8')
+    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
     
     #heroku database uses all lowercase table names
     table_name = table_name.lower()
