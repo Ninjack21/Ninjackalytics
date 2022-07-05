@@ -6,12 +6,10 @@ import os
 logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR, 
                 format = '%(asctime)s:%(funcName)s')
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-template_dir = os.path.join(dir_path, "templates")
 
 def create_app():
     # create and configure the app
-    app = Flask(__name__, template_folder=template_dir)
+    app = Flask(__name__, template_folder='templates')
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
