@@ -30,13 +30,13 @@ def submit():
         except: 
             return redirect(url_for('core.error'))
 
-    return render_template('submit.html')
+    return render_template('core/submit.html')
 
 @bp.route('/error', methods = ('GET',))
 def error():
     # color palette: #FE0180, #0101FE, #01FE80, #FEFE01
 
-    return render_template('error.html')
+    return render_template('core/error.html')
 
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):
@@ -136,7 +136,7 @@ def battlestats(bid):
             figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
             graphs[str(player) + ' - Dmg Dealt Breakdown'] = figdata_png
         
-        return render_template('battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
+        return render_template('core/battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
 
     finally:
         cur.close()
