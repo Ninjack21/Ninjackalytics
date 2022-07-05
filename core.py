@@ -4,8 +4,8 @@ import base64
 from flask import (
     Blueprint, redirect, render_template, url_for, request
 )
-from . import Ninjackalytics_Stat_Queries as nsq
-from . import Ninjackalytics_Functions as nf
+import Ninjackalytics_Stat_Queries as nsq
+import Ninjackalytics_Functions as nf
 import psycopg2 as pps
 
 bp = Blueprint('core', __name__)
