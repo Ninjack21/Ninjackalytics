@@ -1,6 +1,8 @@
 from flask import Flask 
 import logging
 
+logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR, 
+                format = '%(asctime)s:%(funcName)s')
 
 
 def create_app(test_config=None):
@@ -23,6 +25,4 @@ def create_app(test_config=None):
     return app
 
 app = create_app()
-
-app.logger.addHandler(logging.Streamhandler(sys.stdout))
-app.logger.setLevel(logging.Error)
+app.logger.setLevel(logging.ERROR)
