@@ -1,11 +1,9 @@
 from flask import Flask 
 import logging
 import sys
-import os
 
 logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR, 
                 format = '%(asctime)s:%(funcName)s')
-
 
 
 def create_app():

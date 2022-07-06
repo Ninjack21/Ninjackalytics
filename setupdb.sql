@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS Battle_Info
+CREATE TABLE IF NOT EXISTS battle_info
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Date_Submitted" date NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS Battle_Info
     "Winner" text COLLATE pg_catalog."default" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Actions
+CREATE TABLE IF NOT EXISTS actions
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Turn" integer NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS Actions
     "Action" text COLLATE pg_catalog."default" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Damage
+CREATE TABLE IF NOT EXISTS damage
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Turn" integer NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS Damage
     "Type" text COLLATE pg_catalog."default" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Healing
+CREATE TABLE IF NOT EXISTS healing
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Turn" integer NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS Healing
     "Type" text COLLATE pg_catalog."default"
 );
 
-CREATE TABLE IF NOT EXISTS Switch
+CREATE TABLE IF NOT EXISTS switch
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Turn" integer NOT NULL,
@@ -47,14 +47,14 @@ CREATE TABLE IF NOT EXISTS Switch
     "Source" text COLLATE pg_catalog."default" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Team
+CREATE TABLE IF NOT EXISTS team
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     "Player" text COLLATE pg_catalog."default" NOT NULL,
     "Pokemon" text COLLATE pg_catalog."default" NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS Unique_Battle_IDs
+CREATE TABLE IF NOT EXISTS unique_battle_ids
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT "Unique_Battle_IDs_pkey" PRIMARY KEY ("Battle_ID")
