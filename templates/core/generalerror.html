@@ -1,0 +1,39 @@
+{% extends 'base.html' %} 
+
+{% block title %}Error!{% endblock %} 
+
+{% block content %}
+    <div class="container-fluid p-3"
+        style = "background-color: black; width:100%;">
+        <div class = 'row'>
+            <div class = 'col-12' style="text-align:center">
+                <h1 class = 'display-4' style="text-align:center;color:#fefe01">Oops, something went wrong!</h1>
+                <h1 class = 'display-4' style="text-align:center;color:#fefe01">Unfortunately, we don't have a specific error message for this error</h1>
+                <h1 class = 'display-4' style="text-align:center;color:#fefe01">I apologize for the inconvenience!</h1>
+                <br>
+                <p style="text-align:center;color:#fefe01">
+                    {% for message in get_flashed_messages() %}
+                        {{ message }}
+                    {% endfor %}
+                </p>
+            </div>
+        </div>
+    
+        <div class="container-fluid p-3">
+        </div>
+        <div class="container-fluid p-3">
+            <div class="row">
+                <h1 class = 'display-4' style="text-align:center;color:#FE0180">Known Issues Include:</h1>
+            </div>
+            <div class = 'row'>
+                <ul>
+                    <li style="text-align:start;color:#FE0180">Having a typo in the url</li>
+                    <li style="text-align:start;color:#FE0180">Formats without team preview before battle</li>
+                    <li style="text-align:start;color:#FE0180">Perish Song</li>
+                    <li style="text-align:start;color:#FE0180">Ditto</li>
+                    <li style="text-align:start;color:#FE0180">Zoroark</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}

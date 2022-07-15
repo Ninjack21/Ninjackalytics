@@ -7,15 +7,21 @@
         style = "background-color: black; width:100%;">
         <div class = 'row'>
             <div class = 'col-12' style="text-align:center">
-                <h1 class = 'display-4' style="text-align:center;color:#fefe01">Oops! Something went wrong!</h1>
-                <h1 class = 'display-4' style="text-align:center;color:#fefe01">The Beheeyem employed have been notified of the error and will take a look!</h1>
-                <h1 class = 'display-4' style="text-align:center;color:#fefe01">Make sure you entered the full url correctly</h1>
+                {% for message in get_flashed_messages() %}
+                <h1 class = 'display-4' style="text-align:center;color:#fefe01">
+                    {{ message }}
+                </h1>
+                {% endfor %}
+                <br>
+                <h1 class = 'display-4' style="text-align:center;color:#fefe01">I apologize for the inconvenience!</h1>
             </div>
         </div>
     
         <div class="container-fluid p-3">
         </div>
         <div class="container-fluid p-3">
+        <br>
+        <br>
             <div class="row">
                 <h1 class = 'display-4' style="text-align:center;color:#FE0180">Known Issues Include:</h1>
             </div>

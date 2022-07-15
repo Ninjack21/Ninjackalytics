@@ -6,7 +6,7 @@ from flask import (
 )
 import Ninjackalytics_Stat_Queries as nsq
 import Ninjackalytics_Functions as nf
-import psycopg2 as pps
+from flask import flash
 
 
 
@@ -22,23 +22,35 @@ def submit():
         try:
             redirect_response = nf.Run_Ninjackalytics(url)
             #if we got an error then redirect to url_for error page with message after 'Error = '
-            if 'Error' in redirect_response:
+            if 'Error' in str(redirect_response):
                 #we can get the more specific error here later on, but for now we'll use a general error message
                 errormsg = redirect_response[8:]
-                return redirect(url_for('core.error'))
+                errormsg = errormsg.split('\n')
+                #add the error messages to flash
+                #iterate through for number of lines in error msg
+                for msg in enumerate(errormsg):
+                    flash(msg[1])
+                return redirect(url_for('core.specificerror'))
             #if there is no error, then we redirect to the stats page
             else:
                 return redirect(url_for('core.battlestats', bid = redirect_response))
-        except: 
-            return redirect(url_for('core.error'))
+        except Exception as msg: 
+            flash(str(msg))
+            return redirect(url_for('core.generalerror'))
 
     return render_template('core/submit.html')
 
 @bp.route('/error', methods = ('GET',))
-def error():
+def specificerror():
     # color palette: #FE0180, #0101FE, #01FE80, #FEFE01
 
-    return render_template('core/error.html')
+    return render_template('core/specificerror.html')
+
+@bp.route('/generalerror', methods = ('GET',))
+def generalerror():
+
+    return render_template('core/generalerror.html')
+
 
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):
@@ -135,4 +147,3 @@ def battlestats(bid):
         graphs[str(player) + ' - Dmg Dealt Breakdown'] = figdata_png
     
     return render_template('core/battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
-

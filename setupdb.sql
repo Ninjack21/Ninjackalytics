@@ -59,3 +59,14 @@ CREATE TABLE IF NOT EXISTS unique_battle_ids
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT "Unique_Battle_IDs_pkey" PRIMARY KEY ("Battle_ID")
 );
+
+CREATE TABLE IF NOT EXISTS errors
+(
+    "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
+    CONSTRAINT "errors_pkey" PRIMARY KEY ("Battle_ID"),
+    "Date" date NOT NULL,
+    "Func_Name" text COLLATE pg_catalog."default" NOT NULL,
+    "Current_Step" text COLLATE pg_catalog."default" NOT NULL,
+    "Parameters" text COLLATE pg_catalog."default",
+    "Error_Message" text COLLATE pg_catalog."default"
+);
