@@ -1,8 +1,16 @@
-import psycopg2 as pps
-import requests
-from datetime import date
-import re
-import connection as cnxn
+state = 'production'
+if state == 'localhost':
+    import psycopg2 as pps
+    import requests
+    from datetime import date
+    import re
+    from . import connection as cnxn
+else:
+    import psycopg2 as pps
+    import requests
+    from datetime import date
+    import re
+    import connection as cnxn
 
 def Run_Ninjackalytics(url):
     totalsql = {}
@@ -140,7 +148,11 @@ def Generate_Insert_Statement(col_names, values, val_types):
             elif val_types[i] == 'Number':
                 val_string = str(values[i])
             elif val_types[i] == 'Text':
-                val_string = encap_val + values[i] + encap_val
+                if "'" in str(values[i]):
+                    val = values[i].replace("'",' ')
+                else:
+                    val = values[i]
+                val_string = encap_val + val + encap_val
         
         else:
             if val_types[i] == 'Date':
@@ -148,10 +160,13 @@ def Generate_Insert_Statement(col_names, values, val_types):
             elif val_types[i] == 'Number':
                 val_string = val_string + ',' + str(values[i])
             elif val_types[i] == 'Text':
-                val_string = val_string + ',' + encap_val + values[i] + encap_val
+                if "'" in str(values[i]):
+                    val = values[i].replace("'",' ')
+                else:
+                    val = values[i]
+                val_string = val_string + ',' + encap_val + val + encap_val
     
     response.append(val_string)
-    
     return(response)
 #let's create a function that will take any table_name, col_names, col_info and write to any sql table
 def Add_sql(table_name, GIS_response):
@@ -180,7 +195,6 @@ def Add_sql(table_name, GIS_response):
     
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
-        print(sql)
         print(error)
      
 def Check_New_Battle(battle_id):
@@ -401,7 +415,7 @@ def Get_BID_Info(response):
         try:
             table_name='errors'
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -540,7 +554,7 @@ def Get_Team_Info(response):
         try:
             table_name='errors'
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -591,7 +605,7 @@ def Find_nn(log, player_num, mon, battle_id):
             date_sub = date.today()
             table_name='errors'
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -859,7 +873,7 @@ def Get_Damage_and_Healing_Info(response, nicknames):
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, str(error)]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -1271,7 +1285,7 @@ def Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, 
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -1484,14 +1498,13 @@ def Add_Healing_Info(static_vals, line, turn, nicknames, hp, battle_id):
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
         except:
             d=1
-
 
 def Add_To_Healing(static_vals, heal_info, nicknames, hp):
     try: 
@@ -1539,7 +1552,7 @@ def Add_To_Healing(static_vals, heal_info, nicknames, hp):
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -1639,7 +1652,7 @@ def Get_Switch_Info(response, nicknames):
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
@@ -1739,7 +1752,7 @@ def Get_Action_Info(response):
             table_name='errors'
             date_sub = date.today()
             values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
