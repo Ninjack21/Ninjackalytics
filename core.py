@@ -1,4 +1,4 @@
-state = 'localhost'
+state = 'production'
 if state == 'localhost':
     from io import BytesIO
     import matplotlib.pyplot as plt
