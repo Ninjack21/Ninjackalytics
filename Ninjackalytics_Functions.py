@@ -400,9 +400,9 @@ def Get_BID_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -429,6 +429,7 @@ def Get_Team_Info(response):
         funcname = 'Get_Team_Info'
         current_step = '0 - begin'
         parameters = ''
+        date_sub = date.today()
 
         mon_preview = log.split('|clearpoke\n')
         mon_preview = mon_preview[1].split('|teampreview')
@@ -538,9 +539,9 @@ def Get_Team_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -587,10 +588,11 @@ def Find_nn(log, player_num, mon, battle_id):
 
         #if already in errors table then just return the usermsg
         try:
+            date_sub = date.today()
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -641,7 +643,7 @@ def Get_Damage_and_Healing_Info(response, nicknames):
         funcname = 'Get_Damage_and_Healing_Info'
         current_step = '0 - begin'
         parameters = response
-        
+        date_sub = date.today()
         #now I need to split the log into turns and remove the intro information
         
         turns = log.split('|start\n')
@@ -855,9 +857,10 @@ def Get_Damage_and_Healing_Info(response, nicknames):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -1266,9 +1269,10 @@ def Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, 
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -1478,9 +1482,10 @@ def Add_Healing_Info(static_vals, line, turn, nicknames, hp, battle_id):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -1532,9 +1537,10 @@ def Add_To_Healing(static_vals, heal_info, nicknames, hp):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -1631,9 +1637,10 @@ def Get_Switch_Info(response, nicknames):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
@@ -1730,9 +1737,10 @@ def Get_Action_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            date_sub = date.today()
+            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
             error_stmt = Generate_Insert_Statement(col_names, values, val_types)
             Add_sql(table_name, error_stmt)
