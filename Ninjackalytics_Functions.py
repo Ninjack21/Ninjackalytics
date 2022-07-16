@@ -858,7 +858,7 @@ def Get_Damage_and_Healing_Info(response, nicknames):
         try:
             table_name='errors'
             date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
+            values = [battle_id, date_sub, funcname, current_step, parameters, str(error)]
             val_types = ['Text', 'Date' 'Text', 'Text', 'Text', 'Text']
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
