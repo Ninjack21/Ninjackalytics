@@ -1,9 +1,6 @@
-from flask import Flask 
+from flask import Flask
 import logging
 import sys
-
-logging.basicConfig(filename = 'apperrors.log', level = logging.ERROR, 
-                format = '%(asctime)s:%(funcName)s')
 
 
 def create_app():
@@ -12,7 +9,7 @@ def create_app():
     app.config.from_mapping(
         SECRET_KEY='30zO8qGf2oLLH1&d@aE!',
     )
-
+    
     # if test_config is None:
     #     # load the instance config, if it exists, when not testing
     #     app.config.from_pyfile('config.py', silent=True)
@@ -26,5 +23,6 @@ def create_app():
     return app
 
 app = create_app()
+
 app.logger.setLevel(logging.INFO)
 app.logger.addHandler(logging.StreamHandler(sys.stdout))

@@ -2,11 +2,10 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import base64
 from flask import (
-    Blueprint, redirect, render_template, url_for, request
+    Blueprint, redirect, render_template, url_for, request, flash
 )
 import Ninjackalytics_Stat_Queries as nsq
 import Ninjackalytics_Functions as nf
-from flask import flash
 
 
 

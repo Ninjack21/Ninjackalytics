@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS errors
 (
     "Battle_ID" text COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT "errors_pkey" PRIMARY KEY ("Battle_ID"),
-    "Date" date NOT NULL,
+    "Date" date NOT NULL DEFAULT now(),
     "Func_Name" text COLLATE pg_catalog."default" NOT NULL,
     "Current_Step" text COLLATE pg_catalog."default" NOT NULL,
     "Parameters" text COLLATE pg_catalog."default",

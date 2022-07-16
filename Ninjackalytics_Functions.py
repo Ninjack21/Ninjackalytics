@@ -2,118 +2,108 @@ import psycopg2 as pps
 import requests
 from datetime import date
 import re
-import logging
-
-logging.basicConfig(filename = 'NinjackalyticsErrors.log', level = logging.ERROR, 
-                format = '%(asctime)s:%(funcName)s:%(message)s')
+import connection as cnxn
 
 def Run_Ninjackalytics(url):
-    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
-    cur = conn.cursor()
-    try:
-        totalsql = {}
-        baselogmsg = 'url: ' + url + '\n\n'
-        response = Get_Response(url)
-        logresponse = response[0]
-        battle_id = response[1]
-        if logresponse != 0:
-            #now check if it's a new battle or already in the database
+    totalsql = {}
+    response = Get_Response(url)
+    logresponse = response[0]
+    battle_id = response[1]
+    if logresponse != 0:
+        #now check if it's a new battle or already in the database
+        new = Check_New_Battle(battle_id)
+        #if this battle already exists then go ahead and link to the page
+        if new == 'no':
+            return(battle_id)
+        #if this battle is new then continue with ninjackalytics
+        else:
+
+            bidstat = Get_BID_Info(logresponse)
+            if bidstat[0] == 0:
+                return(bidstat[1])
+            else:
+                table = list(bidstat[1])[0]
+                stmts = list(bidstat[1][table])
+                totalsql[table] = stmts
+
+                tablecheck = list(bidstat[1])[1]
+                stmtscheck = list(bidstat[1][tablecheck])
+                totalsql[tablecheck] = stmtscheck
+            
+            teaminfostat = Get_Team_Info(logresponse)
+            if teaminfostat[0] == 0:
+                return(teaminfostat[1])
+            else:
+                table = list(teaminfostat[1])[0]
+                stmts = list(teaminfostat[1][table])
+                totalsql[table] = stmts
+                nicknames = teaminfostat[2]
+
+            dmghealstat = Get_Damage_and_Healing_Info(logresponse, nicknames)
+            if dmghealstat[0] == 0:
+                return(dmghealstat[1])
+            else:
+                tabledmg = list(dmghealstat[1])[0]
+                stmtsdmg = list(dmghealstat[1][tabledmg])
+                totalsql[tabledmg] = stmtsdmg
+
+                tableheal = list(dmghealstat[2])[0]
+                stmtsheal = list(dmghealstat[2][tableheal])
+                totalsql[tableheal] = stmtsheal
+
+            switchstat = Get_Switch_Info(logresponse, nicknames)
+            if switchstat[0] == 0:
+                return(switchstat[1])
+            else:
+                table = list(switchstat[1])[0]
+                stmts = list(switchstat[1][table])
+                totalsql[table] = stmts
+
+            actionstat = Get_Action_Info(logresponse)
+            if actionstat[0] == 0:
+                return(actionstat[1])
+            else:
+                table = list(actionstat[1])[0]
+                stmts = list(actionstat[1][table])
+                totalsql[table] = stmts
+
+            #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
             new = Check_New_Battle(battle_id)
-            #if this battle already exists then go ahead and link to the page
             if new == 'no':
                 return(battle_id)
-            #if this battle is new then continue with ninjackalytics
+            #if this battle doesn't already exist then go ahead and add everything!
             else:
+                # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
+                # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
+                # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
+                # be able to avoid this.
+                try: 
+                    checkdb = list(totalsql)[1]
+                    Add_sql(checkdb, totalsql[checkdb][0])
+                    fnl_check = 'add'
+                #if this fails then simply return the battle_id as it already exists now.
+                except:
+                    fnl_check = 'do not add'
 
-                bidstat = Get_BID_Info(logresponse, baselogmsg)
-                if bidstat[0] == 0:
-                    return(bidstat[1])
-                else:
-                    table = list(bidstat[1])[0]
-                    stmts = list(bidstat[1][table])
-                    totalsql[table] = stmts
-
-                    tablecheck = list(bidstat[1])[1]
-                    stmtscheck = list(bidstat[1][tablecheck])
-                    totalsql[tablecheck] = stmtscheck
-                
-                teaminfostat = Get_Team_Info(logresponse, baselogmsg)
-                if teaminfostat[0] == 0:
-                    return(teaminfostat[1])
-                else:
-                    table = list(teaminfostat[1])[0]
-                    stmts = list(teaminfostat[1][table])
-                    totalsql[table] = stmts
-                    nicknames = teaminfostat[2]
-
-                dmghealstat = Get_Damage_and_Healing_Info(logresponse, nicknames, baselogmsg)
-                if dmghealstat[0] == 0:
-                    return(dmghealstat[1])
-                else:
-                    tabledmg = list(dmghealstat[1])[0]
-                    stmtsdmg = list(dmghealstat[1][tabledmg])
-                    totalsql[tabledmg] = stmtsdmg
-
-                    tableheal = list(dmghealstat[2])[0]
-                    stmtsheal = list(dmghealstat[2][tableheal])
-                    totalsql[tableheal] = stmtsheal
-
-                switchstat = Get_Switch_Info(logresponse, nicknames, baselogmsg)
-                if switchstat[0] == 0:
-                    return(switchstat[1])
-                else:
-                    table = list(switchstat[1])[0]
-                    stmts = list(switchstat[1][table])
-                    totalsql[table] = stmts
-
-                actionstat = Get_Action_Info(logresponse, baselogmsg)
-                if actionstat[0] == 0:
-                    return(actionstat[1])
-                else:
-                    table = list(actionstat[1])[0]
-                    stmts = list(actionstat[1][table])
-                    totalsql[table] = stmts
-
-                #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
-                new = Check_New_Battle(battle_id)
-                if new == 'no':
                     return(battle_id)
-                #if this battle doesn't already exist then go ahead and add everything!
-                else:
-                    # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
-                    # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
-                    # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
-                    # be able to avoid this.
-                    try: 
-                        checkdb = list(totalsql)[1]
-                        Add_sql(checkdb, totalsql[checkdb][0])
-                        fnl_check = 'add'
-                    #if this fails then simply return the battle_id as it already exists now.
-                    except:
-                        fnl_check = 'do not add'
 
+                # now we just check fnl_check and follow it's instructions
+                finally:
+                    if fnl_check == 'add':
+                        #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
+                        del totalsql['unique_battle_ids']
+                        for i, table in enumerate(list(totalsql)):
+                            for i, stmt in enumerate(totalsql[table]):
+                                Add_sql(table, stmt)
+                        #if all succeeds then we want to be redirected to the page with the battle statistics
+                        #otherwise we want to see a custom message
                         return(battle_id)
+                    else:
+                        return(battle_id)
+    #if there was no response from the url provided the battle_id will instead be the user message saying as much
+    else:
+        return(battle_id)
 
-                    # now we just check fnl_check and follow it's instructions
-                    finally:
-                        if fnl_check == 'add':
-                            #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
-                            del totalsql['unique_battle_ids']
-                            for i, table in enumerate(list(totalsql)):
-                                for i, stmt in enumerate(totalsql[table]):
-                                    Add_sql(table, stmt)
-                            #if all succeeds then we want to be redirected to the page with the battle statistics
-                            #otherwise we want to see a custom message
-                            return(battle_id)
-                        else:
-                            return(battle_id)
-        #if there was no response from the url provided the battle_id will instead be the user message saying as much
-        else:
-            return(battle_id)
-    
-    finally:
-        cur.close()
-        conn.close()
 #--------------------START WITH SQL INTERACTION FUNCTIONS ------------------------------------------------------
 def Generate_Insert_Statement(col_names, values, val_types):
     
@@ -170,7 +160,8 @@ def Add_sql(table_name, GIS_response):
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
     #first connect to the database
-    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
+    state = 'production'
+    conn = cnxn.connection(state)
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap = '"'
@@ -192,7 +183,6 @@ def Add_sql(table_name, GIS_response):
         print(sql)
         print(error)
      
-
 def Check_New_Battle(battle_id):
     """
     take the provided battle_id and see if this battle exists in the Ninjackalytics' database already or not
@@ -244,8 +234,8 @@ def Select_sql(table_name, GSS_response):
     """
     
     #first connect to the database
-    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
-    
+    state = 'production'
+    conn = cnxn.connection(state)
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap = '"'
@@ -302,21 +292,24 @@ def Search(string, log):
             
     return(response)
 
-def Get_BID_Info(response, baselogmsg):
+def Get_BID_Info(response):
     
     """
     This function gathers the information needed for the Battle_ID database and returns a list of 2 lists:
     1) the information from player 1's perspective
     2) the information from player 2's perspective
     """
-    logmsg = baselogmsg
     try:
         #Gather battle_id, p1, p2, format
-        logmsg = logmsg + 'pull basic battle info \n'
         battle_id = response['id']
         p1 = response['p1id']
         p2 = response['p2id']
         battle_format = response['formatid']
+
+        #prep error table information
+        funcname = 'Get_BID_Info'
+        current_step = '0 - begin'
+        parameters = ''
 
         #we also want to get the date this url was submitted
         date_sub = date.today()
@@ -325,11 +318,11 @@ def Get_BID_Info(response, baselogmsg):
         private = 'FALSE'
 
         #and then the log (for determining winner and rank)
-        logmsg = logmsg + 'get battle log \n'
         log = response['log']
 
+        current_step = '1 - find player names'
+
         #have to redefine name for rated and win checks because the json response is all lowercase and the split is case sensitive...
-        logmsg = logmsg + 'gather player names and check for rated and tourny status \n'
         p1nprep = log.split('player|p1|')
         p1nprep = p1nprep[1].split('|')
         p1_name = p1nprep[0]
@@ -339,6 +332,9 @@ def Get_BID_Info(response, baselogmsg):
         p2_name = p2nprep[0]
 
         #define the player ranks ----------------------------------------------------------------------------
+
+        current_step = '2 - determine if ranked, then find rank if so'
+
         rated_indication = '|rated'
         tournament_indication = '|Tournament battle'
         rated = Search(rated_indication, log)
@@ -354,12 +350,11 @@ def Get_BID_Info(response, baselogmsg):
             prepp1 = log.split(p1_rank_str)
             prepp2 = log.split(p2_rank_str)
 
-            logmsg = logmsg + 'is a rated battle, now grab ranks by searching for: \n' + str(p1_rank_str) + '\n' + 'and \n' + str(p2_rank_str) + '\n'
-
             p1_rank = (prepp1[1].split(' '))[0]
             p2_rank = (prepp2[1].split(' '))[0]
 
-        logmsg = logmsg + 'now look for tie indication \n'
+        current_step = '3 - determine if tie, otherwise find winner'
+
         tie_indication = 'accepted the tie.\n|\n|tie'
         tie = Search(tie_indication, log)
 
@@ -381,7 +376,8 @@ def Get_BID_Info(response, baselogmsg):
         table_name = 'battle_info'
         col_names = ['Battle_ID', 'Date_Submitted', 'Format', 'Player', 'Rank', 'Private', 'Winner']
 
-        logmsg = logmsg + 'now create the insert statement for adding BID info to the sql database \n'
+        current_step = '4 - create insert statements'
+
         add_p1 = Generate_Insert_Statement(col_names, bidp1, types)
         add_p2 = Generate_Insert_Statement(col_names, bidp2, types)
 
@@ -393,29 +389,34 @@ def Get_BID_Info(response, baselogmsg):
 
         check_db = Generate_Insert_Statement(col_names_check, values_check, types_check)
 
-        logmsg = logmsg + 'now add the following to the sql database: \n'
-        logmsg = logmsg + str(add_p1) + '\n'
-        logmsg = logmsg + str(add_p2)
         add_ps = [add_p1, add_p2]
         bidsql = {}
         bidsql[table_name] = add_ps
         bidsql[table_name_check] = [check_db]
-        # p1_to_sql = Add_sql(table_name, add_p1)
-        # p2_to_sql = Add_sql(table_name, add_p2)
         return (1, bidsql)
     except Exception as error:
-        usermsg = "Error = Oops! Something went wrong while gathering the battle's basic information!\nThe Beheeyem employed have been notified of the error and will take a look!"
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
-        return(0, usermsg)
+        usermsg = "Error = Oops! Something went wrong while gathering the battle's identifying information!\nThe Beheeyem employed have been notified of the error and will take a look!"
+        
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-def Get_Team_Info(response, baselogmsg):
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+
+            return(0, usermsg)
+        except:
+            return(0, usermsg)
+
+def Get_Team_Info(response):
     
     """
     This function takes the response from Get_Response(url) and adds to the Team Database what pokemon they brought and returns a dictionary with the nicknames discovered for each pokemon
     """
     try: 
-        logmsg = baselogmsg
 
         battle_id = response['id']
         p1 = response['p1id']
@@ -424,20 +425,28 @@ def Get_Team_Info(response, baselogmsg):
         col_names = ['Battle_ID', 'Player', 'Pokemon']
         table_name = 'team'
 
-        logmsg = logmsg + 'Prepare for gathering pokemon in team preview \n'
+        #prep error table information
+        funcname = 'Get_Team_Info'
+        current_step = '0 - begin'
+        parameters = ''
+
         mon_preview = log.split('|clearpoke\n')
         mon_preview = mon_preview[1].split('|teampreview')
         mon_preview = mon_preview[0]
 
+        parameters = mon_preview
+
         team_preview = []
+
+        current_step = '1 - find p1 mons'
 
         p1_mon_preview = (mon_preview.split('poke|p2'))[0]
         p1_mon_preview = p1_mon_preview.split('|poke|p1|')
         p1_mon_preview.pop(0)
 
-        logmsg = logmsg + 'Gather Player 1 Pokemon \n'
         p1_mons = []    
         for mon in p1_mon_preview:
+            parameters = mon
             comma = Search(',', mon)
             asterisk = Search('*', mon)
             bracket = Search('|\n', mon)
@@ -463,12 +472,14 @@ def Get_Team_Info(response, baselogmsg):
 
         number_p1_mons = len(p1_mons)
 
+        current_step = '2 - find p2 mons'
+
         p2_mon_preview = (mon_preview.split('poke|p1'))[number_p1_mons]
         p2_mon_preview = p2_mon_preview.split('|poke|p2|')
         p2_mon_preview.pop(0)
-        logmsg = logmsg + 'Gather Player 2 Pokemon \n'
         p2_mons = []    
         for mon in p2_mon_preview:
+            parameters = mon
             comma = Search(',', mon)
             asterisk = Search('*', mon)
             bracket = Search('|\n', mon)
@@ -493,7 +504,9 @@ def Get_Team_Info(response, baselogmsg):
 
         team_preview.append(p2_mons)
 
-        logmsg = logmsg + 'Add pokemon to database \n'
+        current_step = '3 - create insert statements for team table'
+        parameters = ''
+
         val_types = ['Text', 'Text', 'Text']
         prepsql = []
         for i, player in enumerate(team_preview):
@@ -507,34 +520,57 @@ def Get_Team_Info(response, baselogmsg):
                     sql_info = Generate_Insert_Statement(col_names, values, val_types)
                     prepsql.append(sql_info)
 
-        logmsg = logmsg + 'create nicknames dictionary to pass to other functions\n' 
-        nicknames = Build_nns(log, team_preview, baselogmsg)
-        teaminfosql = {}
-        teaminfosql[table_name] = prepsql
-        # teaminfosql = [table_name, prepsql]
+        current_step = '4 - build nicknames dict'
 
-        return(1, teaminfosql, nicknames)
+        #we've added the nickname failure specific message
+        nicknames = Build_nns(log, team_preview, battle_id)
+        if nicknames == "Error = Oops! Something went wrong while finding pokemon nickanmes" + "\nThe Beheeyem employed have been notified of the error and will take a look!":
+            return(0, nicknames)
+        
+        else:
+            teaminfosql = {}
+            teaminfosql[table_name] = prepsql
+
+            return(1, teaminfosql, nicknames)
     except Exception as error:
         usermsg = "Error = Oops! Something went wrong while gathering the info for each Team!\nThe Beheeyem employed have been notified of the error and will take a look!"
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
-        return(0, usermsg)
+
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+
+            return(0, usermsg)
+        except:
+            return(0, usermsg)
     
-def Find_nn(log, player_num, mon, baselogmsg):
+def Find_nn(log, player_num, mon, battle_id):
     
     """
     this function finds the nickname of a player's pokemon and returns either the discovered nickname or simply the pokemon's name if that pokemon never entered the battle
     """
     try: 
-        logmsg = baselogmsg
-        logmsg = logmsg + 'looking for: ' + str(player_num) + "'s " + str(mon) + '\n'
+        
+        #prep error table information
+        funcname = 'Find_nn'
+        current_step = '0 - begin'
+        parameters = 'looking for: ' + str(player_num) + "'s " + str(mon)
+
         mon = mon.split('p' + str(player_num) + ': ')
         mon = mon[1]
+
+        current_step = '1 - create entrance regex search expression'
+
         entrance = 'p'+ str(player_num) + '.: .+[|]' + mon + '.*[|].*/.*'
-        logmsg = logmsg + 'Searching for: \n' + str(entrance) + '\nusing regular expression search\n'
         match = re.search(entrance, log)
         if match:
-            logmsg = logmsg + 'found expression and now attempting to strip out nickname.\n'
+            parameters = str(match)
+            current_step = '2 - we found the mon - now get nickname from response'
             splitme = match.group()
             splitme = splitme.split(': ')
             splitme = splitme[1]
@@ -547,55 +583,64 @@ def Find_nn(log, player_num, mon, baselogmsg):
             #if we never see this pokemon enter then we don't need it's name
             return(mon)
     except Exception as error:
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        usermsg = "Error = Oops! Something went wrong while finding " + str(player_num) + "'s " + str(mon) + "'s nickname" + "\nThe Beheeyem employed have been notified of the error and will take a look!"
 
-def Build_nns(log, team_preview, baselogmsg):
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+        except:
+            d=1
+
+def Build_nns(log, team_preview, battle_id):
     
     """
     This function iterates through the 2 lists of player's pokemon in team_preview from Get_Team_Info and builds a dictionary that relates the nicknames for a particular player to their
     normal pokemon name and returns these as a dictionary of the form nicknames[p1/2][nickname] = normal pokemon name.
     """
     try:
-        logmsg = baselogmsg
         nicknames = {}
         p1dict = {}
         p2dict = {}
 
-        logmsg = logmsg + 'Begin interating through team previews to find all nicknames in battle.\n'
         #team preview is a list of lists, beginning with player 1's list of mons brought
         for i, player in enumerate(team_preview):
-                logmsg = logmsg + '\nSearch for ' + str(player) + "'s mons: \n" + str(team_preview[i]) + '\n'
                 for mon in (team_preview[i]):
                     
                     if i == 0:
                         player_num = 1
-                        logmsg = logmsg + 'Searching for: ' + str(mon) + '\n'
-                        name = Find_nn(log, player_num, mon, baselogmsg)
+                        name = Find_nn(log, player_num, mon, battle_id)
                         p1dict[name] = mon
                     else:
                         player_num = 2
-                        logmsg = logmsg + 'Searching for: ' + str(mon) + '\n'
-                        name = Find_nn(log, player_num, mon, baselogmsg)
+                        name = Find_nn(log, player_num, mon, battle_id)
                         p2dict[name] = mon
         
         nicknames['p1'] = p1dict
         nicknames['p2'] = p2dict
         return(nicknames)
     except Exception as error:
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        usermsg = "Error = Oops! Something went wrong while finding pokemon nickanmes" + "\nThe Beheeyem employed have been notified of the error and will take a look!"
+        return(usermsg)
 
-def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
+def Get_Damage_and_Healing_Info(response, nicknames):
     try: 
-        logmsg = baselogmsg
-        logmsgturntracker = ''
         dmgsql = []
         healsql = []
         battle_id = response['id']
         p1 = response['p1id']
         p2 = response['p2id']
         log = response['log']
+
+        #prep error table information
+        funcname = 'Get_Damage_and_Healing_Info'
+        current_step = '0 - begin'
+        parameters = response
         
         #now I need to split the log into turns and remove the intro information
         
@@ -618,14 +663,18 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
         haz_list = ['Stealth Rock', 'Spikes', 'G-Max Steelsurge']
         stat_list = ['psn', 'brn']
         #this will run through the battle sequentially and i will indicate what turn we are currently looking at
+
+        current_step = '1 - begin iterating through turns'
+
         i = -1
-        logmsg = logmsg + 'begin iterating through battle turn by turn\n'
         for turn in turns:
-            logmsgturntracker = 'error occured in turn: ' + str(turn) + '\n'
             i = i + 1
             lines = turn.split('\n')
             turn_num = i
             for line in lines:
+                funcname = 'Get_Damage_and_Healing_Info'
+                #have the parameter always be the current line
+                parameters = line
                 #we need to ignore any line that begins with '|c|'
                 if not '|c|' in line:
                     is_damage = Search('|-damage|', line)
@@ -644,7 +693,10 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                             dmg_type = 'move'
                             dmg_static_vals = [battle_id, turn_num, dmg_type, col_names]
                             
-                            dmg_info = Gather_Move_Info(line, turn, log, baselogmsg)
+                            current_step = '2 - gather move damage info'
+                            funcname = 'Gather_Move_Info'
+                            dmg_info = Gather_Move_Info(line, turn, log)
+                            funcname = 'Add_To_Damage'
                             atd_response = Add_To_Damage(dmg_static_vals, dmg_info, nicknames, hp)
                             hp = atd_response[0]
                             dmgsql.append(atd_response[1])
@@ -683,13 +735,16 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                             #if none of the above if statements are true then the only remaining type is passive
                             else:
                                 dmg_type = 'passive'
-                                
-                            adi_response = Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp, baselogmsg)
+                            
+                            current_step = '2 - gather non-move damage info'
+                            funcname = 'Add_Damage_Info'
+                            adi_response = Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp)
                             hp = adi_response[0]
                             dmgsql.append(adi_response[1])
                     
                     #if the line has |faint| then we are going to determine who fainted and simply call it passive
                     elif is_faint == 'yes':
+                        current_step = '2 - gather faint mon background info'
                         dmg_type = 'passive'
                         col_names = ['Battle_ID', 'Turn', 'Type', 'Dealer', 'Name', 'Receiver', 'Damage']
                         table_name = 'damage'
@@ -716,12 +771,15 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                         if check_cur_hp != 0:
                             dmg_info = [dealer, name, receiver, new_hp]
                             dmg_static_vals = [battle_id, turn_num, dmg_type, col_names, table_name]
-                            adi_response = Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp, baselogmsg)
+                            current_step = '3 - gather faint mon damage info'
+                            funcname = 'Add_Damage_Info'
+                            adi_response = Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp)
                             hp = adi_response[0]
                             dmgsql.append(adi_response[1])
 
                     #now let's check for if the heal keyword is present            
                     elif is_heal == 'yes':
+                        current_step = '2 - determine heal type'
                         col_names = ['Battle_ID', 'Turn', 'Type', 'Name', 'Receiver', 'Recovery']
                         table_name = 'healing'
                         is_item = Search('[from] item', line)
@@ -747,18 +805,22 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                             heal_type = 'move'
 
                         heal_static_vals = [battle_id, turn_num, heal_type, col_names, table_name]
-                        ahi_response = Add_Healing_Info(heal_static_vals, line, turn, nicknames, hp, baselogmsg)
+                        current_step = '3 - gather heal info'
+                        funcname = 'Add_Healing_Info'
+                        ahi_response = Add_Healing_Info(heal_static_vals, line, turn, nicknames, hp, battle_id)
                         hp = ahi_response[0]
                         healsql.append(ahi_response[1])
                     #----- begin hp_update logic for switch lines-----------
                     #here we need to check if the hp has changed without a damage or heal keyword - if so - the reason is regenerator
                     else:
+                        current_step = '4 - determine if regenerator healing occured'
                         hp_seen = regex_search(line)
                         if hp_seen == 'yes':
                             if 'p1' in line:
                                 player = 'p1'
                             else:
                                 player = 'p2'
+                            funcname = 'Gather_HP_Info'
                             hp_info = Gather_HP_Info(line, player, nicknames)
                             #first obj in hp_info is name and second is current hp   
                             name = hp_info[0]
@@ -774,7 +836,9 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
                                 table_name = 'healing'
 
                                 heal_static_vals = [battle_id, turn_num, heal_type, col_names, table_name]
-                                ahi_response = Add_Healing_Info(heal_static_vals, line, turn, nicknames, hp, baselogmsg)
+                                current_step = '5 - gather regerator healing info'
+                                funcname = 'Add_Healing_Info'
+                                ahi_response = Add_Healing_Info(heal_static_vals, line, turn, nicknames, hp, battle_id)
                                 hp = ahi_response[0]
                                 healsql.append(ahi_response[1])
 
@@ -784,14 +848,23 @@ def Get_Damage_and_Healing_Info(response, nicknames, baselogmsg):
         finalhealsql = {}
         finaldmgsql['damage'] = dmgsql
         finalhealsql['healing'] = healsql
-        dmghealresponse = [finaldmgsql, finalhealsql]
+        
         return([1, finaldmgsql, finalhealsql])
     except Exception as error:
         usermsg = "Error = Oops! Something went wrong while gathering this battle's damage and healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
-        logmsg = logmsg + logmsgturntracker
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
-        return([0, usermsg])
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+
+            return(0, usermsg)
+        except:
+            return(0, usermsg)
 
 def regex_search(line):
     """
@@ -806,15 +879,13 @@ def regex_search(line):
     else:
         return('no')    
 
-def Gather_Move_Info(line, turn, log, baselogmsg):
+def Gather_Move_Info(line, turn, log):
     try: 
-        logmsg = baselogmsg
-        logmsg = logmsg + 'looking to gather information on the move mentioned in this line: \n' + str(line) + '\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
         receiver = line[0]
-        
+
         if 'fnt' in line[1]:
             new_hp = 0
         else:
@@ -845,33 +916,28 @@ def Gather_Move_Info(line, turn, log, baselogmsg):
             #apparently, multi turn moves will not reveal their target until we see the -anim keyword
             is_anim = Search('|-anim|', search_line)
             if is_move == 'yes':
-                moreinfo = '\nchecking: \n' + str(search_line) + '\nfor standard move type' + '\n'
                 search_line = search_line.split('|')
                 search_line.pop(0)
                 if search_line[3]:
                     #need to drop '\n' if it's at the end potentially
                     check = search_line[3].split('\n')
                     compare_receiver = check[0]
-                    moreinfo = moreinfo + 'found receiver: ' + str(compare_receiver) + '\n'
                     if receiver == compare_receiver:
                         dealer = search_line[1]
                         name = search_line[2]
                         #we have to exit our for loop once we have found the information we desire
                         break
             elif is_anim == 'yes':
-                moreinfo = '\nchecking: \n' + str(search_line) + '\nfor multi turn move type' + '\n'
                 search_line = search_line.split('|')
                 search_line.pop(0)
                 if search_line[3]:
                     compare_receiver = search_line[3]
-                    moreinfo = moreinfo + 'found receiver: ' + str(compare_receiver) + '\n'
                     if receiver == compare_receiver:
                         dealer = search_line[1]
                         name = search_line[2]
                         #we have to exit our for loop once we have found the information we desire
                         break
             elif is_end_move == 'yes':
-                moreinfo = '\nchecking: \n' + str(search_line) + '\nfor delayed damage type (e.x. future sight)' + '\n'
                 #now we have to ensure that the -end is of a move and not something like a sub breaking
                 is_move = Search('move:', search_line)
                 if is_move == 'yes':
@@ -884,7 +950,6 @@ def Gather_Move_Info(line, turn, log, baselogmsg):
                     #need to ensure this end move is actually impacting the receiver we are currently looking at - future sight and doom desire are serious pains lol
                     receiver_search = search_line.split('|')
                     compare_receiver = receiver_search[2]
-                    moreinfo = moreinfo + 'found receiver: ' + str(compare_receiver) + '\n'
                     if compare_receiver == receiver:
                         #getting the dealer for this move will require going backwards in the log to find who, on the enemy team, used this last
                         log = log.split(turn)
@@ -911,7 +976,6 @@ def Gather_Move_Info(line, turn, log, baselogmsg):
         #the second pokemon as well (or third, like EQ into self-hit)
         #reference --> https://replay.pokemonshowdown.com/doublesou-232753081
         if not dealer:
-            moreinfo = '\nchecking: \n' + str(search_line) + '\nfor multi hitting move type' + '\n'
             for search_line in search_lines:
                 is_move = Search('|move|', search_line)
                 if is_move == 'yes':
@@ -924,9 +988,7 @@ def Gather_Move_Info(line, turn, log, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
 def Gather_HP_Info(line, player, nicknames):
     
@@ -934,15 +996,12 @@ def Gather_HP_Info(line, player, nicknames):
     this function takes the line fed to it along with the player and nicknames dict and returns the full_name of the mon who's hp was revealed on this line along with the current hp of that mon
     """
     try:
-        logmsg = 'begin looking for the nickname and hp information in: \n' + str(line) + '\n'
         line = line.split('|')
         nickname = line[2]
         #we now directly tie the nickname alone, with the player number, to the 'px: real_mon_name' 
         #value in the dictionary and thus need to drop 'pxy: ' everytime 
         nickname = nickname[5:]
-        logmsg = logmsg + '\nWe have now determined that the nickname of the mon of interest is: ' + str(nickname) + '\n'
         name = nicknames[player][nickname]
-        logmsg = logmsg + 'Now we know the real full name to be: ' + str(name) + '\n'
 
         #no need to check the first 3 since we know it's '', 'keyword hp trigger', 'name' - this also removes any potential nicknames with \s
         line.pop(0)
@@ -951,10 +1010,8 @@ def Gather_HP_Info(line, player, nicknames):
         for obj in line:
             check_if_dead = Search('fnt', obj)
             if check_if_dead == 'yes':
-                logmsg = logmsg + 'This pokemon fainted\n'
                 cur_hp = 0
             else:
-                logmsg = logmsg + 'This pokemon did not faint\n'
                 check_for_hp = obj.split('/')
                 if len(check_for_hp) == 2:
                     cur_hp = float(check_for_hp[0])
@@ -970,8 +1027,7 @@ def Gather_HP_Info(line, player, nicknames):
 
         return(name, new_hp)
     except Exception as error:
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
         
 def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
     
@@ -984,7 +1040,6 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
     if you love having a single quote in your name. Sorry not sorry fam. 
     """
     try:
-        logmsg = 'Want to create the sql insert statement for the damage table for: \n' + str(static_vals) + '\n' + str(dmg_info) + '\n'
         battle_id = static_vals[0]
         turn_num = static_vals[1]
         dmg_type = static_vals[2]
@@ -1005,7 +1060,6 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
         #have to get and convert dealer and receiver names from nickname to original mon name
         else:
             dealer = dmg_info[0]
-            logmsg = logmsg + 'now convert the dealer and receiver names from nickname to original mon name\n'
             if 'p1' in dealer:
                 player = 'p1'
             else:
@@ -1014,7 +1068,6 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
             nickname = dealer[5:]
             dealer = nicknames[player][nickname]
             dealer = dealer.replace("'", ' ')
-        logmsg = logmsg + 'now convert the dealer and receiver names from nickname to original mon name\n'
         receiver = dmg_info[2]
         if 'p1' in receiver:
             player = 'p1'
@@ -1039,12 +1092,10 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
         
         return(hp, GIS_response)
     except Exception as error:
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
     
-def Gather_Item_or_Ability_Info(line, turn, baselogmsg): 
+def Gather_Item_or_Ability_Info(line, turn): 
     try: 
-        logmsg = baselogmsg + 'looking for item or ability damage in: \n' + str(line) + '\n\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
@@ -1074,37 +1125,29 @@ def Gather_Item_or_Ability_Info(line, turn, baselogmsg):
         #need to check if '[of] ' exists - if it doesn't then the dealer is the same as the receiver (think life-orb)
         is_not_self_inflicted = Search('[of] ', line)
         if is_not_self_inflicted == 'no':
-            moreinfo = 'this damage was self inflicted by ' + str(receiver) + '\n'
             dealer = receiver
         else:
-            moreinfo = 'this damage was inflicted by: '
             line = og_line.split('|')
             line = line[5:]
             line = line[0].split('[of] ')
             line = line[1].split('\n')
             dealer = line[0]
-            moreinfo = moreinfo + str(dealer) + '\n'
         info = [dealer, name, receiver, new_hp]
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Gather_Status_or_Hazard_Info(line, turn, baselogmsg): 
+def Gather_Status_or_Hazard_Info(line, turn): 
     try: 
-        logmsg = baselogmsg + 'looking for status or hazard damage in line: \n' + str(line) + '\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
         receiver = line[0]
         
         if 'fnt' in line[1]:
-            moreinfo = 'this damage knocked the receiver out\n'
             new_hp = 0
         else:
-            moreinfo = 'this damage did not knock the receiver out\n'
             line = line[1].split('/')
             #because in some cases hp is reflected as raw numbers, we must now check for and remove any status condition labels like psn or brn
             cur_hp = float(line[0])
@@ -1128,23 +1171,18 @@ def Gather_Status_or_Hazard_Info(line, turn, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Gather_Passive_Info(line, turn, baselogmsg): 
+def Gather_Passive_Info(line, turn): 
     try:
-        logmsg = baselogmsg + 'looking for passive damage in line: ' + str(line) + '\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
         receiver = line[0]
         
         if 'fnt' in line[1]:
-            moreinfo = 'this damage knocked the receiver out\n'
             new_hp = 0
         else:
-            moreinfo = 'this damage did not knock the receiver out\n'
             line = line[1].split('/')
             #because in some cases hp is reflected as raw numbers, we must now check for and remove any status condition labels like psn or brn
             cur_hp = float(line[0])
@@ -1167,53 +1205,78 @@ def Gather_Passive_Info(line, turn, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp, baselogmsg):
+def Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, turn, nicknames, hp):
 
-    try:     
-        logmsg = baselogmsg + 'utilize the correct damage data gathering function and create the generate insert statement response.\n'    
+    try:        
+        #prep error table information
+        funcname = 'Add_Damage_Info'
+        current_step = '0 - begin'
+        parameters = 'looking for dmg type = ' + str(dmg_type) + ' in turn number = ' + str(turn_num) + ' and in line = ' + str(line)
+
         static_vals = [battle_id, turn_num, dmg_type, col_names, table_name]
         if dmg_type == 'item':
-            dmg_info = Gather_Item_or_Ability_Info(line, turn, baselogmsg)
+            funcname = 'Gather_Item_or_Ability_Info'
+            current_step = '1 - look for item dmg_type'
+
+            dmg_info = Gather_Item_or_Ability_Info(line, turn)
             atd_response = Add_To_Damage(static_vals, dmg_info, nicknames, hp)
             hp = atd_response[0]
             dmgsql = atd_response[1]
 
         elif dmg_type == 'ability':
-            dmg_info = Gather_Item_or_Ability_Info(line, turn, baselogmsg)
+            funcname = 'Gather_Item_or_Ability_Info'
+            current_step = '1 - look for ability dmg_type'
+
+            dmg_info = Gather_Item_or_Ability_Info(line, turn)
             atd_response = Add_To_Damage(static_vals, dmg_info, nicknames, hp)
             hp = atd_response[0]
             dmgsql = atd_response[1]
             
         elif dmg_type == 'hazard':
-            dmg_info = Gather_Status_or_Hazard_Info(line, turn, baselogmsg)
+            funcname = 'Gather_Status_or_Hazard_Info'
+            current_step = '1 - look for hazard dmg_type'
+
+            dmg_info = Gather_Status_or_Hazard_Info(line, turn)
             atd_response = Add_To_Damage(static_vals, dmg_info, nicknames, hp)
             hp = atd_response[0]
             dmgsql = atd_response[1]
             
         elif dmg_type == 'status':
-            dmg_info = Gather_Status_or_Hazard_Info(line, turn, baselogmsg)
+            funcname = 'Gather_Status_or_Hazard_Info'
+            current_step = '1 - look for status dmg_type'
+
+            dmg_info = Gather_Status_or_Hazard_Info(line, turn)
             atd_response = Add_To_Damage(static_vals, dmg_info, nicknames, hp)
             hp = atd_response[0]
             dmgsql = atd_response[1]
             
         else:
-            dmg_info = Gather_Passive_Info(line, turn, baselogmsg)
+            funcname = 'Gather_Passive_Info'
+            current_step = '1 - look for passive dmg_type'
+
+            dmg_info = Gather_Passive_Info(line, turn)
             atd_response = Add_To_Damage(static_vals, dmg_info, nicknames, hp)
             hp = atd_response[0]
             dmgsql = atd_response[1]
-        logmsg = logmsg + 'now return the updated hp and the dmgsql response for later addition\n'
         return(hp, dmgsql)
     except Exception as error: 
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        usermsg = "Error = Oops! Something went wrong while gathering this battle's damage information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-def Healing_Item_or_Ability_Info(line, baselogmsg): 
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+        except:
+            d=1
+
+def Healing_Item_or_Ability_Info(line): 
     try: 
-        logmsg = baselogmsg + 'looking for item or ability heal information in: \n' + str(line) +'\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
@@ -1222,7 +1285,6 @@ def Healing_Item_or_Ability_Info(line, baselogmsg):
         
         is_regenerator = Search('|switch|', og_line)
         if is_regenerator == 'yes':
-            moreinfo = 'is regenerator healing\n'
             name = 'regenerator'
             
             #regenerator hp is found on the 4th index from og_line, so here, from 3
@@ -1239,7 +1301,6 @@ def Healing_Item_or_Ability_Info(line, baselogmsg):
             new_hp = round(((cur_hp / max_hp) * 100), 2)
             
         else:
-            moreinfo = 'is item or non-regenerator ability healing\n'
             line = og_line.split('|')
             line = line[4:]
             line = line[0].split(': ')
@@ -1267,27 +1328,21 @@ def Healing_Item_or_Ability_Info(line, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Healing_Passive_Info(line, baselogmsg):
+def Healing_Passive_Info(line):
     try: 
-        logmsg = baselogmsg + 'looking for passive healing info in: \n' + str(line) + '\n'
         #these have very little information - they are simply an indication that healing occured
         is_silent = Search('silent', line)
         if is_silent == 'yes':
-            moreinfo = 'healing is "silent"\n'
             name = 'silent'
         else:
-            moreinfo = 'healing is not "silent"\n'
             find_source = line.split('|')
             find_source = find_source[4]
             find_source = find_source.split('[from] ')
             find_source = find_source[1]
             find_source = find_source.split('\n')
             name = find_source[0]
-            moreinfo = 'healing is ' + str(name) + '\n'
         
         og_line = line
         line = line.split('|')
@@ -1310,15 +1365,12 @@ def Healing_Passive_Info(line, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Healing_Move_Info(line, turn, baselogmsg): 
+def Healing_Move_Info(line, turn): 
     #this will have 2 forms - a directly healing move like roost or strength sap - or a delayed healing like wish
     #forgot about [from] drain| which happens from moves like giga drain
     try: 
-        logmsg = baselogmsg + 'looking for healing move in:\n ' + str(line) + '\n'
         og_line = line
         line = line.split('|')
         line = line[2:]
@@ -1330,14 +1382,12 @@ def Healing_Move_Info(line, turn, baselogmsg):
         if is_indirect == 'yes':
             #used the below to develop this logic
             #|-heal|p1a: Blissey|100/100|[from] move: Wish|[wisher] Blissey
-            moreinfo = 'healing from move is indirect, like wish\n'
             line = og_line
             find_name = line.split('|')
             find_name = find_name[4]
             find_name = find_name.split(': ')
             name = find_name[1]
         else:
-            moreinfo = 'healing from move is not indirect, therefore we must search backwards\n'
             prev_lines = turn.split(og_line)
             #need to only check what occured before this heal keyword
             prev_lines = prev_lines[0]
@@ -1347,7 +1397,6 @@ def Healing_Move_Info(line, turn, baselogmsg):
             for search_line in search_lines:
                 is_move = Search('|move|', search_line)
                 if is_move == 'yes':
-                    moreinfo = moreinfo + 'is a move the user used - reference line: \n' + str(search_line) + '\n'
                     check_receiver_is_user = search_line.split('|')
                     check_receiver_is_user = check_receiver_is_user[2]
                     is_correct_player = Search(player, check_receiver_is_user)
@@ -1375,60 +1424,88 @@ def Healing_Move_Info(line, turn, baselogmsg):
         
         return(info)
     except Exception as error:
-        logmsg = logmsg + moreinfo
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        d=1
 
-def Add_Healing_Info(static_vals, line, turn, nicknames, hp, baselogmsg):
+def Add_Healing_Info(static_vals, line, turn, nicknames, hp, battle_id):
     try:
-        logmsg = baselogmsg + 'utilize the correct healing data gathering function and create the generate insert statement response.\n'   
+
         heal_type = static_vals[2]
+
+        #prep error table information
+        funcname = 'Add_Healing_Info'
+        current_step = '0 - begin'
+        parameters = 'looking for heal type = ' + str(heal_type) + ' in turn = ' + str(turn) + ' and in line = ' + str(line)
         
         if heal_type == 'item':
-            heal_info = Healing_Item_or_Ability_Info(line, baselogmsg)
+            funcname = 'Healing_Item_or_Ability_Info'
+            current_step = '1 - look for heal info for type = item'
+
+            heal_info = Healing_Item_or_Ability_Info(line)
             ath_response = Add_To_Healing(static_vals, heal_info, nicknames, hp)
             hp = ath_response[0]
             healsql = ath_response[1]
 
         elif heal_type == 'ability':
-            heal_info = Healing_Item_or_Ability_Info(line, baselogmsg)
+            funcname = 'Healing_Item_or_Ability_Info'
+            current_step = '1 - look for heal info for type = ability'
+
+            heal_info = Healing_Item_or_Ability_Info(line)
             ath_response = Add_To_Healing(static_vals, heal_info, nicknames, hp)
             hp = ath_response[0]
             healsql = ath_response[1]
             
         elif heal_type == 'passive':
-            heal_info = Healing_Passive_Info(line, baselogmsg)
+            funcname = 'Healing_Passive_Info'
+            current_step = '1 - look for heal info for type = passive'
+
+            heal_info = Healing_Passive_Info(line)
             ath_response = Add_To_Healing(static_vals, heal_info, nicknames, hp)
             hp = ath_response[0]
             healsql = ath_response[1]
             
         else:
-            heal_info = Healing_Move_Info(line, turn, baselogmsg)
+            funcname = 'Healing_Move_Info'
+            current_step = '1 - look for heal info for type = move'
+
+            heal_info = Healing_Move_Info(line, turn)
             ath_response = Add_To_Healing(static_vals, heal_info, nicknames, hp)
             hp = ath_response[0]
             healsql = ath_response[1]
 
-        logmsg = logmsg + 'now return the updated hp and the healsql response for later addition\n'
         return([hp, healsql])  
     except Exception as error: 
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        usermsg = "Error = Oops! Something went wrong while gathering this battle's healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+        except:
+            d=1
+
 
 def Add_To_Healing(static_vals, heal_info, nicknames, hp):
     try: 
-        logmsg = 'Want to create the sql insert statement for the healing table for the following static vals: \n' + str(static_vals) + '\nand for the following heal info: \n' + str(heal_info) + '\n'
         battle_id = static_vals[0]
         turn_num = static_vals[1]
         heal_type = static_vals[2]
         col_names = static_vals[3]
         table_name = static_vals[4]
         
+        #prep error table information
+        funcname = 'Add_To_Healing'
+        current_step = '0 - begin'
+        parameters = str(heal_info)
+
         name = heal_info[0]
         name = name.replace("'", ' ')
         
             
         #have to get and convert dealer and receiver names from nickname to original mon name
-        logmsg = logmsg + 'now convert the dealer and receiver names from nickname to original mon name\n'
         receiver = heal_info[1]
         if 'p1' in receiver:
             player = 'p1'
@@ -1436,7 +1513,6 @@ def Add_To_Healing(static_vals, heal_info, nicknames, hp):
             player = 'p2'
         nickname = receiver[5:]
         receiver = nicknames[player][nickname]
-        logmsg = logmsg + 'receiver name: ' + str(receiver) + '\n'
         new_hp = heal_info[2]
         cur_hp = hp[receiver]
         hp[receiver] = new_hp
@@ -1450,15 +1526,23 @@ def Add_To_Healing(static_vals, heal_info, nicknames, hp):
         val_types = ['Text', 'Number', 'Text', 'Text', 'Text', 'Number']
 
         GIS_response = Generate_Insert_Statement(col_names, values, val_types)
-        logmsg = logmsg + 'now retrun the hp and generate insert statement response\n'
         return(hp, GIS_response)
     except Exception as error: 
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
+        usermsg = "Error = Oops! Something went wrong while adding this battle's healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-def Get_Switch_Info(response, nicknames, baselogmsg):
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+        except:
+            d=1
+
+def Get_Switch_Info(response, nicknames):
     try:
-        logmsg = baselogmsg
         switchsql = []
         col_names = ['Battle_ID', 'Turn', 'Player', 'Pokemon_Enter' , 'Source']
         table_name = 'switch'
@@ -1468,18 +1552,23 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
         p2 = response['p2id']
         log = response['log']
         
+        #prep error table information
+        funcname = 'Get_Switch_Info'
+        current_step = '0 - begin'
+        parameters = ''
+
         #now I need to split the log into turns and remove the intro information
         
         turns = log.split('|start\n')
         turns = turns[1].split('|turn|')
-        logmsg = logmsg + 'begin iterating through each turn\n'
         i = -1
         for turn in turns:
-            logmsgturntracker = 'error occured in turn ' + str(i) + ': ' + str(turn) + '\n'
             i = i + 1
             lines = turn.split('\n')
             turn_num = i
             for line in lines:
+                parameters = line
+                funcname = 'Get_Switch_Info'
                 #we need to ignore any line that begins with '|c|' since these are spectator or player chat messages
                 if not '|c|' in line:
                     is_switch = Search('|switch|', line)
@@ -1513,6 +1602,9 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
                             values = [battle_id, turn_num, player_name, real_name_mon, source]
                             val_types = ['Text', 'Number', 'Text', 'Text', 'Text']
 
+                            funcname = 'Generate_Insert_Statement'
+                            current_step = '1 - generate insert information for move switch'
+
                             GIS_response = Generate_Insert_Statement(col_names, values, val_types)
 
                             switchsql.append(GIS_response)
@@ -1521,6 +1613,9 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
                             #perhaps in the future I can go back and add that information but for now, I won't worry about it
                             source = 'action'
                             
+                            funcname = 'Generate_Insert_Statement'
+                            current_step = '1 - generate insert information for hard switch'
+
                             values = [battle_id, turn_num, player_name, real_name_mon, source]
                             val_types = ['Text', 'Number', 'Text', 'Text', 'Text']
 
@@ -1532,15 +1627,23 @@ def Get_Switch_Info(response, nicknames, baselogmsg):
         return([1, switchinfo])
 
     except Exception as error:
-        usermsg = "Error = Oops! Something went wrong while gathering the battle's switching info!\nThe Beheeyem employed have been notified of the error and will take a look!"
-        logmsg = logmsg + logmsgturntracker
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
-        return(0, usermsg)
+        usermsg = "Error = Oops! Something went wrong while gathering this battle's mon switching information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-def Get_Action_Info(response, baselogmsg):
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+
+            return(0, usermsg)
+        except:
+            return(0, usermsg)
+
+def Get_Action_Info(response):
     try:
-        logmsg = baselogmsg
         actionsql = []
         col_names = ['Battle_ID', 'Turn', 'Player', 'Action']
         table_name = 'actions'
@@ -1550,6 +1653,10 @@ def Get_Action_Info(response, baselogmsg):
         p2 = response['p2id']
         log = response['log']
         
+        #prep error table information
+        funcname = 'Get_Action_Info'
+        current_step = '0 - begin'
+        parameters = ''
         #now I need to split the log into turns and remove the intro information
         
         turns = log.split('|start\n')
@@ -1562,8 +1669,7 @@ def Get_Action_Info(response, baselogmsg):
             #then you prep the next turns information, which is why turn num and i must be offset
             turn_num = i
             i = i + 1
-            logmsgturntracker = 'error occured in turn ' + str(i) + ': ' + str(turn) + '\n'
-            
+            funcname = 'Get_Action_Info'
             #on all post-start turns we want to write an insert statement to the database with each 
             #player's action for that turn
             if i != 0:
@@ -1574,6 +1680,9 @@ def Get_Action_Info(response, baselogmsg):
                     else:
                         player_name = p2
                     action = turn_dict[player]
+
+                    funcname = 'Generate_Insert_Statement'
+                    current_step = "1 - add previous turn's info"
                     
                     values = [battle_id, turn_num, player_name, action]
                     val_types = ['Text', 'Number', 'Text', 'Text']
@@ -1590,6 +1699,9 @@ def Get_Action_Info(response, baselogmsg):
             #empty the turn_dict in order to get the new turn's information
             turn_dict = {}
             for line in lines:
+                funcname = 'Get_Action_Info'
+                current_step = "2 - begin working backwards through lines and prep this turn's info"
+                parameters = line
                 #we need to ignore any line that begins with '|c|'
                 if not '|c|' in line:  
                     line = line.split('|upkeep')
@@ -1614,8 +1726,17 @@ def Get_Action_Info(response, baselogmsg):
         actioninfo[table_name] = actionsql
         return(1, actioninfo)     
     except Exception as error:
-        usermsg = "Error = Oops! Something went wrong while gathering the battle's action selection info!\nThe Beheeyem employed have been notified of the error and will take a look!"
-        logmsg = logmsg + logmsgturntracker
-        logmsg = logmsg + '\n' + str(error)
-        logging.error(logmsg)
-        return(0, usermsg)
+        usermsg = "Error = Oops! Something went wrong while gathering this battle's player action information! \nThe Beheeyem employed have been notified of the error and will take a look!"
+        #if already in errors table then just return the usermsg
+        try:
+            table_name='errors'
+            values = [battle_id, funcname, current_step, parameters, error]
+            val_types = ['Text', 'Text', 'Text', 'Text', 'Text']
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+
+            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
+            Add_sql(table_name, error_stmt)
+
+            return(0, usermsg)
+        except:
+            return(0, usermsg)
