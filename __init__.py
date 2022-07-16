@@ -17,7 +17,7 @@ def create_app():
     #     # load the test config if passed in
     #     app.config.from_mapping(test_config)
         
-    if state == 'localhost': 
+    if state == 'production': 
         from . import core
     else: 
         import core
