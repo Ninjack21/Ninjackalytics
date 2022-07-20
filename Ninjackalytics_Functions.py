@@ -196,6 +196,10 @@ def Add_sql(table_name, GIS_response):
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
+
+    finally:
+        cur.close()
+        conn.close()
      
 def Check_New_Battle(battle_id):
     """
@@ -274,6 +278,10 @@ def Select_sql(table_name, GSS_response):
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
+    
+    finally:
+        cur.close()
+        conn.close()
     
 # ---------------------------- BEGIN DB DATA GATHERING FUNCTIONS HERE ------------
 def Get_Response(url):

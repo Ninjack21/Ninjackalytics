@@ -494,6 +494,10 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
+    
+    finally:
+        cur.close()
+        conn.close()
 
 
 
@@ -603,3 +607,7 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
+    
+    finally:
+        cur.close()
+        conn.close()
