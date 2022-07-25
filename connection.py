@@ -1,9 +1,11 @@
 import psycopg2 as pps
+import config
 
-def connection(state):
+def connection():
     """
-    simply pass this function what state we are in (production or dev) and it will pass to the other functions the correct pathway and return the connection
+    this function checks the config file to determine what state we want to work in right now
     """
+    state = config.state
     if state == 'production':
         host = 'ec2-52-72-56-59.compute-1.amazonaws.com'
         database = 'd1vgs7fthk106f'

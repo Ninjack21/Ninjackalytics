@@ -2,6 +2,7 @@ import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+import connection as cnxn
 
 def Generate_Bar_Chart(infodict):
     """
@@ -430,7 +431,8 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     This function will return the response as a list
     """
     #first connect to the database
-    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
+    state = 'production'
+    conn = cnxn.connection(state)    
     table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
@@ -499,8 +501,6 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
         cur.close()
         conn.close()
 
-
-
 def Core_Info(battle_id):
     """
     This function takes the battle_id and finds the players, who won, and what pokemon were on each player's team
@@ -547,8 +547,8 @@ def Basic_Select(table_name, col, battle_id, conditionals):
     This function will return the response as a list
     """
     #first connect to the database
-    conn = pps.connect(host = 'ec2-52-72-56-59.compute-1.amazonaws.com', database = 'd1vgs7fthk106f', user = 'hkevcdgapzwbgq', password = 'e4f06a129ac6687738bfb3140272e45c405746bda075681a05595a186ae84013')
-    
+    state = 'production'
+    conn = cnxn.connection(state)
     #heroku database uses all lowercase table names
     table_name = table_name.lower()
 
