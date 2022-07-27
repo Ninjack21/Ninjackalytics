@@ -1,1 +1,1 @@
-web: gunicorn __init__:app --max-requests 1200 --preload
+web: gunicorn app:app --max-requests 1200 --preload

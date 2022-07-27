@@ -20,10 +20,10 @@ def Run_Ninjackalytics(url):
     if logresponse != 0:
         #now check if it's a new battle or already in the database
         new = Check_New_Battle(battle_id)
-        #if this battle already exists then go ahead and link to the page
+        # #if this battle already exists then go ahead and link to the page
         if new == 'no':
             return(battle_id)
-        #if this battle is new then continue with ninjackalytics
+        # #if this battle is new then continue with ninjackalytics
         else:
 
             bidstat = Get_BID_Info(logresponse)
@@ -75,39 +75,39 @@ def Run_Ninjackalytics(url):
                 stmts = list(actionstat[1][table])
                 totalsql[table] = stmts
 
-            #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
-            new = Check_New_Battle(battle_id)
-            if new == 'no':
+        # #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
+        new = Check_New_Battle(battle_id)
+        if new == 'no':
+            return(battle_id)
+        # #if this battle doesn't already exist then go ahead and add everything!
+        else:
+            # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
+            # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
+            # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
+            # be able to avoid this.
+            try: 
+                checkdb = list(totalsql)[1]
+                Add_sql(checkdb, totalsql[checkdb][0])
+                fnl_check = 'add'
+            #if this fails then simply return the battle_id as it already exists now.
+            except:
+                fnl_check = 'do not add'
+
                 return(battle_id)
-            #if this battle doesn't already exist then go ahead and add everything!
-            else:
-                # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
-                # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
-                # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
-                # be able to avoid this.
-                try: 
-                    checkdb = list(totalsql)[1]
-                    Add_sql(checkdb, totalsql[checkdb][0])
-                    fnl_check = 'add'
-                #if this fails then simply return the battle_id as it already exists now.
-                except:
-                    fnl_check = 'do not add'
 
+            # now we just check fnl_check and follow it's instructions
+            finally:
+                if fnl_check == 'add':
+                    #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
+                    del totalsql['unique_battle_ids']
+                    for i, table in enumerate(list(totalsql)):
+                        for i, stmt in enumerate(totalsql[table]):
+                            Add_sql(table, stmt)
+                    #if all succeeds then we want to be redirected to the page with the battle statistics
+                    #otherwise we want to see a custom message
                     return(battle_id)
-
-                # now we just check fnl_check and follow it's instructions
-                finally:
-                    if fnl_check == 'add':
-                        #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
-                        del totalsql['unique_battle_ids']
-                        for i, table in enumerate(list(totalsql)):
-                            for i, stmt in enumerate(totalsql[table]):
-                                Add_sql(table, stmt)
-                        #if all succeeds then we want to be redirected to the page with the battle statistics
-                        #otherwise we want to see a custom message
-                        return(battle_id)
-                    else:
-                        return(battle_id)
+                else:
+                    return(battle_id)
     #if there was no response from the url provided the battle_id will instead be the user message saying as much
     else:
         return(battle_id)
@@ -175,8 +175,7 @@ def Add_sql(table_name, GIS_response):
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
     #first connect to the database
-    state = 'production'
-    conn = cnxn.connection(state)
+    conn = cnxn.connection()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap = '"'
@@ -252,8 +251,7 @@ def Select_sql(table_name, GSS_response):
     """
     
     #first connect to the database
-    state = 'production'
-    conn = cnxn.connection(state)
+    conn = cnxn.connection()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
     strtencap = '"'
@@ -1021,17 +1019,21 @@ def Gather_HP_Info(line, player, nicknames):
     this function takes the line fed to it along with the player and nicknames dict and returns the full_name of the mon who's hp was revealed on this line along with the current hp of that mon
     """
     try:
+        print('line: '+ str(line))
+        print('player: ' + str(player))
         line = line.split('|')
         nickname = line[2]
         #we now directly tie the nickname alone, with the player number, to the 'px: real_mon_name' 
         #value in the dictionary and thus need to drop 'pxy: ' everytime 
         nickname = nickname[5:]
         name = nicknames[player][nickname]
+        print('name: ' + str(name))
 
         #no need to check the first 3 since we know it's '', 'keyword hp trigger', 'name' - this also removes any potential nicknames with \s
         line.pop(0)
         line.pop(0)
         line.pop(0)
+        print('newline: ' + str(line))
         for obj in line:
             check_if_dead = Search('fnt', obj)
             if check_if_dead == 'yes':

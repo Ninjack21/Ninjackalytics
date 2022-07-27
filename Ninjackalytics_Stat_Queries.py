@@ -431,8 +431,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     This function will return the response as a list
     """
     #first connect to the database
-    state = 'production'
-    conn = cnxn.connection(state)    
+    conn = cnxn.connection()
     table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
@@ -538,17 +537,15 @@ def Core_Info(battle_id):
     core_info['P1'] = player1
     core_info['P2'] = player2
     return(core_info)
-
-def Basic_Select(table_name, col, battle_id, conditionals):
     
+def Basic_Select(table_name, battle_id, conditionals):
     """
     This function selects from "table_name" - "col" where "battle_id" and "conditionals"[0] equals "conditionals"[1]
     conditionals is a list of lists - [column, value] to be used in additional where clauses
     This function will return the response as a list
     """
     #first connect to the database
-    state = 'production'
-    conn = cnxn.connection(state)
+    conn = cnxn.connection()
     #heroku database uses all lowercase table names
     table_name = table_name.lower()
 
@@ -572,42 +569,12 @@ def Basic_Select(table_name, col, battle_id, conditionals):
         
     #let's attempt what we have just written
     try:
-        #create a new cursor
-        cur = conn.cursor()
         
-        #execute the INSERT statement
-        cur.execute(sql)
-        
-        response = cur.fetchall()
-
-        #fetchall provides a list of tuples, want to get only the values and ignore the types provided
-        cleanresponse = []
-        for value in enumerate(response):
-            if "'" in str(value):
-                stringvalue = str(value[1])
-                splitup = stringvalue.split("'")
-                newval = splitup[1]
-                newvaltype = splitup[0]
-                if newvaltype == '(Decimal(':
-                    cleanresponse.append(round(float(newval), 2))
-                else:
-                    cleanresponse.append(newval)
-            else:
-                stringvalue = str(value)
-                splitup = stringvalue.split(', (')
-                integercomma = splitup[1]
-                integercommasplitup = integercomma.split(',')
-                integer = integercommasplitup[0]
-                cleanresponse.append(integer)
-
-        conn.commit()
+        cleanresponse = pd.read_SQL(sql, conn, index_col = None)
+        print(cleanresponse)
 
         return(cleanresponse)
     
     #if we encounter an error - return that error
     except (Exception, pps.DatabaseError) as error:
         print(error)
-    
-    finally:
-        cur.close()
-        conn.close()
