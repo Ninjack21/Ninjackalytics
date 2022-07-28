@@ -464,6 +464,13 @@ def Get_Team_Info(response):
         p1_mon_preview = (mon_preview.split('poke|p2'))[0]
         p1_mon_preview = p1_mon_preview.split('|poke|p1|')
         p1_mon_preview.pop(0)
+        #remove the item tag used in previous generations
+        p1_mon_preview_no_item = []
+        for mon in p1_mon_preview: 
+            mon = mon.replace('|item','')
+            p1_mon_preview_no_item.append(mon)
+
+        p1_mon_preview = p1_mon_preview_no_item
 
         p1_mons = []    
         for mon in p1_mon_preview:
@@ -498,6 +505,15 @@ def Get_Team_Info(response):
         p2_mon_preview = (mon_preview.split('poke|p1'))[number_p1_mons]
         p2_mon_preview = p2_mon_preview.split('|poke|p2|')
         p2_mon_preview.pop(0)
+
+        #remove the item tag used in previous generations
+        p2_mon_preview_no_item = []
+        for mon in p2_mon_preview: 
+            mon = mon.replace('|item','')
+            p2_mon_preview_no_item.append(mon)
+
+        p2_mon_preview = p2_mon_preview_no_item 
+
         p2_mons = []    
         for mon in p2_mon_preview:
             parameters = mon
@@ -587,8 +603,12 @@ def Find_nn(log, player_num, mon, battle_id):
 
         current_step = '1 - create entrance regex search expression'
 
+        #we only want to search for an entrance after the team preview - the team preview is not going to show the nickname
+        searchlog = log.split('|start')
+        searchlog = searchlog[1]
+
         entrance = 'p'+ str(player_num) + '.: .+[|]' + mon + '.*[|].*/.*'
-        match = re.search(entrance, log)
+        match = re.search(entrance, searchlog)
         if match:
             parameters = str(match)
             current_step = '2 - we found the mon - now get nickname from response'
@@ -773,8 +793,8 @@ def Get_Damage_and_Healing_Info(response, nicknames):
                         
                         # https://replay.pokemonshowdown.com/gen8ou-1510969757 -> |faint|p1a: Al'Queda
                         
-                        line = line.split('|')
-                        receiver = line[2]
+                        checkline = line.split('|')
+                        receiver = checkline[2]
                         receiver = receiver.split('\n')
                         receiver = receiver[0]
                         dealer = receiver
@@ -1019,21 +1039,19 @@ def Gather_HP_Info(line, player, nicknames):
     this function takes the line fed to it along with the player and nicknames dict and returns the full_name of the mon who's hp was revealed on this line along with the current hp of that mon
     """
     try:
-        print('line: '+ str(line))
-        print('player: ' + str(player))
         line = line.split('|')
         nickname = line[2]
         #we now directly tie the nickname alone, with the player number, to the 'px: real_mon_name' 
         #value in the dictionary and thus need to drop 'pxy: ' everytime 
         nickname = nickname[5:]
         name = nicknames[player][nickname]
-        print('name: ' + str(name))
+
 
         #no need to check the first 3 since we know it's '', 'keyword hp trigger', 'name' - this also removes any potential nicknames with \s
         line.pop(0)
         line.pop(0)
         line.pop(0)
-        print('newline: ' + str(line))
+
         for obj in line:
             check_if_dead = Search('fnt', obj)
             if check_if_dead == 'yes':
@@ -1202,15 +1220,17 @@ def Gather_Status_or_Hazard_Info(line, turn):
 
 def Gather_Passive_Info(line, turn): 
     try:
+        
         og_line = line
         line = line.split('|')
-        line = line[2:]
-        receiver = line[0]
-        
-        if 'fnt' in line[1]:
+        receiverline = line[2:]
+        receiver = receiverline[0]
+        hpline = line[2:]
+
+        if 'fnt' in line[1] or 'faint' in line[1]:
             new_hp = 0
         else:
-            line = line[1].split('/')
+            line = hpline[1].split('/')
             #because in some cases hp is reflected as raw numbers, we must now check for and remove any status condition labels like psn or brn
             cur_hp = float(line[0])
             
@@ -1221,16 +1241,29 @@ def Gather_Passive_Info(line, turn):
             max_hp = float(max_hp[0])
             
             new_hp = round(((cur_hp / max_hp) * 100), 2)
-            
-        line = og_line.split('|')
-        line = line[4:]
-        line = line[0].split('[from] ')
-        name = line[1]
-        dealer = name
 
-        info = [dealer, name, receiver, new_hp]
+        #first we will try to get the needed info using the regular passive info gather process
+        try:    
+            line = og_line.split('|')
+            line = line[4:]
+            line = line[0].split('[from] ')
+            name = line[1]
+            dealer = name
+
+            info = [dealer, name, receiver, new_hp]
+            return(info)
+        #if this fails, then we probably have a self-killing move and will need a different system
+        except: 
+            #if we can't find a from, then for now we'll assume we killed ourselves somehow
+            #since perish song exists - for now we'll just call the dealer ourselves and the name forced faint
+            #perish song is previous turns so would need it's own handling case and it's fairly uncommon right now and probably
+            #not that big a deal that we get it perfectly
+            dealer = receiver
+            name = 'forced faint'
         
-        return(info)
+            info = [dealer, name, receiver, new_hp]
+            return(info)
+        
     except Exception as error:
         d=1
 
