@@ -1,22 +1,23 @@
-state = 'production'
-if state == 'localhost':
-    from io import BytesIO
-    import matplotlib.pyplot as plt
-    import base64
-    from flask import (
-        Blueprint, redirect, render_template, url_for, request, flash
-    )
-    from . import Ninjackalytics_Stat_Queries as nsq
-    from . import Ninjackalytics_Functions as nf
-else:
-    from io import BytesIO
-    import matplotlib.pyplot as plt
-    import base64
-    from flask import (
-        Blueprint, redirect, render_template, url_for, request, flash
-    )
-    import Ninjackalytics_Stat_Queries as nsq
-    import Ninjackalytics_Functions as nf
+import config
+state = config.state
+# if state == 'dev':
+#     from io import BytesIO
+#     import matplotlib.pyplot as plt
+#     import base64
+#     from flask import (
+#         Blueprint, redirect, render_template, url_for, request, flash
+#     )
+#     from . import Ninjackalytics_Stat_Queries as nsq
+#     from . import Ninjackalytics_Functions as nf
+# else:
+from io import BytesIO
+import matplotlib.pyplot as plt
+import base64
+from flask import (
+    Blueprint, redirect, render_template, url_for, request, flash
+)
+import Ninjackalytics_Stat_Queries as nsq
+import Ninjackalytics_Functions as nf
 
 
 

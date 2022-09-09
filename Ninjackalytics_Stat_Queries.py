@@ -1,8 +1,8 @@
-import psycopg2 as pps
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import connection as cnxn
+import sqlalchemy as db
 
 def Generate_Bar_Chart(infodict):
     """
@@ -431,7 +431,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
     This function will return the response as a list
     """
     #first connect to the database
-    conn = cnxn.connection()
+    conn = cnxn.engine
     table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
@@ -493,7 +493,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
         return(cleanresponse)
     
     #if we encounter an error - return that error
-    except (Exception, pps.DatabaseError) as error:
+    except (Exception) as error:
         print(error)
     
     finally:
@@ -509,20 +509,20 @@ def Core_Info(battle_id):
     """
     core_info = {}
 
-    players = Basic_Select('battle_info', 'Player', battle_id, [])
+    players = Basic_Select('Battle_Info', 'Player', battle_id, [])
     p1 = players[0]
     p2 = players[1]
-    winner = Basic_Select('battle_info', 'Winner', battle_id, [])
+    winner = Basic_Select('Battle_Info', 'Winner', battle_id, [])
     winner = winner[0]
 
     p1cond = [['Player', p1]]
-    team1 = Basic_Select('team', 'Pokemon', battle_id, p1cond)
+    team1 = Basic_Select('Team', 'Pokemon', battle_id, p1cond)
     player1 = {'name' : p1,
     'team' : team1
     }
 
     p2cond = [['Player', p2]]
-    team2 = Basic_Select('team', 'Pokemon', battle_id, p2cond)
+    team2 = Basic_Select('Team', 'Pokemon', battle_id, p2cond)
     player2 = {'name' : p2,
     'team' : team2
     }
@@ -544,37 +544,26 @@ def Basic_Select(table_name, battle_id, conditionals):
     conditionals is a list of lists - [column, value] to be used in additional where clauses
     This function will return the response as a list
     """
-    #first connect to the database
-    conn = cnxn.connection()
-    #heroku database uses all lowercase table names
-    table_name = table_name.lower()
 
-    #define the schema and encapsulation here to use for referencing the Table Name
-    schema = 'public.'
-    strtencap_col = '"'
-    endencap_col = '"'
-    strtencap_tbl = '"'
-    endencap_tbl = '"'
-    valencap = "'"
-    
-    #create the initial sql statement that we'll be adding where clauses to from conditionals
-    sql = 'Select ' + strtencap_col + col + endencap_col + ' From ' + schema + strtencap_tbl + table_name + endencap_tbl + ' Where ' + strtencap_col + 'Battle_ID' + endencap_col + ' = ' +  valencap + battle_id + valencap
 
-    for clause in conditionals: 
-        cur_col = clause[0]
-        cur_val = clause[1]
-        sql = sql + ' AND ' + strtencap_col + cur_col + endencap_col + ' = ' + valencap + cur_val + valencap
+    str = ''
+    final = len(conditionals)
+    i = 0
+    for conditional in conditionals:
+        if i == final:
+            str = str + table_name + '.' + conditional[0] + '==' + str(conditional[1]) + ')'
+        else:
+            str = str + table_name + '.' + conditional[0] + '==' + str(conditional[1]) + ','
     
-    sql = sql + ';'
-        
-    #let's attempt what we have just written
+    stmt = 'select(' + table_name + ').where(' + str
+    print(stmt)
+
     try:
-        
-        cleanresponse = pd.read_SQL(sql, conn, index_col = None)
-        print(cleanresponse)
-
-        return(cleanresponse)
+        #first connect to the database
+        conn = cnxn.engine
+        df = pd.read_sql_query(stmt, conn)
+        return(df)
     
     #if we encounter an error - return that error
-    except (Exception, pps.DatabaseError) as error:
+    except (Exception) as error:
         print(error)

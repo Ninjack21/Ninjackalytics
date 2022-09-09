@@ -1,16 +1,8 @@
-state = 'production'
-if state == 'localhost':
-    import psycopg2 as pps
-    import requests
-    from datetime import date
-    import re
-    from . import connection as cnxn
-else:
-    import psycopg2 as pps
-    import requests
-    from datetime import date
-    import re
-    import connection as cnxn
+from sqlalchemy import insert
+from sqlalchemy.sql import select
+import requests
+import re
+import connection as cnxn
 
 def Run_Ninjackalytics(url):
     totalsql = {}
@@ -33,10 +25,6 @@ def Run_Ninjackalytics(url):
                 table = list(bidstat[1])[0]
                 stmts = list(bidstat[1][table])
                 totalsql[table] = stmts
-
-                tablecheck = list(bidstat[1])[1]
-                stmtscheck = list(bidstat[1][tablecheck])
-                totalsql[tablecheck] = stmtscheck
             
             teaminfostat = Get_Team_Info(logresponse)
             if teaminfostat[0] == 0:
@@ -75,212 +63,83 @@ def Run_Ninjackalytics(url):
                 stmts = list(actionstat[1][table])
                 totalsql[table] = stmts
 
-        # #now that we've run - double check one last time that it hasn't been added while we were running Ninjackalytics
-        new = Check_New_Battle(battle_id)
-        if new == 'no':
-            return(battle_id)
-        # #if this battle doesn't already exist then go ahead and add everything!
-        else:
-            # if it still is not in the database we are going to try to add it - if it adds succesfully then we will make fnl_chk = 'add'. Otherwise it will be 'do not add'. 
-            # This is because a key error will be thrown if 2 try to add simultaneously. Whereas if we simply checked if it existed I think it'd be possible for them to both 
-            # not see each other and then both add simultaneously which I do not want. If we decouple the addition of the Unique_Battle_IDs and the rest of the data we should 
-            # be able to avoid this.
-            try: 
-                checkdb = list(totalsql)[1]
-                Add_sql(checkdb, totalsql[checkdb][0])
-                fnl_check = 'add'
-            #if this fails then simply return the battle_id as it already exists now.
-            except:
-                fnl_check = 'do not add'
-
+        #double check that it wasn't uploaded while running, if it has, then simply reroute to the correct page
+        try: 
+            new = Check_New_Battle(battle_id)
+            if new == 'no':
                 return(battle_id)
 
-            # now we just check fnl_check and follow it's instructions
-            finally:
-                if fnl_check == 'add':
-                    #remove the Unique_Battle_IDs from the totalsql dictionary before adding as it has now already happened
-                    del totalsql['unique_battle_ids']
-                    for i, table in enumerate(list(totalsql)):
-                        for i, stmt in enumerate(totalsql[table]):
-                            Add_sql(table, stmt)
-                    #if all succeeds then we want to be redirected to the page with the battle statistics
-                    #otherwise we want to see a custom message
-                    return(battle_id)
-                else:
-                    return(battle_id)
-    #if there was no response from the url provided the battle_id will instead be the user message saying as much
+        # now we just check fnl_check and follow it's instructions
+        finally:
+            if new == 'yes':
+                for i, table in enumerate(list(totalsql)):
+                    for i, stmt in enumerate(totalsql[table]):
+                        execute_sql(stmt)
+                #if all succeeds then we want to be redirected to the page with the battle statistics
+                #otherwise we want to see a custom message
+                return(battle_id)
+            else:
+                return(battle_id)
+#if there was no response from the url provided the battle_id will instead be the user message saying as much
     else:
         return(battle_id)
 
 #--------------------START WITH SQL INTERACTION FUNCTIONS ------------------------------------------------------
-def Generate_Insert_Statement(col_names, values, val_types):
+def Generate_Insert_Statement(table_name, col_names, values):
     
     """
     This function takes, as a python list, the column names, values to be added, and the types of each value ('Date', 'Text', or 'Number')
     and creates the appropriate strings for Python to pass to the Add to SQL Function. 
     The response from this function is a list where response[0] = column_names_string and response[1] = values_to_be_added_string
     """
+    loc = 0
+    str = ''
+    for col in col_names:
+        str = str + col_names[loc] + '=' + values[loc] + ','
+        loc = loc + 1
     
-    #first, let's encapsulate the columns and generate the string to be provided to our add to sql function
-    strtencap_col = '"'
-    endencap_col = '"'
-    col_string = ''
-    
-    for column in col_names:
-        if col_string =='':
-            col_string = strtencap_col + column + endencap_col
-        else:
-            col_string = col_string + ',' + strtencap_col + column + endencap_col
-    
-    response = [col_string]
-    
-    
-    #------------ now we get to check what type each value is and perform the necessary manipulations to create val_string
-    encap_val = "'"
-    
-    val_string = ''
-    
-    for i, value in enumerate(values):
-        
-        if val_string == '':
-            if val_types[i] == 'Date':
-                val_string = "TO_DATE('" + str(values[i]) + "','YYYY/MM/DD')"
-            elif val_types[i] == 'Number':
-                val_string = str(values[i])
-            elif val_types[i] == 'Text':
-                if "'" in str(values[i]):
-                    val = values[i].replace("'",' ')
-                else:
-                    val = values[i]
-                val_string = encap_val + val + encap_val
-        
-        else:
-            if val_types[i] == 'Date':
-                val_string = val_string + ',' + "TO_DATE('" + str(values[i]) + "','YYYY/MM/DD')"
-            elif val_types[i] == 'Number':
-                val_string = val_string + ',' + str(values[i])
-            elif val_types[i] == 'Text':
-                if "'" in str(values[i]):
-                    val = values[i].replace("'",' ')
-                else:
-                    val = values[i]
-                val_string = val_string + ',' + encap_val + val + encap_val
-    
-    response.append(val_string)
-    return(response)
+    stmt = 'insert(' + table_name + ').values(' + str + ')'
+    return(stmt)
+
 #let's create a function that will take any table_name, col_names, col_info and write to any sql table
-def Add_sql(table_name, GIS_response):
+def execute_sql(stmt):
     
     """
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
-    #first connect to the database
-    conn = cnxn.connection()
-    #define the schema and encapsulation here to use for referencing the Table Name
-    schema = 'public.'
-    strtencap = '"'
-    endencap = '"'
-    
-    sql = 'INSERT INTO ' + schema + strtencap + table_name + endencap + '(' + GIS_response[0] + ')' + ' VALUES (' + GIS_response[1] + ');'
-    #let's attempt what we have just written
     try:
-        #create a new cursor
-        cur = conn.cursor()
-        
-        #execute the INSERT statement
-        cur.execute(sql)
-        
-        conn.commit()
-    
-    #if we encounter an error - return that error
-    except (Exception, pps.DatabaseError) as error:
-        print(error)
+        print(stmt)
+        conn = cnxn.engine
+        result = conn.execute(stmt)
+        return(result)
 
-    finally:
-        cur.close()
-        conn.close()
-     
+    except Exception as error:
+        print('exception error: ' + str(error))
+
 def Check_New_Battle(battle_id):
     """
     take the provided battle_id and see if this battle exists in the Ninjackalytics' database already or not
     (responses are to the variable name used of "new")
     """
-    table_name = 'unique_battle_ids'
-    col_name = 'Battle_ID'
-    GSS_response = Generate_Select_Statement(col_name, battle_id, 'Text')
-    
-    check_for_bid = Select_sql(table_name, GSS_response)
+
+    stmt = Generate_Select_Statement('Battle_Info', 'Battle_ID', battle_id)
+    check_for_bid = execute_sql(stmt)
 
     if check_for_bid:
         return('no')
     else:
         return('yes')
 
-def Generate_Select_Statement(col_name, value, val_type):
+def Generate_Select_Statement(table_name, col_name, value):
     
     """
     This function takes the column you want to search, the value you want to search for (along with its type) and properly syntaxes them for the select_sql function.
     The output of this function is response, where response[0] = the col_string to search for and response[1] = the val_string you'll be searching for
     """
     
-    #first, let's encapsulate the columns and generate the string to be provided to our add to sql function
-    strtencap_col = '"'
-    endencap_col = '"'
-
-    col_string = strtencap_col + col_name + endencap_col
-    
-    response = [col_string]
-    
-    encap_val = "'"
-        
-    if val_type == 'Date':
-        val_string = "TO_DATE('" + str(value) + "','YYYY/MM/DD')"
-    elif val_type == 'Number':
-        val_string = str(value)
-    elif val_type == 'Text':
-        val_string = encap_val + value + encap_val
-    
-    response.append(val_string)
-    
-    return(response)
-
-def Select_sql(table_name, GSS_response):
-    
-    """
-    This function takes the table name, column names, and column_info (values to be added) and pulls their information
-    """
-    
-    #first connect to the database
-    conn = cnxn.connection()
-    #define the schema and encapsulation here to use for referencing the Table Name
-    schema = 'public.'
-    strtencap = '"'
-    endencap = '"'
-    
-    sql = 'Select ' + GSS_response[0] + ' From ' + schema + strtencap + table_name + endencap + ' Where ' + GSS_response[0] + ' = ' + GSS_response[1] + ';'
-        
-    #let's attempt what we have just written
-    try:
-        #create a new cursor
-        cur = conn.cursor()
-        
-        #execute the INSERT statement
-        cur.execute(sql)
-        
-        response = cur.fetchall()
-
-        conn.commit()
-        
-        return(response)
-
-    #if we encounter an error - return that error
-    except (Exception, pps.DatabaseError) as error:
-        print(error)
-    
-    finally:
-        cur.close()
-        conn.close()
-    
+    stmt = 'select(' + table_name + '.' + col_name + ').where(' + table_name + '.' + col_name + '==' + str(value) + ')'
+    return(stmt)
+      
 # ---------------------------- BEGIN DB DATA GATHERING FUNCTIONS HERE ------------
 def Get_Response(url):
     """
@@ -331,12 +190,9 @@ def Get_BID_Info(response):
         current_step = '0 - begin'
         parameters = ''
 
-        #we also want to get the date this url was submitted
-        date_sub = date.today()
-
         #private always defaults to false as this may be added later but will not be right now.
-        private = 'FALSE'
-
+        p1_private = 'FALSE'
+        p2_private = 'FALSE'
         #and then the log (for determining winner and rank)
         log = response['log']
 
@@ -389,30 +245,17 @@ def Get_BID_Info(response):
             else:
                 winner = p2
 
-        bidp1 = [battle_id, date_sub, battle_format, p1, p1_rank, private, winner]
-        bidp2 = [battle_id, date_sub, battle_format, p2, p2_rank, private, winner]
-        types = ['Text', 'Date', 'Text', 'Text', 'Number', 'Text', 'Text']
+        bid = [battle_id, battle_format, p1, p1_rank, p1_private, p2, p2_rank, p2_private, winner]
 
-        table_name = 'battle_info'
-        col_names = ['Battle_ID', 'Date_Submitted', 'Format', 'Player', 'Rank', 'Private', 'Winner']
+        table_name = 'Battle_Info'
+        col_names = ['Battle_ID', 'Format', 'P1', 'P1_Rank', 'P1_Private', 'P2', 'P2_Rank', 'P2_Private', 'Winner']
 
         current_step = '4 - create insert statements'
 
-        add_p1 = Generate_Insert_Statement(col_names, bidp1, types)
-        add_p2 = Generate_Insert_Statement(col_names, bidp2, types)
-
-        table_name_check = 'unique_battle_ids'
-
-        col_names_check = ['Battle_ID']
-        values_check = [battle_id]
-        types_check = ['Text']
-
-        check_db = Generate_Insert_Statement(col_names_check, values_check, types_check)
-
-        add_ps = [add_p1, add_p2]
+        #change to reflect new database structure
+        add_bid = Generate_Insert_Statement(table_name, col_names, bid)
         bidsql = {}
-        bidsql[table_name] = add_ps
-        bidsql[table_name_check] = [check_db]
+        bidsql[table_name] = add_bid
         return (1, bidsql)
     except Exception as error:
         usermsg = "Error = Oops! Something went wrong while gathering the battle's identifying information!\nThe Beheeyem employed have been notified of the error and will take a look!"
@@ -420,12 +263,11 @@ def Get_BID_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
 
             return(0, usermsg)
         except:
@@ -442,14 +284,13 @@ def Get_Team_Info(response):
         p1 = response['p1id']
         p2 = response['p2id']
         log = response['log']
-        col_names = ['Battle_ID', 'Player', 'Pokemon']
-        table_name = 'team'
+        col_names = ['Pok1', 'Pok2', 'Pok3', 'Pok4', 'Pok5', 'Pok6']
+        table_name = 'Team'
 
         #prep error table information
         funcname = 'Get_Team_Info'
         current_step = '0 - begin'
         parameters = ''
-        date_sub = date.today()
 
         mon_preview = log.split('|clearpoke\n')
         mon_preview = mon_preview[1].split('|teampreview')
@@ -544,18 +385,11 @@ def Get_Team_Info(response):
         current_step = '3 - create insert statements for team table'
         parameters = ''
 
-        val_types = ['Text', 'Text', 'Text']
         prepsql = []
         for i, player in enumerate(team_preview):
-            for mon in (team_preview[i]):
-                if i == 0:
-                    values = [battle_id, p1, mon]
-                    sql_info = Generate_Insert_Statement(col_names, values, val_types)
-                    prepsql.append(sql_info)
-                else:
-                    values = [battle_id, p2, mon]
-                    sql_info = Generate_Insert_Statement(col_names, values, val_types)
-                    prepsql.append(sql_info)
+            values = [team_preview[player]]
+            sql_info = Generate_Insert_Statement(table_name, col_names, values)
+            prepsql.append(sql_info)
 
         current_step = '4 - build nicknames dict'
 
@@ -575,12 +409,11 @@ def Get_Team_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
-            col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
+            values = [battle_id, funcname, current_step, parameters, error]
+            col_names = ['Battle_ID', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
 
             return(0, usermsg)
         except:
@@ -628,14 +461,12 @@ def Find_nn(log, player_num, mon, battle_id):
 
         #if already in errors table then just return the usermsg
         try:
-            date_sub = date.today()
             table_name='errors'
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
         except:
             d=1
 
@@ -683,7 +514,6 @@ def Get_Damage_and_Healing_Info(response, nicknames):
         funcname = 'Get_Damage_and_Healing_Info'
         current_step = '0 - begin'
         parameters = response
-        date_sub = date.today()
         #now I need to split the log into turns and remove the intro information
         
         turns = log.split('|start\n')
@@ -698,7 +528,7 @@ def Get_Damage_and_Healing_Info(response, nicknames):
                 hp[real_name] = 100
         
         #now we want to begin iterating through the turns, line by line in each turn, and classifying all the types of damages, 
-        #prepare their Add_sql information, and update the hp tracker
+        #prepare their execute_sql information, and update the hp tracker
         
         #we need to define what hazards and status conditions exist at the current moment 
         #(later, can pull these from a file if desired but for now, will hard code in)
@@ -897,13 +727,11 @@ def Get_Damage_and_Healing_Info(response, nicknames):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, str(error)]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, str(error)]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
 
             return(0, usermsg)
         except:
@@ -1085,6 +913,7 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
     if you love having a single quote in your name. Sorry not sorry fam. 
     """
     try:
+        table_name = 'Damages'
         battle_id = static_vals[0]
         turn_num = static_vals[1]
         dmg_type = static_vals[2]
@@ -1131,9 +960,8 @@ def Add_To_Damage(static_vals, dmg_info, nicknames, hp):
         dmg_dealt = float(cur_hp) - float(new_hp)
         
         values = [battle_id, turn_num, dmg_type, dealer, name, receiver, dmg_dealt]
-        val_types = ['Text', 'Number', 'Text', 'Text', 'Text', 'Text', 'Number']
 
-        GIS_response = Generate_Insert_Statement(col_names, values, val_types)
+        GIS_response = Generate_Insert_Statement(table_name, col_names, values)
         
         return(hp, GIS_response)
     except Exception as error:
@@ -1326,13 +1154,11 @@ def Add_Damage_Info(dmg_type, battle_id, turn_num, col_names, table_name, line, 
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
         except:
             d=1
 
@@ -1539,13 +1365,11 @@ def Add_Healing_Info(static_vals, line, turn, nicknames, hp, battle_id):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
         except:
             d=1
 
@@ -1584,22 +1408,19 @@ def Add_To_Healing(static_vals, heal_info, nicknames, hp):
         recovery = float(new_hp) - float(cur_hp)
 
         values = [battle_id, turn_num, heal_type, name, receiver, recovery]
-        val_types = ['Text', 'Number', 'Text', 'Text', 'Text', 'Number']
 
-        GIS_response = Generate_Insert_Statement(col_names, values, val_types)
+        GIS_response = Generate_Insert_Statement(table_name, col_names, values)
         return(hp, GIS_response)
     except Exception as error: 
         usermsg = "Error = Oops! Something went wrong while adding this battle's healing information! \nThe Beheeyem employed have been notified of the error and will take a look!"
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
         except:
             d=1
 
@@ -1662,12 +1483,11 @@ def Get_Switch_Info(response, nicknames):
                             source = get_move[0]
                             
                             values = [battle_id, turn_num, player_name, real_name_mon, source]
-                            val_types = ['Text', 'Number', 'Text', 'Text', 'Text']
 
                             funcname = 'Generate_Insert_Statement'
                             current_step = '1 - generate insert information for move switch'
 
-                            GIS_response = Generate_Insert_Statement(col_names, values, val_types)
+                            GIS_response = Generate_Insert_Statement(table_name, col_names, values)
 
                             switchsql.append(GIS_response)
                         else:
@@ -1679,9 +1499,8 @@ def Get_Switch_Info(response, nicknames):
                             current_step = '1 - generate insert information for hard switch'
 
                             values = [battle_id, turn_num, player_name, real_name_mon, source]
-                            val_types = ['Text', 'Number', 'Text', 'Text', 'Text']
 
-                            GIS_response = Generate_Insert_Statement(col_names, values, val_types)
+                            GIS_response = Generate_Insert_Statement(table_name, col_names, values)
                             switchsql.append(GIS_response)
         
         switchinfo = {}
@@ -1693,13 +1512,11 @@ def Get_Switch_Info(response, nicknames):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
 
             return(0, usermsg)
         except:
@@ -1748,8 +1565,7 @@ def Get_Action_Info(response):
                     current_step = "1 - add previous turn's info"
                     
                     values = [battle_id, turn_num, player_name, action]
-                    val_types = ['Text', 'Number', 'Text', 'Text']
-                    GIS_response = Generate_Insert_Statement(col_names, values, val_types)
+                    GIS_response = Generate_Insert_Statement(table_name, col_names, values)
                     actionsql.append(GIS_response)
             #want to ignore anything after 'upkeep' as players who sack pokemon switch after that
             turn = turn.split('|upkeep')
@@ -1793,13 +1609,11 @@ def Get_Action_Info(response):
         #if already in errors table then just return the usermsg
         try:
             table_name='errors'
-            date_sub = date.today()
-            values = [battle_id, date_sub, funcname, current_step, parameters, error]
-            val_types = ['Text', 'Date', 'Text', 'Text', 'Text', 'Text']
+            values = [battle_id, funcname, current_step, parameters, error]
             col_names = ['Battle_ID', 'Date', 'Func_Name', 'Current_Step', 'Parameters', 'Error_Message']
 
-            error_stmt = Generate_Insert_Statement(col_names, values, val_types)
-            Add_sql(table_name, error_stmt)
+            error_stmt = Generate_Insert_Statement(table_name, col_names, values)
+            execute_sql(error_stmt)
 
             return(0, usermsg)
         except:
