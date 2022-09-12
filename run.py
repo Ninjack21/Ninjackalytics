@@ -1,4 +1,4 @@
-from poke_tool import create_app
+from poke_tool.poke_user_interface import create_app
 from flask_sqlalchemy import SQLAlchemy
 from poke_tool.config import db_design, db_uri
 from sqlalchemy import create_engine

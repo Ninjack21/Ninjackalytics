@@ -16,13 +16,12 @@ import base64
 from flask import (
     Blueprint, redirect, render_template, url_for, request, flash
 )
-import poke_tool.battle_stats.Ninjackalytics_Stat_Queries as nsq
-import poke_tool.battle_stats.Ninjackalytics_Functions as nf
+import poke_tool.poke_user_interface.Ninjackalytics_Stat_Queries as nsq
+import poke_tool.poke_stats_gen_backend.Ninjackalytics_Functions as nf
 
+bp = Blueprint('user_navigation', __name__)
 
-bp = Blueprint('core', __name__)
-
-
+#need to recreate such that submit merely checks if the battle is already in the database and if it is not it will call our poke_stats_gen_backend and await a response
 @bp.route('/', methods = ('POST', 'GET'))
 def submit():
     #if the user is submitting their battle url then use run_ninjackalytics
@@ -40,39 +39,39 @@ def submit():
                 #iterate through for number of lines in error msg
                 for msg in enumerate(errormsg):
                     flash(msg[1])
-                return redirect(url_for('core.specificerror'))
+                return redirect(url_for('user_navigation.specificerror'))
             #if there is no error, then we redirect to the stats page
             else:
-                return redirect(url_for('core.battlestats', bid = redirect_response))
+                return redirect(url_for('user_navigation.battlestats', bid = redirect_response))
         except Exception as msg: 
             flash(str(msg))
-            return redirect(url_for('core.generalerror'))
+            return redirect(url_for('user_navigation.generalerror'))
 
-    return render_template('core/submit.html')
+    return render_template('user_navigation/submit.html')
 
 @bp.route('/error', methods = ('GET',))
 def specificerror():
     # color palette: #FE0180, #0101FE, #01FE80, #FEFE01
 
-    return render_template('core/specificerror.html')
+    return render_template('user_navigation/specificerror.html')
 
 @bp.route('/generalerror', methods = ('GET',))
 def generalerror():
 
-    return render_template('core/generalerror.html')
+    return render_template('user_navigation/generalerror.html')
 
 
 @bp.route('/battlestats/<bid>', methods=('GET',))
 def battlestats(bid):
 
-    core_info = nsq.Core_Info(bid)
+    user_navigation_info = nsq.user_navigation_Info(bid)
     pnums = ['P1', 'P2']
     graphs = {}
     totals = {}
     #generate the plots for this battle
     for player in pnums:
         #https://www.pythonanywhere.com/forums/topic/5017/
-        healentr = nsq.Healing_Per_Entrance(bid, player, core_info)
+        healentr = nsq.Healing_Per_Entrance(bid, player, user_navigation_info)
         nsq.Generate_Bar_Chart(healentr)
         figfile = BytesIO()
         plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
@@ -80,7 +79,7 @@ def battlestats(bid):
         figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
         graphs[str(player) + ' - Healing Per Entrance'] = figdata_png
 
-        dmgentr = nsq.Damage_Per_Entrance(bid, player, core_info)
+        dmgentr = nsq.Damage_Per_Entrance(bid, player, user_navigation_info)
         nsq.Generate_Bar_Chart(dmgentr)
         figfile = BytesIO()
         plt.savefig(figfile, format='png', transparent=True, bbox_inches='tight')
@@ -88,7 +87,7 @@ def battlestats(bid):
         figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
         graphs[str(player) + ' - Dmg Per Entrance'] = figdata_png
 
-        turnact = nsq.Turn_Action_Breakdown(bid, player, core_info)
+        turnact = nsq.Turn_Action_Breakdown(bid, player, user_navigation_info)
         #sum up the number of turns in this battle for this player
         totalturns=0
         for i in turnact.values():
@@ -104,7 +103,7 @@ def battlestats(bid):
         graphs[str(player) + ' - Turn Action Breakdown'] = figdata_png
         
 
-        healtype = nsq.Heal_Type_Breakdown(bid, player, core_info)
+        healtype = nsq.Heal_Type_Breakdown(bid, player, user_navigation_info)
         totals[str(player) + ' - Total Healing Heal Type Breakdown'] = round(healtype['Total'],2)
 
         nsq.Generate_Bar_Chart(healtype)
@@ -115,7 +114,7 @@ def battlestats(bid):
         graphs[str(player) + ' - Heal Type Breakdown'] = figdata_png
         
 
-        healbrkdwn = nsq.Healing_Breakdown(bid, player, core_info)
+        healbrkdwn = nsq.Healing_Breakdown(bid, player, user_navigation_info)
         totals[str(player) + ' - Total Healing Breakdown'] = round(healbrkdwn['Total'],2)
         nsq.Generate_Bar_Chart(healbrkdwn)
         figfile = BytesIO()
@@ -125,7 +124,7 @@ def battlestats(bid):
         graphs[str(player) + ' - Healing Breakdown'] = figdata_png
         
 
-        dmgtype = nsq.Dmg_Type_Breakdown(bid, player, core_info)
+        dmgtype = nsq.Dmg_Type_Breakdown(bid, player, user_navigation_info)
         totals[str(player) + ' - Total Dmg Type Breakdown'] = round(dmgtype['Total'],2)
 
         nsq.Generate_Bar_Chart(dmgtype)
@@ -136,7 +135,7 @@ def battlestats(bid):
         graphs[str(player) + ' - Dmg Type Breakdown'] = figdata_png
         
 
-        dmgrecbrkdwn = nsq.Dmg_Received_Breakdown(bid, player, core_info)
+        dmgrecbrkdwn = nsq.Dmg_Received_Breakdown(bid, player, user_navigation_info)
         totals[str(player) + ' - Total Dmg Received Breakdown'] = round(dmgrecbrkdwn['Total'],2)
 
         nsq.Generate_Bar_Chart(dmgrecbrkdwn)
@@ -146,7 +145,7 @@ def battlestats(bid):
         figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
         graphs[str(player) + ' - Dmg Received Breakdown'] = figdata_png
         
-        dmgdealtbrkdwn = nsq.Dmg_Dealt_Breakdown(bid, player, core_info)
+        dmgdealtbrkdwn = nsq.Dmg_Dealt_Breakdown(bid, player, user_navigation_info)
         totals[str(player) + ' - Total Dmg Dealt Breakdown'] = round(dmgdealtbrkdwn['Total'],2)
         
         nsq.Generate_Bar_Chart(dmgdealtbrkdwn)
@@ -156,4 +155,4 @@ def battlestats(bid):
         figdata_png = base64.b64encode(figfile.getvalue()).decode('ascii')
         graphs[str(player) + ' - Dmg Dealt Breakdown'] = figdata_png
     
-    return render_template('core/battlestats.html', graphs=graphs, core_info=core_info, bid=bid, totals = totals)
+    return render_template('user_navigation/battlestats.html', graphs=graphs, user_navigation_info=user_navigation_info, bid=bid, totals = totals)
