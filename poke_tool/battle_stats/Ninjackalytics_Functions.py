@@ -2,7 +2,10 @@ from sqlalchemy import insert
 from sqlalchemy.sql import select
 import requests
 import re
-import connection as cnxn
+from sqlalchemy import create_engine
+from poke_tool.config import db_uri
+
+conn = create_engine(db_uri).connect()
 
 def Run_Ninjackalytics(url):
     totalsql = {}
@@ -108,8 +111,6 @@ def execute_sql(stmt):
     This function takes the table name, column names, and column_info (values to be added) and adds them to the database and prints any errors if they occur.
     """
     try:
-        print(stmt)
-        conn = cnxn.engine
         result = conn.execute(stmt)
         return(result)
 
@@ -273,11 +274,15 @@ def Get_BID_Info(response):
         except:
             return(0, usermsg)
 
+
 def Get_Team_Info(response):
     
     """
     This function takes the response from Get_Response(url) and adds to the Team Database what pokemon they brought and returns a dictionary with the nicknames discovered for each pokemon
     """
+
+    "YOU NEED TO ALPHABETIZE THE TEAMS BEFORE INSERTING SO THAT WON'T RECREATE UNIQUES"
+
     try: 
 
         battle_id = response['id']

@@ -1,4 +1,4 @@
-import config
+import poke_tool.config as config
 state = config.state
 # if state == 'dev':
 #     from io import BytesIO
@@ -16,9 +16,8 @@ import base64
 from flask import (
     Blueprint, redirect, render_template, url_for, request, flash
 )
-import Ninjackalytics_Stat_Queries as nsq
-import Ninjackalytics_Functions as nf
-
+import poke_tool.battle_stats.Ninjackalytics_Stat_Queries as nsq
+import poke_tool.battle_stats.Ninjackalytics_Functions as nf
 
 
 bp = Blueprint('core', __name__)

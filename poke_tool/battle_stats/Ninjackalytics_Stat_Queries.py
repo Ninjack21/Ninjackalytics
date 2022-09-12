@@ -1,8 +1,10 @@
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
-import connection as cnxn
-import sqlalchemy as db
+from sqlalchemy import create_engine
+from poke_tool.config import db_uri
+
+conn = create_engine(db_uri).connect()
 
 def Generate_Bar_Chart(infodict):
     """
@@ -430,8 +432,7 @@ def Advanced_Select(table_name, col, battle_id, basiccond, advcond):
 
     This function will return the response as a list
     """
-    #first connect to the database
-    conn = cnxn.engine
+
     table_name = table_name.lower()
     #define the schema and encapsulation here to use for referencing the Table Name
     schema = 'public.'
@@ -560,7 +561,7 @@ def Basic_Select(table_name, battle_id, conditionals):
 
     try:
         #first connect to the database
-        conn = cnxn.engine
+        conn
         df = pd.read_sql_query(stmt, conn)
         return(df)
     
