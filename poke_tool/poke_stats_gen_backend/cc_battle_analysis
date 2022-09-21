@@ -1,0 +1,11 @@
+from battle_log_parsing import GeneralSearch
+from sqlalchemy import create_engine
+from poke_tool.config import db_uri
+from battle_log_parsing import GeneralSearch as gs
+
+response = gs.get_response()  # This variable is best global since used so frequently
+
+
+class Ninjackalytics:
+    def __init__(self, replay_url: str):
+        self.replay_url = replay_url
