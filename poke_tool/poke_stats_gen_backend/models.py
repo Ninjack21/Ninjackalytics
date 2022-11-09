@@ -22,19 +22,16 @@ class teams(Base):
         return "<Team: %r>" % self.id
 
 
-# create a model database
 class battle_info(Base):
     __tablename__ = "battle_info"
     Battle_ID = Column(Text, unique=True)
     Date_Submitted = Column(DateTime, default=datetime.utcnow)
     Format = Column(Text, nullable=False)
     P1 = Column(Text, nullable=False)
-    P1_rank = Column(Integer, nullable=True)
-    P1_private = Column(Boolean, nullable=False)
     P1_team = Column(Integer, ForeignKey(teams.id), nullable=False)
     P2 = Column(Text, nullable=False)
-    P2_rank = Column(Integer, nullable=True)
-    P2_private = Column(Boolean, nullable=False)
+    P2_team = Column(Integer, ForeignKey(teams.id), nullable=False)
+    Rank = Column(Integer)
     Winner = Column(Text, nullable=False)
 
     def __repr__(self):
@@ -43,8 +40,8 @@ class battle_info(Base):
 
 class actions(Base):
     __tablename__ = "actions"
-    Battle_ID = Column(Text, ForeignKey(battle_info.Battle_ID))
-    Player_Name = Column(Text, nullable=False)
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
+    Player_Number = Column(Text, nullable=False)
     Turn = Column(Integer, nullable=True)
     Action = Column(Text, nullable=False)
 
@@ -54,7 +51,7 @@ class actions(Base):
 
 class damages(Base):
     __tablename__ = "damages"
-    Battle_ID = Column(Text, ForeignKey(battle_info.Battle_ID))
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Damage = Column(Numeric(5, 2), nullable=False)
     Dealer = Column(Text, nullable=False)
     Source_Name = Column(Text, nullable=True)
@@ -68,7 +65,7 @@ class damages(Base):
 
 class healing(Base):
     __tablename__ = "healing"
-    Battle_ID = Column(Text, ForeignKey(battle_info.Battle_ID))
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Healing = Column(Numeric(5, 2), nullable=False)
     Receiver = Column(Text, nullable=False)
     Source_Name = Column(Text, nullable=True)
@@ -81,8 +78,7 @@ class healing(Base):
 
 class pivots(Base):
     __tablename__ = "pivots"
-    Battle_ID = Column(Text, ForeignKey(battle_info.Battle_ID))
-    Player_Name = Column(Text, nullable=False)
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Pokemon_Enter = Column(Text, nullable=False)
     Source_Name = Column(Text, nullable=True)
     Turn = Column(Integer, nullable=False)
