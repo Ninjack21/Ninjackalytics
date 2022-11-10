@@ -7,8 +7,10 @@ from poke_tool.poke_stats_gen_backend.High_Level.Global_Functions import (
 from poke_tool.poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
     update_mon_hp,
 )
+from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
+@handle_errors
 def source(info_dic):
     line = info_dic["line"]
     turn = info_dic["turn"]
@@ -33,6 +35,7 @@ def source(info_dic):
     return heal_type
 
 
+@handle_errors
 def check_if_regenerator(info_dic):
     """
     this function simply checks the hp and if it's new updates it and returns True for regenerator healing
@@ -63,6 +66,7 @@ def check_if_regenerator(info_dic):
         return False
 
 
+@handle_errors
 def regenerator_healing(info_dic):
     """
     this simply creates the information related to the regenerator healing found (if true from check_hp
@@ -92,6 +96,7 @@ def regenerator_healing(info_dic):
     return heal_info_dic
 
 
+@handle_errors
 def move_info(info_dic):
     """
     there are 2 forms of heal move:
@@ -141,6 +146,7 @@ def move_info(info_dic):
         return line_info_dic
 
 
+@handle_errors
 def item_or_ability_info(info_dic):
     """ """
     line = info_dic["line"]
@@ -168,6 +174,7 @@ def item_or_ability_info(info_dic):
     return line_info_dic
 
 
+@handle_errors
 def passive_info(info_dic):
     line = info_dic["line"]
     turn = info_dic["turn"]

@@ -2,6 +2,7 @@ import re
 from poke_tool.poke_stats_gen_backend.High_Level.Global_Functions import (
     get_mon_obj,
 )
+from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 def is_line_significant(line):
@@ -11,6 +12,7 @@ def is_line_significant(line):
         return False
 
 
+@handle_errors
 def get_line_switch_info(info_dic, mons, battle_info_dic):
     line = info_dic["line"]
     turn = info_dic["turn"]

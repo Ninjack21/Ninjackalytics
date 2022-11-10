@@ -89,9 +89,9 @@ class pivots(Base):
 
 class errors(Base):
     __tablename__ = "errors"
-    Battle_ID = Column(Text, nullable=False)
+    Battle_URL = Column(Text, nullable=False)
     Date_Submitted = Column(DateTime, default=datetime.utcnow)
-    Current_Step = Column(Text, nullable=False)
+    Function_Name = Column(Text, nullable=False)
     Error_Message = Column(Text, nullable=True)
     Turn = Column(Integer, nullable=False)
 

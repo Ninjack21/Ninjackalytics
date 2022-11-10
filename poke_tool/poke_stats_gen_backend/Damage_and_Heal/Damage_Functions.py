@@ -9,6 +9,7 @@ from poke_tool.poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
 )
 
 import re
+from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 def source(line):
@@ -27,6 +28,7 @@ def source(line):
         return "passive"
 
 
+@handle_errors
 def normal_move_info(info_dic, receiver, move_info_dic):
     """
     the normal move info function takes the info_dic, the raw receiver name, and the move_info_dic so it can add the following
@@ -58,6 +60,7 @@ def normal_move_info(info_dic, receiver, move_info_dic):
     return move_info_dic
 
 
+@handle_errors
 def delayed_move_info(info_dic, receiver, move_info_dic):
     """
     the delayed move info cuntion takes the info_dic, the raw receiver name, and the move_info_dic so it can add the following
@@ -94,6 +97,7 @@ def delayed_move_info(info_dic, receiver, move_info_dic):
             return move_info_dic
 
 
+@handle_errors
 def doubles_move_info(info_dic, receiver, move_info_dic):
     """
     the doubles move info function takes the info_dic, the raw receiver name, and the move_info_dic so it can add the following
@@ -177,6 +181,7 @@ def doubles_move_info(info_dic, receiver, move_info_dic):
     return move_info_dic
 
 
+@handle_errors
 def doubles_anim_info(info_dic, receiver, move_info_dic):
     mons = info_dic["mons"]
     turn = info_dic["turn"]
@@ -202,6 +207,7 @@ def doubles_anim_info(info_dic, receiver, move_info_dic):
     return move_info_dic
 
 
+@handle_errors
 def move_info(info_dic):
     mons = info_dic["mons"]
     line = info_dic["line"]
@@ -276,6 +282,7 @@ def move_info(info_dic):
         return item_ability_info_dic
 
 
+@handle_errors
 def other_info(info_dic, dmg_source):
     line = info_dic["line"]
     turn = info_dic["turn"]
@@ -303,6 +310,7 @@ def other_info(info_dic, dmg_source):
     return status_hazard_info_dic
 
 
+@handle_errors
 def item_or_ability_info(info_dic, dmg_source):
     line = info_dic["line"]
     turn = info_dic["turn"]

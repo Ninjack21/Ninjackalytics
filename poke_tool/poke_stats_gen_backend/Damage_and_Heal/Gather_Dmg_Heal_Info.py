@@ -2,13 +2,12 @@ from . import Damage_Functions as Dmg
 from . import Healing_Functions as Heal
 from . import Misc_Functions as Msc
 from .General_Functions import get_line_significance
-from poke_tool.poke_stats_gen_backend.High_Level.Session import Session
 from poke_tool.poke_stats_gen_backend.models import damages, healing
 
 
-def get_damage_and_healing_info(response, mons, battle_info_dic):
+def get_damage_and_healing_info(response, mons, battle_info_dic, session):
     turns = response.turns
-    info_dic = {"turns": turns, "mons": mons}
+    info_dic = {"turns": turns, "mons": mons, "Battle_ID": battle_info_dic["Battle_ID"]}
     for turn_num in turns:
         turn = turns[turn_num]
         info_dic["turn"] = turn
@@ -55,9 +54,7 @@ def get_damage_and_healing_info(response, mons, battle_info_dic):
             if sig in ["damage", "faint"]:
                 if line_info_dic:
                     current_line_info = damages(**line_info_dic)
-                    with Session.begin() as session:
-                        session.add(current_line_info)
+                    session.add(current_line_info)
             else:
                 current_line_info = healing(**line_info_dic)
-                with Session.begin() as session:
-                    session.add(current_line_info)
+                session.add(current_line_info)
