@@ -52,9 +52,10 @@ def get_pokemon(response):
 
     if len(preview_mons) != 0:
         for prev_mon in preview_mons:
-            real_name = prev_mon[3:].split("|")[0].split("-")[0]
+            real_name = prev_mon[3:].split("|")[0].split("-")[0].replace("\n", "")
             player_num = int(prev_mon[1])
             battle_name_check = f"p{player_num} {real_name}"
+
             exists = False
             for mon in entrance_mons:
                 obj = entrance_mons[mon]

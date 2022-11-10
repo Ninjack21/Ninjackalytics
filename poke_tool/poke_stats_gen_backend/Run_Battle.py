@@ -11,6 +11,7 @@ from poke_tool.poke_stats_gen_backend.Damage_and_Heal.Gather_Dmg_Heal_Info impor
     get_damage_and_healing_info,
 )
 from poke_tool.poke_stats_gen_backend.Action.Gather_Action_Info import get_action_info
+from poke_tool.poke_stats_gen_backend.Switch.Gather_Switch_Info import get_pivot_info
 
 
 def run_battle(url):
@@ -21,4 +22,4 @@ def run_battle(url):
     if battle_info_dic["Exists"] == False:  # if already exists, backend stops
         get_damage_and_healing_info(response, mons, battle_info_dic)
         get_action_info(response, battle_info_dic)
-    # Now we need to do Switch
+        get_pivot_info(response, mons, battle_info_dic)
