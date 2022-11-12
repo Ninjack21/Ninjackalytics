@@ -1,8 +1,8 @@
 import re
-from poke_tool.poke_stats_gen_backend.models import battle_info
-from poke_tool.poke_stats_gen_backend.High_Level.Session import Session
-from poke_tool.Backend.config import REPLAY_URL
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import update_error_db
+from poke_stats_gen_backend.models import battle_info
+from poke_stats_gen_backend.High_Level.Session import Session
+from Backend.config import REPLAY_URL
+from poke_stats_gen_backend.Errors.Error_Handling import update_error_db
 import inspect
 
 

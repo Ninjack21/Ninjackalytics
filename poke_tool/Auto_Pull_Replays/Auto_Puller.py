@@ -1,11 +1,11 @@
-from poke_tool.Auto_Pull_Replays.Config import FORMATS, GENERATIONS
-from poke_tool.poke_stats_gen_backend.Run_Battle import run_battle
+from Auto_Pull_Replays.Config import FORMATS, GENERATIONS
+from poke_stats_gen_backend.Run_Battle import run_battle
 import requests
 import time
 from datetime import timedelta
-from poke_tool.Auto_Pull_Replays.Session import Session
-from poke_tool.poke_stats_gen_backend.models import battle_info
-from poke_tool.Backend.config import SEARCH_URL, REPLAY_URL
+from Auto_Pull_Replays.Session import Session
+from poke_stats_gen_backend.models import battle_info
+from Backend.config import SEARCH_URL, REPLAY_URL
 
 
 def get_gen_format_replays(gen: str, format: str, page: str):
@@ -32,6 +32,7 @@ def add_replays_to_database(legit_urls: list):
             run_battle(url)
             success += 1
         except Exception as error:
+            print(f"{url} had the error: {error}")
             failure += 1
 
     print(
@@ -43,7 +44,7 @@ def auto_runner():
     for gen in GENERATIONS:
         for format in FORMATS:
             more_battles = True
-            page_num = 15
+            page_num = 1
             print(f"\n\n----- BEGIN SEARCHING FOR {gen}{format} BATTLES ------\n\n")
             while more_battles:
                 legit_urls = get_gen_format_replays(gen, format, page_num)

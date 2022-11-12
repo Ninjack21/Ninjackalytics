@@ -1,8 +1,5 @@
 import re
-from poke_tool.poke_stats_gen_backend.High_Level.Global_Functions import (
-    get_mon_obj,
-)
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 def is_line_significant(line):

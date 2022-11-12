@@ -1,5 +1,5 @@
 import re
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 @handle_errors

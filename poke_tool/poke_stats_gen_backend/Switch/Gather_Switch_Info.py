@@ -1,6 +1,6 @@
-from poke_tool.poke_stats_gen_backend.High_Level import Classes
+from poke_stats_gen_backend.High_Level import Classes
 from .General_Functions import is_line_significant, get_line_switch_info
-from poke_tool.poke_stats_gen_backend.models import pivots
+from poke_stats_gen_backend.models import pivots
 
 
 def get_pivot_info(response, mons, battle_info_dic, session):

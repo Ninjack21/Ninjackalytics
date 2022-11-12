@@ -1,5 +1,5 @@
 from flask import Flask
-import poke_tool.config as config
+import config as config
 import os
 
 def create_app(test_config=None, db_uri=config.db_uri):

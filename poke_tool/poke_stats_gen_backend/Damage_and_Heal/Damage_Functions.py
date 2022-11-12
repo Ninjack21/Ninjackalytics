@@ -1,15 +1,12 @@
 from . import Classes
-
-from poke_tool.poke_stats_gen_backend.High_Level.Global_Functions import (
+from poke_stats_gen_backend.High_Level.Global_Functions import (
     get_mon_obj,
 )
-
-from poke_tool.poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
+from poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
     update_mon_hp,
 )
-
 import re
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 def source(line):
@@ -63,7 +60,7 @@ def normal_move_info(info_dic, receiver, move_info_dic):
 @handle_errors
 def delayed_move_info(info_dic, receiver, move_info_dic):
     """
-    the delayed move info cuntion takes the info_dic, the raw receiver name, and the move_info_dic so it can add the following
+    the delayed move info funtion takes the info_dic, the raw receiver name, and the move_info_dic so it can add the following
     to the move_info_dic by searching for |-start| to determine what caused |-end|:
     Source Name = Move Name
     Dealer = Dealer real name
@@ -246,40 +243,6 @@ def move_info(info_dic):
         move_info_dic = doubles_move_info(info_dic, receiver, move_info_dic)
 
     return move_info_dic
-
-    def item_or_ability_info(info_dic):
-        line = info_dic["line"]
-        turn = info_dic["turn"]
-        mons = info_dic["mons"]
-        line_pattern = (
-            "[^\|]+"  # this breaks out a line into it's key parts by "|" dividers
-        )
-        dmg_line = re.findall(line_pattern, line.line)
-        item_ability_info_dic = {}
-
-        receiver = dmg_line[1]
-        rec_mon_obj = BattleLogFunctions.get_mon_obj(receiver, mons)
-        item_ability_info_dic["Receiver"] = rec_mon_obj.battle_name
-
-        item_ability_name = dmg_line[3].split(": ")[1]
-        item_ability_info_dic["Source_Name"] = item_ability_name
-
-        if len(dmg_line) == 5:  # this means we have the "[of]" text for a dealer
-            dealer = dmg_line[4].split("[of] ")[1]
-            dealer_mon_obj = BattleLogFunctions.get_mon_obj(dealer, mons)
-            item_ability_info_dic["Dealer"] = dealer_mon_obj.battle_name
-        else:  # this means it was a self inflicted ability or item
-            item_ability_info_dic["Dealer"] = rec_mon_obj.battle_name
-
-        BattleLogFunctions.update_mon_hp(line, rec_mon_obj)
-        item_ability_info_dic["Damage"] = abs(rec_mon_obj.get_hp_change)
-
-        dtype = dmg_line[3].split(": ")[0].split("[from] ")[1]
-
-        item_ability_info_dic["Turn"] = info_dic["turn"].number
-        item_ability_info_dic["Type"] = dtype
-
-        return item_ability_info_dic
 
 
 @handle_errors

@@ -94,6 +94,7 @@ class errors(Base):
     Function_Name = Column(Text, nullable=False)
     Error_Message = Column(Text, nullable=True)
     Turn = Column(Integer, nullable=False)
+    Line = Column(Text, nullable=False)
 
     def __repr__(self):
         return "<Error: %r>" % self.Error_Message

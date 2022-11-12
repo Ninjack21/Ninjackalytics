@@ -1,13 +1,11 @@
 import re
-
-from poke_tool.poke_stats_gen_backend.High_Level.Global_Functions import (
+from poke_stats_gen_backend.High_Level.Global_Functions import (
     get_mon_obj,
 )
-
-from poke_tool.poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
+from poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
     update_mon_hp,
 )
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 @handle_errors

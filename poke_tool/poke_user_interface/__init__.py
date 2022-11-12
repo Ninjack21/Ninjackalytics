@@ -1,5 +1,5 @@
 from flask import Flask
-import poke_tool.config as config
+import config as config
 import os
 
 

@@ -1,10 +1,10 @@
-from poke_tool.poke_stats_gen_backend.High_Level.Session import Session
-from poke_tool.poke_stats_gen_backend.models import teams
-from poke_tool.poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from poke_stats_gen_backend.High_Level.Session import Session
+from poke_stats_gen_backend.models import teams
+from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
 
 
 @handle_errors
-def get_team_info(mons, info_dic):
+def get_team_info(info_dic, mons):
     p1_mon_list = []
     p2_mon_list = []
     for mon in mons:
