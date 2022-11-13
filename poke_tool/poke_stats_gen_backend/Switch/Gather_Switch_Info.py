@@ -5,7 +5,11 @@ from poke_stats_gen_backend.models import pivots
 
 def get_pivot_info(response, mons, battle_info_dic, session):
     turns = response.turns
-    info_dic = {"mons": mons, "Battle_ID": battle_info_dic["Battle_ID"]}
+    info_dic = {
+        "mons": mons,
+        "Battle_ID": battle_info_dic["Battle_ID"],
+        "Table_ID": battle_info_dic["Table_ID"],
+    }
     for turn_num in turns:
         turn = turns[turn_num]
         info_dic["turn"] = turn
@@ -15,6 +19,6 @@ def get_pivot_info(response, mons, battle_info_dic, session):
             info_dic["line"] = line
             sig = is_line_significant(line)
             if sig:
-                switch_info = get_line_switch_info(info_dic, mons, battle_info_dic)
+                switch_info = get_line_switch_info(info_dic, mons)
                 pivot = pivots(**switch_info)
                 session.add(pivot)

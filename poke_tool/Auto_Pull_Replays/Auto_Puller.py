@@ -50,7 +50,7 @@ def auto_runner():
                 legit_urls = get_gen_format_replays(gen, format, page_num)
                 if not legit_urls:
                     page_num += 1
-                elif page_num > 25:
+                elif page_num == 25:
                     more_battles = False
                 else:
                     add_replays_to_database(legit_urls)

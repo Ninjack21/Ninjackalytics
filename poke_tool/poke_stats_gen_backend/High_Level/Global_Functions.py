@@ -15,7 +15,6 @@ def get_response(replay_url) -> bool:
     if response.status_code == 200:
 
         response = response.json()
-        battle_id = response["id"]
         return response
 
     else:

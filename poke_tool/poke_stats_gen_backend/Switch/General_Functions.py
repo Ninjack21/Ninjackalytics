@@ -13,10 +13,10 @@ def is_line_significant(line):
 
 
 @handle_errors
-def get_line_switch_info(info_dic, mons, battle_info_dic):
+def get_line_switch_info(info_dic, mons):
     line = info_dic["line"]
     turn = info_dic["turn"]
-    line_info_dic = {"Turn": turn.number, "Battle_ID": battle_info_dic["Table_ID"]}
+    line_info_dic = {"Turn": turn.number, "Battle_ID": info_dic["Table_ID"]}
 
     pattern = r"[^\|]+"
     line_info = re.findall(pattern, line.line)

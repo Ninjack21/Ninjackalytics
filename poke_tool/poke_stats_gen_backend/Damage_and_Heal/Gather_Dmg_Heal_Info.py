@@ -7,13 +7,17 @@ from poke_stats_gen_backend.models import damages, healing
 
 def get_damage_and_healing_info(response, mons, battle_info_dic, session):
     turns = response.turns
-    info_dic = {"turns": turns, "mons": mons, "Battle_ID": battle_info_dic["Battle_ID"]}
+    info_dic = {
+        "turns": turns,
+        "mons": mons,
+        "Battle_ID": battle_info_dic["Battle_ID"],
+        "Table_ID": battle_info_dic["Table_ID"],
+    }
     for turn_num in turns:
         turn = turns[turn_num]
         info_dic["turn"] = turn
         lines = turn.lines
         for line_num in lines:
-            line_info_dic = {"Battle_ID": battle_info_dic["Table_ID"]}
             line = lines[line_num]
             info_dic["line"] = line
             sig = get_line_significance(line)

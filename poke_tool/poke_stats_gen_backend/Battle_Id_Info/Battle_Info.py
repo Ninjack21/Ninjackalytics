@@ -1,5 +1,5 @@
 import re
-from poke_stats_gen_backend.models import battle_info
+from poke_stats_gen_backend.models import battle_info, errors
 from poke_stats_gen_backend.High_Level.Session import Session
 from Backend.config import REPLAY_URL
 from poke_stats_gen_backend.Errors.Error_Handling import update_error_db
@@ -61,7 +61,12 @@ def get_bid_info(response, team_info_dict):
             exists = (
                 session.query(battle_info.id).filter_by(Battle_ID=battle_id).first()
             )
-            if not exists:
+            previous_error = (
+                session.query(errors.Battle_URL)
+                .filter_by(Battle_URL=f"{REPLAY_URL}{battle_id}")
+                .first()
+            )
+            if not exists and not previous_error:
                 session.add(current_battle_info)
                 session.flush()
                 return_dict["Table_ID"] = current_battle_info.id

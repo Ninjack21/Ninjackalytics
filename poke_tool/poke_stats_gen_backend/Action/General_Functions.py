@@ -10,9 +10,9 @@ def is_line_significant(line):
 
 
 @handle_errors
-def get_line_action_info(info_dic, battle_info_dic):
+def get_line_action_info(info_dic):
     turn = info_dic["turn"]
-    battle_table_id = battle_info_dic["Table_ID"]
+    battle_table_id = info_dic["Table_ID"]
     p1_action_dic = {
         "Turn": turn.number,
         "Battle_ID": battle_table_id,

@@ -16,6 +16,7 @@ from poke_stats_gen_backend.High_Level.Session import Session
 
 
 def run_battle(url):
+    # let's later update this to first check if it exists and only then do team info stuff
     response = Response(get_response(url))
     mons = get_pokemon(response)
     info_dic = {"Battle_ID": response.battle_id}

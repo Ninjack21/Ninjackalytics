@@ -4,15 +4,18 @@ class Response:
         self.battle_id = response["id"]
         self.format = response["format"]
 
-        battle_start = self.log.split("|start\n")[1]
-        log_turns = battle_start.split("|turn|")
-        turn_num = 0
-        turns = {}
-        for turn_str in log_turns:
-            turns[turn_num] = Turn(turn_num, turn_str)
-            turn_num += 1
+        try:
+            battle_start = self.log.split("|start\n")[1]
+            log_turns = battle_start.split("|turn|")
+            turn_num = 0
+            turns = {}
+            for turn_str in log_turns:
+                turns[turn_num] = Turn(turn_num, turn_str)
+                turn_num += 1
 
-        self.turns = turns
+            self.turns = turns
+        except:  # this means they timed out before selecting a mon at team preview
+            self.turns = {}
 
 
 class Turn:
