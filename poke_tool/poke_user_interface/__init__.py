@@ -1,9 +1,9 @@
 from flask import Flask
-import config as config
+from ..config import db_uri
 import os
 
 
-def create_app(test_config=None, db_uri=config.db_uri):
+def create_app(test_config=None, db_uri=db_uri):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
