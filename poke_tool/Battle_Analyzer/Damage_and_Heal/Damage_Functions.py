@@ -1,12 +1,12 @@
-from . import Classes
-from poke_stats_gen_backend.High_Level.Global_Functions import (
+from . import Models
+from Battle_Analyzer.High_Level.Global_Functions import (
     get_mon_obj,
 )
-from poke_stats_gen_backend.Damage_and_Heal.General_Functions import (
+from Battle_Analyzer.Damage_and_Heal.General_Functions import (
     update_mon_hp,
 )
 import re
-from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from Battle_Analyzer.Errors.Error_Handling import handle_errors
 
 
 def source(line):
@@ -17,9 +17,9 @@ def source(line):
         return "item"
     elif "[from] ability:" in line_str:
         return "ability"
-    elif Classes.Hazards.check_hazards(line_str):
+    elif Models.Hazards.check_hazards(line_str):
         return "hazard"
-    elif Classes.Statuses.check_statuses(line_str):
+    elif Models.Statuses.check_statuses(line_str):
         return "status"
     else:
         return "passive"

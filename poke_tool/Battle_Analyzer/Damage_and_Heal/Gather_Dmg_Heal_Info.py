@@ -2,7 +2,7 @@ from . import Damage_Functions as Dmg
 from . import Healing_Functions as Heal
 from . import Misc_Functions as Msc
 from .General_Functions import get_line_significance
-from poke_stats_gen_backend.models import damages, healing
+from Battle_Analyzer.Models import damages, healing
 
 
 def get_damage_and_healing_info(response, mons, battle_info_dic, session):

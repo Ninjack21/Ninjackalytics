@@ -1,19 +1,22 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from config import db_uri
-from ..poke_stats_gen_backend.models import *
-from ..Backend.config import REPLAY_URL
+from poke_tool.poke_stats_gen_backend.models import *
+from poke_tool.Backend.config import REPLAY_URL
 import pandas as pd
 
 engine = create_engine(db_uri)
 Session = sessionmaker(engine)
 
-
 class BattleData:
-    def __init__(self, url: str) -> None:
-        self.url = url
-        self.battle_id = url.split(REPLAY_URL)[1]
+    def __init__(self, battle_id: str, table_id=None) -> None:
+        self.battle_id = battle_id
+        self.table_id = table_id
 
+    def get_table_id(self):
+        with Session.begin() as session:
+
+    
     def get_basic_info(self):
         with Session.begin() as session:
             q = (
@@ -88,15 +91,53 @@ class BattleData:
             df = pd.read_sql(q, session.bind)
         return df
 
-    def get_aggregate_info(self):
+    def _aggregate_player_info(self, player_number):
         damage_df = self.get_damage_info()
+        damage_df = damage_df.rename(
+            columns={
+                "Source_Name": "Damage_Source",
+                "Receiver": "Dmg_Receiver",
+                "Type": "Dmg_Type",
+            }
+        )
+        damage_df = damage_df[damage_df["Dealer"].str.startswith(f"P{player_number}")]
+
         healing_df = self.get_healing_info()
+        healing_df = healing_df.rename(
+            columns={
+                "Source_Name": "Healing_Source",
+                "Receiver": "Healing_Receiver",
+                "Type": "Healing_Type",
+            }
+        )
+        healing_df = healing_df[
+            healing_df["Healing_Receiver"].str.startswith(f"P{player_number}")
+        ]
+
         pivots_df = self.get_pivots_info()
+        pivots_df = pivots_df.rename(
+            columns={
+                "Source_Name": "Pivot_Source",
+            }
+        )
+        pivots_df = pivots_df[
+            pivots_df["Pokemon_Enter"].str.startswith(f"P{player_number}")
+        ]
+
         actions_df = self.get_actions_info()
+        actions_df = actions_df[
+            actions_df["Player_Number"].str.startswith(f"P{player_number}")
+        ]
 
         df = (
             damage_df.merge(healing_df, how="outer", on=["Turn"])
             .merge(pivots_df, how="outer", on=["Turn"])
             .merge(actions_df, how="outer", on=["Turn"])
         )
+        return df
+
+    def get_aggregate_data(self):
+        p1_df = self._aggregate_player_info(1)
+        p2_df = self._aggregate_player_info(2)
+        df = p1_df.merge(p2_df, how="outer", on=["Turn"])
         return df

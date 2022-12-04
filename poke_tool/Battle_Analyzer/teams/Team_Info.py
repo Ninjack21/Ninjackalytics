@@ -1,6 +1,6 @@
-from poke_stats_gen_backend.High_Level.Session import Session
-from poke_stats_gen_backend.models import teams
-from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from Battle_Analyzer.High_Level.Session import Session
+from Battle_Analyzer.Models import teams
+from Battle_Analyzer.Errors.Error_Handling import handle_errors
 
 
 @handle_errors

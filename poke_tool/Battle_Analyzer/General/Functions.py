@@ -1,6 +1,6 @@
 import requests
 import re
-from . import Classes
+from . import Models
 
 
 def get_response(replay_url) -> bool:
@@ -40,7 +40,7 @@ def get_pokemon(response):
         if not real_name.endswith("-Mega"):
             nickname = name_lookup[0][5:]
             player_num = int(name_lookup[0][1:2])
-            entrance_mons[f"p{player_num} {nickname}"] = Classes.Pokemon(
+            entrance_mons[f"p{player_num} {nickname}"] = Models.Pokemon(
                 real_name, nickname, player_num
             )  # dict of mons with unique key of pnum nickname
 
@@ -61,7 +61,7 @@ def get_pokemon(response):
                 if obj.battle_name.startswith(battle_name_check):
                     exists = True
             if not exists:
-                all_mons[battle_name_check] = Classes.Pokemon(
+                all_mons[battle_name_check] = Models.Pokemon(
                     real_name, real_name, player_num
                 )  # if we get here then this mon didn't enter battle but we should add it
 

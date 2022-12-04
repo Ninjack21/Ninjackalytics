@@ -1,4 +1,4 @@
-from poke_user_interface import create_app
+from frontend import create_app
 from flask_sqlalchemy import SQLAlchemy
 from config import db_design, db_uri
 from sqlalchemy import create_engine

@@ -1,5 +1,5 @@
 import re
-from poke_stats_gen_backend.Errors.Error_Handling import handle_errors
+from Battle_Analyzer.Errors.Error_Handling import handle_errors
 
 
 def is_line_significant(line):

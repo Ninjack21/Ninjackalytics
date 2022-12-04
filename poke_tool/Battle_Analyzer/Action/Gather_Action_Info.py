@@ -1,6 +1,6 @@
-from poke_stats_gen_backend.High_Level import Classes
+from Battle_Analyzer.High_Level import Models
 from .General_Functions import get_line_action_info
-from poke_stats_gen_backend.models import actions
+from Battle_Analyzer.Models import actions
 
 
 def get_action_info(response, battle_info_dic, session):

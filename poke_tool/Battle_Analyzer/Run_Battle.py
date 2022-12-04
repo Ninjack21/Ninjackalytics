@@ -1,18 +1,18 @@
 import re
-from poke_stats_gen_backend.Battle_Id_Info.Battle_Info import get_bid_info
-from poke_stats_gen_backend.High_Level.Global_Functions import (
+from Battle_Analyzer.Battle_Id_Info.Battle_Info import get_bid_info
+from Battle_Analyzer.High_Level.Global_Functions import (
     get_response,
     get_pokemon,
 )
-from poke_stats_gen_backend.Team.Team_Info import get_team_info
-from poke_stats_gen_backend.High_Level.Classes import *
-from poke_stats_gen_backend.models import *
-from poke_stats_gen_backend.Damage_and_Heal.Gather_Dmg_Heal_Info import (
+from Battle_Analyzer.Team.Team_Info import get_team_info
+from Battle_Analyzer.High_Level.Models import *
+from Battle_Analyzer.Models import *
+from Battle_Analyzer.Damage_and_Heal.Gather_Dmg_Heal_Info import (
     get_damage_and_healing_info,
 )
-from poke_stats_gen_backend.Action.Gather_Action_Info import get_action_info
-from poke_stats_gen_backend.Switch.Gather_Switch_Info import get_pivot_info
-from poke_stats_gen_backend.High_Level.Session import Session
+from Battle_Analyzer.Action.Gather_Action_Info import get_action_info
+from Battle_Analyzer.Switch.Gather_Switch_Info import get_pivot_info
+from Battle_Analyzer.High_Level.Session import Session
 
 
 def run_battle(url):

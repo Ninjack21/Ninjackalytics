@@ -12,14 +12,14 @@ Base.query = db_session.query_property()
 
 
 def init_db():
-    import poke_stats_gen_backend.models
+    import Battle_Analyzer.Models
     import auth.models
 
     Base.metadata.create_all(bind=engine)
 
 
 def update_db():
-    import poke_stats_gen_backend.models
+    import Battle_Analyzer.Models
     import auth.models
 
     print("update db currently just deletes all tables in the database")

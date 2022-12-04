@@ -1,6 +1,6 @@
-from poke_stats_gen_backend.High_Level.Session import Session
-from poke_stats_gen_backend.models import *
-from Backend.config import REPLAY_URL
+from Battle_Analyzer.High_Level.Session import Session
+from Battle_Analyzer.Models import *
+from Backend.Config import REPLAY_URL
 from Auto_Pull_Replays.Config import ERROR_RETURN_DIC
 from inspect import getmembers, isfunction, isclass
 
@@ -48,12 +48,12 @@ def handle_errors(f):
 
 
 def trim_error_return_dic(name, return_dic):
-    import poke_stats_gen_backend.Action.General_Functions as action
-    import poke_stats_gen_backend.Damage_and_Heal.Damage_Functions as dmg
-    import poke_stats_gen_backend.Damage_and_Heal.Misc_Functions as msc
-    import poke_stats_gen_backend.Damage_and_Heal.Healing_Functions as heal
-    import poke_stats_gen_backend.Switch.General_Functions as switch
-    from poke_stats_gen_backend.models import damages, healing, pivots, actions
+    import Battle_Analyzer.Action.General_Functions as action
+    import Battle_Analyzer.Damage_and_Heal.Damage_Functions as dmg
+    import Battle_Analyzer.Damage_and_Heal.Misc_Functions as msc
+    import Battle_Analyzer.Damage_and_Heal.Healing_Functions as heal
+    import Battle_Analyzer.Switch.General_Functions as switch
+    from Battle_Analyzer.Models import damages, healing, pivots, actions
 
     all_funcs = {
         "action_functions": getmembers(action, isfunction),
