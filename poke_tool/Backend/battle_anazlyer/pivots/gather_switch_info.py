@@ -1,5 +1,5 @@
 from Battle_Analyzer.High_Level import Models
-from .General_Functions import is_line_significant, get_line_switch_info
+from .general_functions import is_line_significant, get_line_switch_info
 from Battle_Analyzer.Models import pivots
 
 

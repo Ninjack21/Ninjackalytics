@@ -1,5 +1,5 @@
 from Battle_Analyzer.High_Level import Models
-from .General_Functions import get_line_action_info
+from .general_functions import get_line_action_info
 from Battle_Analyzer.Models import actions
 
 
