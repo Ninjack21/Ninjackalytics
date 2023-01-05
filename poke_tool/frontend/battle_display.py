@@ -8,15 +8,12 @@ import pandas as pd
 engine = create_engine(db_uri)
 Session = sessionmaker(engine)
 
+
 class BattleData:
     def __init__(self, battle_id: str, table_id=None) -> None:
         self.battle_id = battle_id
         self.table_id = table_id
 
-    def get_table_id(self):
-        with Session.begin() as session:
-
-    
     def get_basic_info(self):
         with Session.begin() as session:
             q = (
