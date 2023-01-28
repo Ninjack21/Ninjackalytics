@@ -10,9 +10,14 @@ Session = sessionmaker(engine)
 
 
 class BattleData:
-    def __init__(self, battle_id: str, table_id=None) -> None:
+    def __init__(self, battle_id: str) -> None:
         self.battle_id = battle_id
         self.table_id = table_id
+
+    def _get_table_id(self):
+        """
+        Use the battle_id to determine the table id
+        """
 
     def get_basic_info(self):
         with Session.begin() as session:

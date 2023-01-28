@@ -1,41 +1,38 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 
-{% block title %}Submit Replay{% endblock %} 
+{% block title %}Submit Replay{% endblock %}
 
 {% block content %}
-    <div class="container-fluid p-3"
-        style = "background-color: black; width:100%;">
-        <div class = 'row'>
-            <div class = 'col-8'>
-                <h1 class = 'display-1' style="text-align:center;color:#fefe01">Welcome</h1>
-                <h1 class = 'display-1' style="text-align:center;color:#fefe01">To</h1>
-                <h1 class = 'display-1' style="text-align:center;color:#fefe01">Ninjackalytics!</h1>
-                <h1 class = 'display-4' style="text-align:center;color:#fefe01">Version: Beta 1.0</h1>
-            </div>
-            <div class = 'col-4'>
-                <img class='img-fluid' src = "{{ url_for('static', filename='Ninjack - Transparent.png') }}" />
-            </div>
+<div class="container-fluid p-3" style="background-color: black; width:100%;">
+    <div class='row'>
+        <div class='col-8'>
+            <h1 class='display-1' style="text-align:center;color:#fefe01">Welcome</h1>
+            <h1 class='display-1' style="text-align:center;color:#fefe01">To</h1>
+            <h1 class='display-1' style="text-align:center;color:#fefe01">Ninjackalytics!</h1>
+            <h1 class='display-4' style="text-align:center;color:#fefe01">Version: Beta 1.0</h1>
+        </div>
+        <div class='col-4'>
+            <img class='img-fluid' src="{{ url_for('static', filename='Ninjack - Transparent.png') }}" />
         </div>
     </div>
-    <div class="container-fluid p-3"
-        style = "background-color: black; width:100%;">
-        <form method="post">
-            <div class="form-group row">
-                <div class = 'col-auto'>
-                    <label for="url" class="display-4" style="text-align:center;color:#fefe01">Enter Replay URL:</label>
-                </div>
+</div>
+<div class="container-fluid p-3" style="background-color: black; width:100%;">
+    <form method="post">
+        <div class="form-group row">
+            <div class='col-auto'>
+                <label for="url" class="display-4" style="text-align:center;color:#fefe01">Enter Replay URL:</label>
             </div>
-            <div class = 'form-group-row'></div>
-                <div class="col-6">
-                    <input type="url" class="form-control form-control-lg" id="url" name = 'url' placeholder="e.x. https://replay.pokemonshowdown.com/gen8ou-1623501377" required>
-                </div>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary mb-3">Submit Battle</button>
-            </div>
-            <div class="col-auto">
-                <p style="text-align:left;color:#fefe01">Enter a replay URL like 'https://replay.pokemonshowdown.com/gen8ou-1623501377' to get battle specific metrics!</p>
-            </div>
-          </form>
-    </div>
+        </div>
+        <div class='form-group-row'></div>
+        <div class="col-6">
+            <input type="url" class="form-control form-control-lg" id="url" name='url'
+                placeholder="https://replay.pokemonshowdown.com/" required>
+        </div>
+</div>
+<div class="col-auto">
+    <button type="submit" class="btn btn-primary mb-3">Submit Battle:</button>
+</div>
+
+</form>
+</div>
 {% endblock %}
