@@ -185,19 +185,23 @@ class TestGetPokemon(unittest.TestCase):
     def test_get_pokemon(self):
         """
         There is a missing piece to this function. The expected number of discovered
-        pokemon objects should indeed be 4, yet we get 8. The reason? Currently,
+        pokemon objects should indeed be 4, yet we get 6. The reason? Currently,
         the get_pokemon function does not realize that the pokemon from the team preview
-        are actually duplicates of the ones from the entrances.
+        are actually duplicates of the ones from the entrances, but the battle names made
+        by pokemon objects from team previews do not see the true nickname (reference
+        the docstring in the create params from preview mons function). As such, the unique
+        identifier in the dictionary of pokemon objects appears different even though, if you
+        equated the two pokemon objects you'd discover they are in fact the same (as defined
+        in the __eq__ method of the pokemon object).
 
-        Entrances should overwrite team preview mons. The most obvious way to do this in
-        my mind is to add a check step function before returning mons_objects that
-        looks to see if there are any duplicates where player_num + real_name = the same
-        thing.
+        Entrances should overwrite team preview mons. To do this, the pokemon objects should
+        be compared with an equals operator and the entrance mon should overwrite that of
+        any pokemon objects made from the team preview.
 
         For example, in the above code, if evaluated, we would discover that a mons object
         for p1 Skarmory exists twice, once with the nickname "Skarmory" and once with the
-        nickname "Valkyrie". We would want to delete the one associated with the team
-        preview.
+        nickname "Valkyrie" (battle names p1 Skarmory & p1 Valkyrie, respectively).
+        We would want to delete the one associated with the team preview (p1 Skarmory).
         """
         mons_objects = get_pokemon(self.battle_log)
 
