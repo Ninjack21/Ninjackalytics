@@ -206,31 +206,31 @@ class TestGetPokemon(unittest.TestCase):
         mons_objects = get_pokemon(self.battle_log)
 
         # Check that the correct number of Pokemon objects were created
-        self.assertEqual(len(mons_objects), 4)
+        self.assertEqual(len(mons_objects), 6)
 
         # Check that the properties of the first Pokemon object are correct
-        self.assertEqual(mons_objects[0].real_name, "Skarmory")
-        self.assertEqual(mons_objects[0].nickname, "Valkyrie")
-        self.assertEqual(mons_objects[0].hp, 100)
-        self.assertEqual(mons_objects[0].hp_change, None)
-        self.assertEqual(mons_objects[0].player_num, 1)
-        self.assertEqual(mons_objects[0].battle_name, "p1 Skarmory")
+        self.assertEqual(mons_objects["p1 Skarmory"].real_name, "Skarmory")
+        self.assertEqual(mons_objects["p1 Skarmory"].nickname, "Valkyrie")
+        self.assertEqual(mons_objects["p1 Skarmory"].hp, 100)
+        self.assertEqual(mons_objects["p1 Skarmory"].hp_change, None)
+        self.assertEqual(mons_objects["p1 Skarmory"].player_num, "1")
+        self.assertEqual(mons_objects["p1 Skarmory"].battle_name, "p1 Skarmory")
 
         # Check that the properties of the second Pokemon object are correct
-        self.assertEqual(mons_objects[1].real_name, "Heatran")
-        self.assertEqual(mons_objects[1].nickname, "Fiammetta")
-        self.assertEqual(mons_objects[1].hp, 100)
-        self.assertEqual(mons_objects[1].hp_change, None)
-        self.assertEqual(mons_objects[1].player_num, 1)
-        self.assertEqual(mons_objects[1].battle_name, "p1 Heatran")
+        self.assertEqual(mons_objects["p1 Heatran"].real_name, "Heatran")
+        self.assertEqual(mons_objects["p1 Heatran"].nickname, "Fiammetta")
+        self.assertEqual(mons_objects["p1 Heatran"].hp, 100)
+        self.assertEqual(mons_objects["p1 Heatran"].hp_change, None)
+        self.assertEqual(mons_objects["p1 Heatran"].player_num, "1")
+        self.assertEqual(mons_objects["p1 Heatran"].battle_name, "p1 Heatran")
 
         # Check that the properties of the third Pokemon object are correct
-        self.assertEqual(mons_objects[2].real_name, "Magnezone")
-        self.assertEqual(mons_objects[2].nickname, "HK-51")
-        self.assertEqual(mons_objects[2].hp, 100)
-        self.assertEqual(mons_objects[2].hp_change, None)
-        self.assertEqual(mons_objects[2].player_num, 1)
-        self.assertEqual(mons_objects[2].battle_name, "p1 Magnezone")
+        self.assertEqual(mons_objects["p1 Magnezone"].real_name, "Magnezone")
+        self.assertEqual(mons_objects["p1 Magnezone"].nickname, "HK-51")
+        self.assertEqual(mons_objects["p1 Magnezone"].hp, 100)
+        self.assertEqual(mons_objects["p1 Magnezone"].hp_change, None)
+        self.assertEqual(mons_objects["p1 Magnezone"].player_num, "1")
+        self.assertEqual(mons_objects["p1 Magnezone"].battle_name, "p1 Magnezone")
 
 
 if __name__ == "__main__":
