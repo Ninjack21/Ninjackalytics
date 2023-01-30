@@ -30,9 +30,9 @@ def get_pokemon(response):
     within the actual battle log itself it is less useful to use the team preview mons.
     More work would be required to recognize the pokemon.
 
-    The expected return of this function is a dictionary of all of the mon oobjects where
+    The expected return of this function is a dictionary of all of the mon objects where
     the keys are the "battle name" of the pokemon (which is simply the player number and
-    then the pokemon nickname - which is always unique).
+    then the pokemon real_name - which is always unique).
     """
     battle_log = response["log"]
     preview_mons = extract_preview_mons(battle_log)
@@ -75,14 +75,14 @@ def extract_entrances(battle_log):
 def create_pokemon_objects(pokemon_object_params: list) -> object:
     """
     This function is here to take the list of pokemon_object_params and create
-    a list of the actual pokemon objects.
+    a dictionary of the actual pokemon objects with their battle name as the keys.
     """
 
     pokemon = {}
     for pokemon_params in pokemon_object_params:
-        new_pokemon = models.Pokemon(**pokemon_params)
+        NewPokemon = models.Pokemon(**pokemon_params)
 
-        pokemon[new_pokemon.battle_name] = new_pokemon
+        pokemon[NewPokemon.battle_name] = NewPokemon
 
     return pokemon
 
@@ -146,11 +146,11 @@ def create_pokemon_params_from_preview(preview_mons_list):
     from entrances in a battle.
     """
     pokemon_data = []
-    for mons in preview_mons_list:
-        split_mons = mons.split("|")
-        player_num = split_mons[0][1]
-        real_name = split_mons[1]
-        nickname = split_mons[1]
+    for mon in preview_mons_list:
+        split_mon = mon.split("|")
+        player_num = split_mon[0][1]
+        real_name = split_mon[1]
+        nickname = split_mon[1]
         pokemon_data.append(
             {"real_name": real_name, "nickname": nickname, "player_num": player_num}
         )
