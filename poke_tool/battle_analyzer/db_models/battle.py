@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, Text, DateTime, Boolean, ForeignKey, Num
 from datetime import datetime
 from database import Base
 
+
 # Define a base model for other database tables to inherit
 class Base(Base):
-
     __abstract__ = True
     id = Column(Integer, primary_key=True)
 
