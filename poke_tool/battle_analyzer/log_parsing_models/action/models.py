@@ -1,9 +1,22 @@
-from typing import List
+from typing import List, Protocol
 import re
 
 
+class Turn(Protocol):
+    number: int
+    text: str
+
+
+class Battle(Protocol):
+    def get_turns(self) -> List[Turn]:
+        ...
+
+    def get_log(self) -> str:
+        ...
+
+
 class ActionData:
-    def __init__(self, battle: object):
+    def __init__(self, battle: Battle):
         self.battle = battle
 
     def get_action_data(self, battle_id: int) -> List[dict]:

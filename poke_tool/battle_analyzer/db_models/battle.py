@@ -54,8 +54,10 @@ class damages(Base):
     Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Damage = Column(Numeric(5, 2), nullable=False)
     Dealer = Column(Text, nullable=False)
+    Dealer_Player_Number = Column(Integer, nullable=False)
     Source_Name = Column(Text, nullable=True)
     Receiver = Column(Text, nullable=False)
+    Receiver_Player_Number = Column(Integer, nullable=False)
     Turn = Column(Integer, nullable=False)
     Type = Column(Text, nullable=False)
 
@@ -68,6 +70,7 @@ class healing(Base):
     Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Healing = Column(Numeric(5, 2), nullable=False)
     Receiver = Column(Text, nullable=False)
+    Receiver_Player_Number = Column(Integer, nullable=False)
     Source_Name = Column(Text, nullable=True)
     Turn = Column(Integer, nullable=False)
     Type = Column(Text, nullable=False)
@@ -80,6 +83,7 @@ class pivots(Base):
     __tablename__ = "pivots"
     Battle_ID = Column(Integer, ForeignKey(battle_info.id))
     Pokemon_Enter = Column(Text, nullable=False)
+    Player_Number = Column(Integer, nullable=False)
     Source_Name = Column(Text, nullable=True)
     Turn = Column(Integer, nullable=False)
 

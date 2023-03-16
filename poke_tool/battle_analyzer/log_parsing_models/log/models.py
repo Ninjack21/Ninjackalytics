@@ -1,6 +1,6 @@
 import requests
 import re
-from typing import Optional, Iterable
+from typing import Optional, List
 
 
 class Battle:
@@ -38,6 +38,23 @@ class Battle:
         except requests.exceptions.RequestException:
             raise ValueError(f"An error occurred while trying to access the URL")
 
+    def get_lines(self) -> list:
+        """
+        Get a list of all Line objects in the battle.
+
+        Returns:
+        --------
+        List[Line]:
+            A list of all Line objects in the battle.
+        """
+        lines = [
+            line
+            for turn in self.get_turns()
+            for line in turn.lines
+            if bool(line.text.strip())
+        ]
+        return lines
+
     def get_turn(self, turn_num: int) -> Optional["Turn"]:
         """
         Get the Turn object for the specified turn number.
@@ -57,7 +74,7 @@ class Battle:
         except IndexError:
             return None
 
-    def get_turns(self) -> list():
+    def get_turns(self) -> list:
         """
         Get an iterable of all Turn objects in the battle.
 

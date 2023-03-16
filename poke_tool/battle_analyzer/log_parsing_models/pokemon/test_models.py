@@ -305,6 +305,18 @@ class TestBattlePokemon(unittest.TestCase):
 
         self.assertEqual(bp.get_pokemon_current_hp("p2a: Charizard"), 75.0)
 
+    def test_get_pnum_and_name(self):
+        bp = BattlePokemon(self.mock_battle)
+
+        raw_name = "p1a: Esp-nickname"
+        pnum, name = bp.get_pnum_and_name(raw_name)
+
+        expected_pnum = 1
+        expected_name = "Espeon"
+
+        self.assertEqual(pnum, expected_pnum)
+        self.assertEqual(name, expected_name)
+
 
 if __name__ == "__main__":
     unittest.main()

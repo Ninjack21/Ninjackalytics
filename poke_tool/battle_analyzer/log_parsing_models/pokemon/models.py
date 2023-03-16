@@ -1,6 +1,5 @@
 import re
-from typing import List, Dict
-from more_itertools import unique_everseen
+from typing import List, Dict, Tuple
 
 
 class BattlePokemon:
@@ -36,6 +35,28 @@ class BattlePokemon:
         """
         player_nums = set(mon.player_num for mon in self.pokemon)
         return list(player_nums)
+
+    def get_pnum_and_name(self, raw_name: str) -> Tuple[int, str]:
+        """
+        Takes a pokemon raw name and returns the player number and name.
+
+        Parameters
+        ----------
+        raw_name : str
+            The name of a pokemon encountered in a battle log
+
+        Returns
+        -------
+        pnum : int
+            The player number of the pokemon
+        name : str
+            The real_name of the pokemon
+        ---
+        """
+        mon = self.get_mon_obj(raw_name)
+        pnum = mon.player_num
+        name = mon.real_name
+        return pnum, name
 
     def get_mon_obj(self, raw_name: str) -> object:
         """

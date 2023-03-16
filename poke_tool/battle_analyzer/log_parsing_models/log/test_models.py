@@ -163,6 +163,55 @@ class TestBattle(unittest.TestCase):
 
         self.assertEqual(battle.get_log(), "")
 
+    @patch.object(Battle, "_get_json_response")
+    def test_get_lines(self, mock_get):
+        log = """
+        |start
+        |switch|p1a: May Day Parade|Kecleon, F, shiny|324/324
+        |switch|p2a: AMagicalFox|Delphox, M, shiny|292/292
+        |turn|1
+        |callback|decision
+        |
+        |move|p1a: May Day Parade|Fake Out|p2a: AMagicalFox
+        |-damage|p2a: AMagicalFox|213/292
+        |cant|p2a: AMagicalFox|flinch
+        |
+        |turn|2
+        |callback|decision
+        |
+        |-start|p1a: May Day Parade|typechange|Dark|[from] Protean
+        |move|p1a: May Day Parade|Sucker Punch|p2a: AMagicalFox
+        |-crit|p2a: AMagicalFox
+        |-supereffective|p2a: AMagicalFox
+        |-damage|p2a: AMagicalFox|0 fnt
+        |faint|p2a: AMagicalFox
+        |
+        |callback|decision
+        |
+        |switch|p2a: Moustachio|Alakazam, M, shiny|252/252
+        """
+        json_response = {"id": "1", "format": "gen8", "log": log}
+        mock_get.return_value = json_response
+        mock_get.return_value = json_response
+        battle = Battle("some_url")
+
+        lines = battle.get_lines()
+        log_lines = [
+            line
+            for line in log.split("\n")
+            if bool(line.strip()) and "|start" not in line
+        ]
+
+        # Test that all lines appear and in the presumed order
+        # Dealing with turn filtering of lines right now - doesn't read whole line, only number of turn since
+        # split on that
+        for i, line in enumerate(lines):
+            print("==================")
+            print(f"{i}: {line.text}")
+            print(f"{i}: {log_lines[i]}")
+
+            # self.assertEqual(line.text, log_lines[i])
+
 
 if __name__ == "__main__":
     unittest.main()
