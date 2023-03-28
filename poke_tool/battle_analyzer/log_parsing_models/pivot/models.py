@@ -18,9 +18,9 @@ class BattlePokemon(Protocol):
 
 
 class PivotData:
-    def __init__(self, mock_battle, mock_battle_pokemon):
-        self.mock_battle = mock_battle
-        self.mock_battle_pokemon = mock_battle_pokemon
+    def __init__(self, battle, battle_pokemon):
+        self.battle = battle
+        self.battle_pokemon = battle_pokemon
 
     def get_pivot_data(self) -> List[Dict[str, str]]:
         """
@@ -41,7 +41,7 @@ class PivotData:
         - |switch|p2a: Moustachio|Alakazam, M, shiny|252/252
         ---
         """
-        turns = self.mock_battle.get_turns()
+        turns = self.battle.get_turns()
         pivot_data = []
 
         for turn in turns:
@@ -53,7 +53,7 @@ class PivotData:
                 (
                     player_number,
                     pokemon_name,
-                ) = self.mock_battle_pokemon.get_pnum_and_name(event.split("|")[2])
+                ) = self.battle_pokemon.get_pnum_and_name(event.split("|")[2])
 
                 # Determine the source of the pivot action
                 source_name = self._get_source_name(event)
