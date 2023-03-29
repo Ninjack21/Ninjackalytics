@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Protocol, Optional
 from abc import ABC, abstractmethod
 
 
@@ -143,7 +143,7 @@ class MoveDataFinder(DamageDataFinder):
         super().__init__(battle_pokemon)
 
     def get_damage_data(
-        self, event: str, turn: Turn, battle: Battle
+        self, event: str, turn: Turn, battle: Optional[Battle] = None
     ) -> List[Dict[str, str]]:
         pass
 
@@ -156,36 +156,36 @@ class ItemOrAbilityDataFinder(DamageDataFinder):
         super().__init__(battle_pokemon)
 
     def get_damage_data(
-        self,
-        event: str,
-        turn: Turn,
-    ) -> List[Dict[str, str]]:
-        damage_data_list = []
-        for turn in self.battle.get_turns():
-            # Extract switch events from turn text
-            damage_events = re.findall(r"\|-damage.*", turn.text)
-            for event in events:
-                damage_source = self._get_damage_source(event)
-                if damage_source == "item" or damage_source == "ability":
-                    damage_data_list.append(
-                        self._extract_item_or_ability_info(turn, event)
-                    )
-        return damage_data_list
+        self, event: str, turn: Turn, battle: Battle = None
+    ) -> Dict[str, str]:
+        """
+        Get the damage data from an item or ability event.
 
-    def _get_source_name(self, event: str) -> str:
-        pass
+        Parameters:
+        -----------
+        event: str
+            The item or ability event.
+        turn: Turn
+            The turn the event occurred on.
 
-    def _extract_item_or_ability_info(self, turn: Turn, event: str) -> Dict[str, str]:
+        Returns:
+        --------
+        Dict[str, str]:
+            The damage data from the item or ability event.
+        ---
+        """
         item_or_ability_info_dic = {}
 
-        receiver = self._get_receiver(event)
-        item_or_ability_info_dic["Receiver"] = receiver[1]
+        dealer_pnum, dealer = self._get_dealer(event)
+        item_or_ability_info_dic["Dealer"] = dealer
+        item_or_ability_info_dic["Dealer_Player_Number"] = dealer_pnum
 
-        source_name = self._get_source_name_from_event(event)
+        receiver_pnum, receiver = self._get_receiver(event)
+        item_or_ability_info_dic["Receiver"] = receiver
+        item_or_ability_info_dic["Receiver_Player_Number"] = receiver_pnum
+
+        source_name = self._get_source_name(event)
         item_or_ability_info_dic["Source_Name"] = source_name
-
-        dealer = self._get_dealer(event)
-        item_or_ability_info_dic["Dealer"] = dealer[1]
 
         hp_change = self._get_hp_change(event, receiver)
         item_or_ability_info_dic["Damage"] = abs(hp_change)
@@ -195,16 +195,12 @@ class ItemOrAbilityDataFinder(DamageDataFinder):
 
         return item_or_ability_info_dic
 
+    def _get_source_name(self, event: str) -> str:
+        return event.split("|")[4].split(": ")[1]
+
     def _get_receiver(self, event: str) -> Tuple[int, str]:
         receiver_raw_name = event.split("|")[2]
         return self.battle_pokemon.get_pnum_and_name(receiver_raw_name)
-
-    def _get_source_name_from_event(self, event: str) -> str:
-        line_pattern = (
-            "[^\|]+"  # this breaks out a line into its key parts by "|" dividers
-        )
-        dmg_line = re.findall(line_pattern, event)
-        return dmg_line[3].split(": ")[1]
 
     def _get_dealer(self, event: str) -> Tuple[int, str]:
         line_pattern = (
@@ -214,14 +210,15 @@ class ItemOrAbilityDataFinder(DamageDataFinder):
         if len(dmg_line) == 5:  # this indicates [of] exists : which tells dealer mon
             dealer_raw_name = dmg_line[4].split("[of] ")[1]
             return self.battle_pokemon.get_pnum_and_name(dealer_raw_name)
-        else:  # if no 5th element, then dealer is source name
-            return (None, self._get_source_name_from_event(event))
+        else:  # if no 5th element, then dealer is source name, pnum assumed same as receiver
+            pnum, name = self._get_receiver(event)
+            return (pnum, self._get_source_name(event))
 
-    def _get_hp_change(self, event: str, receiver: Tuple[int, str]) -> float:
-        old_hp = self.battle_pokemon.get_pokemon_current_hp(receiver[1])
+    def _get_hp_change(self, event: str, receiver: str) -> float:
+        old_hp = self.battle_pokemon.get_pokemon_current_hp(receiver)
         new_hp = float(event.split("|")[3].split(" ")[0])
-        self.battle_pokemon.update_hp_for_pokemon(receiver[1], new_hp)
-        return self.battle_pokemon.get_pokemon_hp_change(receiver[1])
+        self.battle_pokemon.update_hp_for_pokemon(receiver, new_hp)
+        return self.battle_pokemon.get_pokemon_hp_change(receiver)
 
 
 class StatusOrHazardDataFinder(DamageDataFinder):
