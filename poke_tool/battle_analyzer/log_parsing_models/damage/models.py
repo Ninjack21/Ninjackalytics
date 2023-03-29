@@ -126,8 +126,7 @@ class DamageData:
 
 
 class DamageDataFinder(ABC):
-    def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        self.battle = battle
+    def __init__(self, battle_pokemon: BattlePokemon):
         self.battle_pokemon = battle_pokemon
 
     @abstractmethod
@@ -140,10 +139,12 @@ class DamageDataFinder(ABC):
 
 
 class MoveDataFinder(DamageDataFinder):
-    def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        super().__init__(battle, battle_pokemon)
+    def __init__(self, battle_pokemon: BattlePokemon):
+        super().__init__(battle_pokemon)
 
-    def get_damage_data(self) -> List[Dict[str, str]]:
+    def get_damage_data(
+        self, event: str, turn: Turn, battle: Battle
+    ) -> List[Dict[str, str]]:
         pass
 
     def _get_source_name(self, event: str) -> str:
@@ -151,10 +152,14 @@ class MoveDataFinder(DamageDataFinder):
 
 
 class ItemOrAbilityDataFinder(DamageDataFinder):
-    def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        super().__init__(battle, battle_pokemon)
+    def __init__(self, battle_pokemon: BattlePokemon):
+        super().__init__(battle_pokemon)
 
-    def get_damage_data(self) -> List[Dict[str, str]]:
+    def get_damage_data(
+        self,
+        event: str,
+        turn: Turn,
+    ) -> List[Dict[str, str]]:
         damage_data_list = []
         for turn in self.battle.get_turns():
             # Extract switch events from turn text
@@ -220,8 +225,8 @@ class ItemOrAbilityDataFinder(DamageDataFinder):
 
 
 class StatusOrHazardDataFinder(DamageDataFinder):
-    def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        super().__init__(battle, battle_pokemon)
+    def __init__(self, battle_pokemon: BattlePokemon):
+        super().__init__(battle_pokemon)
 
     def get_damage_data(self) -> List[Dict[str, str]]:
         pass
@@ -231,8 +236,8 @@ class StatusOrHazardDataFinder(DamageDataFinder):
 
 
 class PassiveDataFinder(DamageDataFinder):
-    def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        super().__init__(battle, battle_pokemon)
+    def __init__(self, battle_pokemon: BattlePokemon):
+        super().__init__(battle_pokemon)
 
     def get_damage_data(self) -> List[Dict[str, str]]:
         pass
