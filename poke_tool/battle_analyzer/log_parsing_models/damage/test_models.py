@@ -119,10 +119,7 @@ class TestMoveDealerFinder(unittest.TestCase):
         )
         self.delayedturn = MockTurn(
             17,
-            """
-            |-end|p1a: Ninetales|move: Future Sight
-            |-damage|p1a: Ninetales|44/100
-            """,
+            """|-end|p1a: Ninetales|move: Future Sight\n|-damage|p1a: Ninetales|44/100""",
         )
         self.doublesturn1 = MockTurn(
             3, "|move|p2a: Genesect|Techno Blast|p1a: Palossand"
@@ -166,12 +163,10 @@ class TestMoveDealerFinder(unittest.TestCase):
 
     def test_get_delayed_dealer_and_source(self):
         mock_battle = MockBattle()
+        # don't mess with string, white space breaks and turn 14 is key turn
         fsight_start_turn = MockTurn(
             14,
-            """
-            |move|p2a: Slowking|Future Sight|p1a: Ninetales
-            |-start|p2a: Slowking|move: Future Sight
-            """,
+            "|move|p2a: Slowking|Future Sight|p1a: Ninetales\n|-start|p2a: Slowking|move: Future Sight",
         )
         fsight_middle_turn = MockTurn(
             15,
@@ -201,6 +196,15 @@ class TestMoveDealerFinder(unittest.TestCase):
             ),
             expected_output,
         )
+
+        # test no end indicator
+        with self.assertRaises(ValueError):
+            self.move_dealer_finder._get_delayed_dealer_and_source(
+                event="|-damage|p1a: Ninetales|44/100",
+                receiver_raw="p1a: Ninetales",
+                turn=self.normalturn,
+                battle=MockBattle(),
+            )
 
 
 # class TestDamageData(unittest.TestCase):

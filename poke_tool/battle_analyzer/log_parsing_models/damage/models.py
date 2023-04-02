@@ -224,24 +224,39 @@ class MoveDealerFinder:
         |-damage|p1a: Ninetales|44/100 <-- EXAMPLE EVENT
         ...
         |turn|17
-        """
-        current_turn = turn.number
-        all_turns = battle.get_turns()
-        pre_event_turns = reversed([t for t in all_turns if t.number < current_turn])
 
-        for turn in pre_event_turns:
-            print(turn.text)
-            pre_event_text = turn.text.split(event)[0]
-            matches = reversed(
-                list(re.finditer(self.move_patterns["delayed"], pre_event_text))
-            )
-            match = next(
-                (m for m in matches if m.group("receiver") == receiver_raw), None
-            )
-            if match:
-                dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
-                source = match.group("source")
-                return dealer, source
+        Notes:
+        ------
+        - The delayed move is the move that is delayed by a move such as Future Sight
+        - The original target of the move may not be the receiver of the damage.
+        """
+        # find source name (indicated by -end)
+        end_pattern = re.compile(r"-end\|(?P<receiver>.*)\|move: (?P<source>.*)\n")
+        end_event = next(
+            (
+                e
+                for e in re.finditer(end_pattern, turn.text)
+                if e.group("receiver") == receiver_raw
+            ),
+            None,
+        )
+        if not end_event:
+            raise ValueError(f"Could not find |-end| indicator for event: {event}")
+        source_name = end_event.group("source")
+
+        # find dealer name (indicated by -start) where source name is the same
+        start_events = [
+            event
+            for turn in reversed(battle.get_turns())
+            for event in re.finditer(self.move_patterns["delayed"], turn.text)
+            if event.group("source") == source_name
+        ]
+        start_event = next(iter(start_events), None)
+        if not start_event:
+            raise ValueError(f"Could not find |-start| indicator for event: {event}")
+        dealer = self.battle_pokemon.get_pnum_and_name(start_event.group("dealer"))
+
+        return dealer, source_name
 
     # TODO: now implement a way to find the event and turn_text for the other types of moves such that
     # get_dealer_source can then be utilized
