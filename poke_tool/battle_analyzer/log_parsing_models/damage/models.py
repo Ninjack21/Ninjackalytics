@@ -2,6 +2,9 @@ import re
 from typing import Dict, List, Tuple, Protocol, Optional
 from abc import ABC, abstractmethod
 
+# TODO: update methods that return non-pokemon dealers by adding a method to search upwards
+# in a battle log for the pokemon who used the move that has resulted in the damage event
+
 
 class Turn(Protocol):
     number: int
@@ -159,14 +162,125 @@ class DamageDataFinder(ABC):
         return self.battle_pokemon.get_pokemon_hp_change(receiver)
 
 
+class MoveDealerFinder:
+    def __init__(self, battle_pokemon: BattlePokemon):
+        self.battle_pokemon = battle_pokemon
+        self.move_patterns = {
+            "normal": re.compile(
+                r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
+            ),
+            "delayed": re.compile(r"\|-start\|.*"),
+            "doubles": re.compile(r"\|move\|[p][1-2][a-d]: .*\|.*"),
+            "doubles_anim": re.compile(r"\|-anim\|.*"),
+        }
+
+    def get_dealer_source(
+        self, event: str, receiver_raw: str, turn: Turn, battle: Battle
+    ) -> Tuple[Tuple[int, str], str]:
+        pass
+
+    def _get_dealer_source(self, event: str, turn_text: str) -> Tuple[int, str]:
+        """
+        Example Event:
+        --------------
+        |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
+        |-damage|p1a: Cuss-Tran|67/100
+        """
+        matches = re.findall(self.move_patterns["normal"], turn_text)
+        for match in matches.reverse():
+            if receiver_raw == match.get("receiver"):
+                dealer = self.battle_pokemon.get_pnum_and_name(match.get("dealer"))
+                source = match.get("source")
+                return dealer, source
+        raise ValueError(f"Could not find dealer for event: {event}")
+
+        return self.battle_pokemon.get_pnum_and_name(dealer_raw_name)
+
+    # TODO: now implement a way to find the event and turn_text for the other types of moves such that
+    # get_dealer_source can then be utilized
+
+    # TODO: then build unit tests for MoveDealerFinder
+    # TODO: then build out MoveReceiverFinder and create unit tests
+    # TODO: finally, implement MoveReceiverFinder to see if passes tests
+
+
+class MoveReceiverFinder:
+    def __init__(self, battle_pokemon: BattlePokemon):
+        self.battle_pokemon = battle_pokemon
+
+    def get_receiver(self, event: str) -> Tuple[int, str]:
+        receiver_raw_name = event.split("|")[2]
+        return self.battle_pokemon.get_pnum_and_name(receiver_raw_name)
+
+
 class MoveDataFinder(DamageDataFinder):
     def __init__(self, battle_pokemon: BattlePokemon):
         super().__init__(battle_pokemon)
 
-    def get_damage_data(
-        self, event: str, turn: Turn, battle: Optional[Battle] = None
-    ) -> List[Dict[str, str]]:
-        pass
+        self.dealer_finder = MoveDealerFinder(battle_pokemon)
+        self.receiver_finder = MoveReceiverFinder(battle_pokemon)
+
+    def get_damage_data(self, event: str, turn: Turn, battle: Battle) -> Dict[str, str]:
+        """
+        Get the damage data from a move event.
+        NOTE: Move events do require the battle object as moves like future sight need to be
+        back-searched for the dealer.
+
+        Parameters:
+        -----------
+        event: str
+            The move event
+        turn: Turn
+            The turn the event occurred on.
+
+        Returns:
+        --------
+        Dict[str, str]:
+            The damage data from the move event.
+        ---
+        """
+        damage_dict = {}
+
+        damage_dict["Type"] = self._get_damage_source(event)
+        source_name = self._get_source_name(event)
+
+        dealer_pnum, dealer = self.dealer_finder.get_dealer(event)
+        damage_dict["Dealer"] = dealer
+        damage_dict["Dealer_Player_Number"] = dealer_pnum
+
+        receiver_pnum, receiver = self.receiver_finder.get_receiver(event)
+        damage_dict["Receiver"] = receiver
+        damage_dict["Receiver_Player_Number"] = receiver_pnum
+
+        damage_dict["Source_Name"] = source_name
+
+        hp_change = self._get_hp_change(event, receiver)
+        damage_dict["Damage"] = abs(hp_change)
+
+        damage_dict["Turn"] = turn.number
+
+        return damage_dict
+
+    def _get_damage_source(self, event: str) -> str:
+        """
+        Get the damage source from the event.
+
+        Parameters:
+        -----------
+        event: str
+            The damage event.
+
+        Returns:
+        --------
+        str:
+            The damage source.
+        ---
+        """
+        # damage that comes from moves does not have [from] in the event
+        if "[from]" in event:
+            raise ValueError(f"Event {event} is not a move event.")
+        else:
+            return "move"
 
     def _get_source_name(self, event: str) -> str:
         pass
@@ -336,19 +450,19 @@ class PassiveDataFinder(DamageDataFinder):
         self, event: str, turn: Turn, battle: Battle = None
     ) -> Dict[str, str]:
         """
-        Get the damage data from a status or hazard event.
+        Get the damage data from a passive event.
 
         Parameters:
         -----------
         event: str
-            The status or hazard event
+            The passive event
         turn: Turn
             The turn the event occurred on.
 
         Returns:
         --------
         Dict[str, str]:
-            The damage data from the status or hazard event.
+            The damage data from the passive event.
 
         Example Event:
         --------------
