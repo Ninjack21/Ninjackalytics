@@ -169,32 +169,79 @@ class MoveDealerFinder:
             "normal": re.compile(
                 r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
             ),
-            "delayed": re.compile(r"\|-start\|.*"),
+            "delayed": re.compile(
+                r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
+            ),
             "doubles": re.compile(r"\|move\|[p][1-2][a-d]: .*\|.*"),
             "doubles_anim": re.compile(r"\|-anim\|.*"),
         }
 
-    def get_dealer_source(
+    def get_dealer_and_source(
         self, event: str, receiver_raw: str, turn: Turn, battle: Battle
     ) -> Tuple[Tuple[int, str], str]:
         pass
 
-    def _get_dealer_source(self, event: str, turn_text: str) -> Tuple[int, str]:
+    def _get_normal_dealer_and_source(
+        self, event: str, receiver_raw: str, turn: Turn
+    ) -> Tuple[Tuple[int, str], str]:
         """
         Example Event:
+        --------------
+        |-damage|p1a: Cuss-Tran|67/100
+
+        Example Turn:
         --------------
         |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
         |-damage|p1a: Cuss-Tran|67/100
         """
-        matches = re.findall(self.move_patterns["normal"], turn_text)
-        for match in matches.reverse():
-            if receiver_raw == match.get("receiver"):
-                dealer = self.battle_pokemon.get_pnum_and_name(match.get("dealer"))
-                source = match.get("source")
-                return dealer, source
+        pre_event_text = turn.text.split(event)[0]
+        matches = reversed(
+            list(re.finditer(self.move_patterns["normal"], pre_event_text))
+        )
+        match = next((m for m in matches if m.group("receiver") == receiver_raw), None)
+        if match:
+            dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
+            source = match.group("source")
+            return dealer, source
         raise ValueError(f"Could not find dealer for event: {event}")
 
-        return self.battle_pokemon.get_pnum_and_name(dealer_raw_name)
+    def _get_delayed_dealer_and_source(
+        self, event: str, receiver_raw: str, turn: Turn, battle: Battle
+    ) -> Tuple[Tuple[int, str], str]:
+        """
+        delayed:
+        --------
+        |turn|14
+        ...
+        |move|p2a: Slowking|Future Sight|p1a: Ninetales <-- DEALER AND SOURCE
+        |-start|p2a: Slowking|move: Future Sight
+        ...
+        |turn|15
+        ...
+        |turn|16
+        ...
+        |-end|p1a: Ninetales|move: Future Sight
+        |-damage|p1a: Ninetales|44/100 <-- EXAMPLE EVENT
+        ...
+        |turn|17
+        """
+        current_turn = turn.number
+        all_turns = battle.get_turns()
+        pre_event_turns = reversed([t for t in all_turns if t.number < current_turn])
+
+        for turn in pre_event_turns:
+            print(turn.text)
+            pre_event_text = turn.text.split(event)[0]
+            matches = reversed(
+                list(re.finditer(self.move_patterns["delayed"], pre_event_text))
+            )
+            match = next(
+                (m for m in matches if m.group("receiver") == receiver_raw), None
+            )
+            if match:
+                dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
+                source = match.group("source")
+                return dealer, source
 
     # TODO: now implement a way to find the event and turn_text for the other types of moves such that
     # get_dealer_source can then be utilized
