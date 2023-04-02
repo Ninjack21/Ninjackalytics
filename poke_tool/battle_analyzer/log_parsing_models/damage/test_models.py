@@ -7,13 +7,16 @@ from models import (
     BattlePokemon,
     DamageData,
     ItemOrAbilityDataFinder,
+    StatusOrHazardDataFinder,
+    PassiveDataFinder,
 )
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================
 # based on protocol in models
 class MockBattlePokemon:
     def __init__(self):
-        pass
+        self.mon_hps = {}
+        self.mon_hp_changes = {}
 
     # quick implementation for testing
     def get_pnum_and_name(self, raw_name):
@@ -27,10 +30,252 @@ class MockBattlePokemon:
 
         self.mock_battle_pokemon = MockBattlePokemon()
 
-    # TODO: finish mocking battle pokemon methods and other protocl mocks needed
+    def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
+        # assumes not called before get_current_hp, which inits mon_hps
+        current_hp = self.mon_hps[raw_name]
+        self.mon_hp_changes[raw_name] = current_hp - new_hp
+        self.mon_hps[raw_name] = new_hp
+
+    def get_pokemon_hp_change(self, raw_name: str) -> float:
+        # assumes not called before get_current_hp, which inits mon_hps
+        return self.mon_hp_changes[raw_name]
+
+    def get_pokemon_current_hp(self, raw_name: str) -> float:
+        if not raw_name in self.mon_hps:
+            self.mon_hps[raw_name] = 100.0
+        return self.mon_hps[raw_name]
+
+
+mock_battle_pokemon = MockBattlePokemon()
+
+
+class MockBattle:
+    def __init__(self):
+        turns = []
+
+    # quick implementation for testing
+    def get_turns(self) -> list:
+        return self.turns
+
+
+mock_battle = MockBattle()
+
+
+class MockTurn:
+    def __init__(self, number: int, text: str):
+        self.number = number
+        self.text = text
 
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================
+
+
+class TestItemOrAbilityDataFinder(unittest.TestCase):
+    def setUp(self):
+
+        self.item_or_ability_data_finder = ItemOrAbilityDataFinder(mock_battle_pokemon)
+
+    def test_get_damage_data(self):
+        # Test case 1
+        event1 = "|-damage|p2a: BrainCell|372/424|[from] item: Life Orb"
+        turn1 = MockTurn(1, event1)
+
+        expected_output1 = {
+            "Dealer": "Life Orb",
+            "Dealer_Player_Number": 2,
+            "Receiver": "BrainCell",
+            "Receiver_Player_Number": 2,
+            "Source_Name": "Life Orb",
+            "Damage": (52 / 424) * 100,
+            "Type": "Item",
+            "Turn": 1,
+        }
+        actual_output1 = self.item_or_ability_data_finder.get_damage_data(event1, turn1)
+        # round to 2 decimal places
+        expected_output1["Damage"] = round(expected_output1["Damage"], 2)
+        actual_output1["Damage"] = round(actual_output1["Damage"], 2)
+
+        self.assertEqual(
+            actual_output1,
+            expected_output1,
+        )
+
+        # Test case 2
+        event2 = "|-damage|p1a: Pikachu|120/169|[from] ability: Static"
+        turn2 = MockTurn(5, event2)
+
+        expected_output2 = {
+            "Dealer": "Static",
+            "Dealer_Player_Number": 1,
+            "Receiver": "Pikachu",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "Static",
+            "Damage": (49 / 169) * 100,
+            "Type": "Ability",
+            "Turn": 5,
+        }
+        actual_output2 = self.item_or_ability_data_finder.get_damage_data(event2, turn2)
+        # round to 2 decimal places
+        expected_output2["Damage"] = round(expected_output2["Damage"], 2)
+        actual_output2["Damage"] = round(actual_output2["Damage"], 2)
+
+        self.assertEqual(
+            actual_output2,
+            expected_output2,
+        )
+
+        # Test case 3 - event without item or ability damage
+        with self.assertRaises(ValueError):
+            event3 = "|-damage|p1a: Pikachu|120/169"
+            turn3 = MockTurn(5, event3)
+            self.item_or_ability_data_finder.get_damage_data(event3, turn3)
+
+
+class TestStatusorHazardDataFinder(unittest.TestCase):
+    def setUp(self):
+
+        self.status_hazard_data_finder = StatusOrHazardDataFinder(mock_battle_pokemon)
+
+    def test_get_damage_data(self):
+        # Test hazard damage
+        event1 = "|-damage|p2a: Ferrothorn|94/100|[from] Stealth Rock"
+        turn1 = MockTurn(1, event1)
+
+        expected_output1 = {
+            "Dealer": "Stealth Rock",
+            "Dealer_Player_Number": 1,
+            "Receiver": "Ferrothorn",
+            "Receiver_Player_Number": 2,
+            "Source_Name": "Stealth Rock",
+            "Damage": (6 / 100) * 100,
+            "Type": "Hazard",
+            "Turn": 1,
+        }
+        actual_output1 = self.status_hazard_data_finder.get_damage_data(event1, turn1)
+        # round to 2 decimal places
+        expected_output1["Damage"] = round(expected_output1["Damage"], 2)
+        actual_output1["Damage"] = round(actual_output1["Damage"], 2)
+
+        self.assertEqual(
+            actual_output1,
+            expected_output1,
+        )
+
+        # Test toxic damage
+        event2 = "|-damage|p1a: Rillaboom|94/100 tox|[from] psn"
+        turn2 = MockTurn(5, event2)
+
+        expected_output2 = {
+            "Dealer": "tox",
+            "Dealer_Player_Number": 2,
+            "Receiver": "Rillaboom",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "tox",
+            "Damage": (6 / 100) * 100,
+            "Type": "Status",
+            "Turn": 5,
+        }
+        actual_output2 = self.status_hazard_data_finder.get_damage_data(event2, turn2)
+        # round to 2 decimal places
+        expected_output2["Damage"] = round(expected_output2["Damage"], 2)
+        actual_output2["Damage"] = round(actual_output2["Damage"], 2)
+
+        self.assertEqual(
+            actual_output2,
+            expected_output2,
+        )
+
+        # Test normal poison damage
+        event2 = "|-damage|p1a: Jigglypuff|94/100|[from] psn"
+        turn2 = MockTurn(5, event2)
+
+        expected_output2 = {
+            "Dealer": "psn",
+            "Dealer_Player_Number": 2,
+            "Receiver": "Jigglypuff",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "psn",
+            "Damage": (6 / 100) * 100,
+            "Type": "Status",
+            "Turn": 5,
+        }
+        actual_output2 = self.status_hazard_data_finder.get_damage_data(event2, turn2)
+        # round to 2 decimal places
+        expected_output2["Damage"] = round(expected_output2["Damage"], 2)
+        actual_output2["Damage"] = round(actual_output2["Damage"], 2)
+
+        self.assertEqual(
+            actual_output2,
+            expected_output2,
+        )
+
+        # Test case 4 - event without status or hazard
+        with self.assertRaises(ValueError):
+            event3 = "|-damage|p1a: Pikachu|120/169"
+            turn3 = MockTurn(5, event3)
+            self.status_hazard_data_finder.get_damage_data(event3, turn3)
+
+
+class TestPassiveDataFinder(unittest.TestCase):
+    def setUp(self):
+
+        self.passive_data_finder = PassiveDataFinder(mock_battle_pokemon)
+
+    def test_get_damage_data(self):
+        # Test passive damage with obvious dealer
+        event1 = "|-damage|p1a: Druddigon|88/100|[from] Leech Seed|[of] p2a: Ferrothorn"
+        turn1 = MockTurn(1, event1)
+
+        expected_output1 = {
+            "Dealer": "Ferrothorn",
+            "Dealer_Player_Number": 2,
+            "Receiver": "Druddigon",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "Leech Seed",
+            "Damage": (12 / 100) * 100,
+            "Type": "Passive",
+            "Turn": 1,
+        }
+        actual_output1 = self.passive_data_finder.get_damage_data(event1, turn1)
+        # round to 2 decimal places
+        expected_output1["Damage"] = round(expected_output1["Damage"], 2)
+        actual_output1["Damage"] = round(actual_output1["Damage"], 2)
+
+        self.assertEqual(
+            actual_output1,
+            expected_output1,
+        )
+
+        # Test passive damage without [of]
+        # NOTE: as seen in code, I do not currently know of case where this exists
+        event2 = "|-damage|p1a: Aggron|88/100|[from] something weird"
+        turn1 = MockTurn(1, event2)
+
+        expected_output2 = {
+            "Dealer": "something weird",
+            "Dealer_Player_Number": 2,
+            "Receiver": "Aggron",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "something weird",
+            "Damage": (12 / 100) * 100,
+            "Type": "Passive",
+            "Turn": 1,
+        }
+        actual_output2 = self.passive_data_finder.get_damage_data(event2, turn1)
+        # round to 2 decimal places
+        expected_output2["Damage"] = round(expected_output2["Damage"], 2)
+        actual_output2["Damage"] = round(actual_output2["Damage"], 2)
+
+        self.assertEqual(
+            actual_output2,
+            expected_output2,
+        )
+
+        # Test case 3 - no [from] found (would normally indidcate a move damage)
+        with self.assertRaises(ValueError):
+            event3 = "|-damage|p2a: Ferrothorn|94/100|"
+            turn3 = MockTurn(5, event3)
+            self.passive_data_finder.get_damage_data(event3, turn3)
 
 
 # TODO: turn back on once all other objects are tested and passing
@@ -76,64 +321,6 @@ class MockBattlePokemon:
 #             self.assertEqual(
 #                 actual_source, expected_source, f"Failed for event: {event}"
 #             )
-
-
-class TestItemOrAbilityDataFinder(unittest.TestCase):
-    def setUp(self):
-
-        self.item_or_ability_data_finder = ItemOrAbilityDataFinder(mock_battle_pokemon)
-
-    def test_get_damage_data(self):
-        # Test case 1
-        event1 = "|-damage|p2a: BrainCell|372/424|[from] item: Life Orb"
-        turn1 = Mock()
-        turn1.number = 1
-
-        expected_output1 = {
-            "Dealer": "Life Orb",
-            "Dealer_Player_Number": 2,
-            "Receiver": "BrainCell",
-            "Receiver_Player_Number": 2,
-            "Source_Name": "Life Orb",
-            "Damage": 52,
-            "Type": "item",
-            "Turn": 1,
-        }
-
-        self.assertEqual(
-            self.item_or_ability_data_finder.get_damage_data(event1, turn1),
-            expected_output1,
-        )
-
-        # Test case 2
-        event2 = "|-damage|p1a: Pikachu|120/169|[from] ability: Static"
-        turn5 = Mock()
-        turn5.number = 5
-
-        expected_output2 = {
-            "Dealer": "Static",
-            "Dealer_Player_Number": 1,
-            "Receiver": "Pikachu",
-            "Receiver_Player_Number": 1,
-            "Source_Name": "Static",
-            "Damage": 49,
-            "Type": "ability",
-            "Turn": 5,
-        }
-
-        self.assertEqual(
-            self.item_or_ability_data_finder.get_damage_data(event2, turn2),
-            expected_output2,
-        )
-
-        # Test case 3 - event without item or ability damage
-        event3 = "|-damage|p1a: Pikachu|120/169"
-        turn3 = Mock()
-        turn3.number = 3
-
-        self.assertIsNone(
-            self.item_or_ability_data_finder.get_damage_data(event3, turn3)
-        )
 
 
 if __name__ == "__main__":
