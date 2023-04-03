@@ -162,7 +162,7 @@ class DamageDataFinder(ABC):
         return self.battle_pokemon.get_pokemon_hp_change(receiver)
 
 
-class MoveDealerFinder:
+class DealerSourceFinder:
     def __init__(self, battle_pokemon: BattlePokemon):
         self.battle_pokemon = battle_pokemon
         self.move_patterns = {
@@ -172,17 +172,21 @@ class MoveDealerFinder:
             "delayed": re.compile(
                 r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
             ),
-            "doubles": re.compile(r"\|move\|[p][1-2][a-d]: .*\|.*"),
-            "doubles_anim": re.compile(r"\|-anim\|.*"),
+            "spread": re.compile(
+                r"\|move\|(?P<dealer>[p][1-2][a-d]: .*)\|(?P<source>.*)\|(?P<primary_receiver>.*)\|\[spread\]"
+            ),
+            "anim": re.compile(
+                r"\|-anim\|(\|move\||)(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
+            ),
         }
 
     def get_dealer_and_source(
-        self, event: str, receiver_raw: str, turn: Turn, battle: Battle
+        self, event: str, turn: Turn, battle: Battle
     ) -> Tuple[Tuple[int, str], str]:
         pass
 
     def _get_normal_dealer_and_source(
-        self, event: str, receiver_raw: str, turn: Turn
+        self, event: str, turn: Turn
     ) -> Tuple[Tuple[int, str], str]:
         """
         Example Event:
@@ -198,7 +202,8 @@ class MoveDealerFinder:
         matches = reversed(
             list(re.finditer(self.move_patterns["normal"], pre_event_text))
         )
-        match = next((m for m in matches if m.group("receiver") == receiver_raw), None)
+        receiver_raw = self._get_receiver_raw_from_event(event)
+        match = self._get_match(matches, receiver_raw)
         if match:
             dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
             source = match.group("source")
@@ -206,7 +211,7 @@ class MoveDealerFinder:
         raise ValueError(f"Could not find dealer for event: {event}")
 
     def _get_delayed_dealer_and_source(
-        self, event: str, receiver_raw: str, turn: Turn, battle: Battle
+        self, event: str, turn: Turn, battle: Battle
     ) -> Tuple[Tuple[int, str], str]:
         """
         delayed:
@@ -236,7 +241,7 @@ class MoveDealerFinder:
             (
                 e
                 for e in re.finditer(end_pattern, turn.text)
-                if e.group("receiver") == receiver_raw
+                if e.group("receiver") == self._get_receiver_raw_from_event(event)
             ),
             None,
         )
@@ -257,6 +262,75 @@ class MoveDealerFinder:
         dealer = self.battle_pokemon.get_pnum_and_name(start_event.group("dealer"))
 
         return dealer, source_name
+
+    def _get_animated_dealer_and_source(
+        self, event: str, turn: Turn
+    ) -> Tuple[Tuple[int, str], str]:
+        """
+        Example Event:
+        --------------
+        |-damage|p2b: Incineroar|31/100
+
+        Example Turn:
+        --------------
+        |-anim||move|p1b: Dragapult|Dragon Darts|p2a: Pelipper
+        |-damage|p2a: Pelipper|65/100
+        |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
+        |-damage|p2b: Incineroar|31/100
+        """
+        pre_event_text = turn.text.split(event)[0]
+        matches = reversed(
+            list(re.finditer(self.move_patterns["anim"], pre_event_text))
+        )
+        receiver_raw = self._get_receiver_raw_from_event(event)
+        match = self._get_match(matches, receiver_raw)
+        if match:
+            dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
+            source = match.group("source")
+            return dealer, source
+        raise ValueError(f"Could not find dealer for event: {event}")
+
+    def _get_spread_dealer_and_source(
+        self, event: str, turn: Turn
+    ) -> Tuple[Tuple[int, str], str]:
+        """
+        Example Event:
+        --------------
+        |-damage|p1a: Indeedee|15/100
+
+        Example Turn:
+        --------------
+        |move|p2a: Regidrago|Dragon Energy|p1b: Regieleki|[spread] p1a,p1b
+        |-damage|p1a: Indeedee|15/100
+        |-damage|p1b: Regieleki|0 fnt
+
+        NOTE:
+        -----
+        The spread move hits all enemies and thus we can't rely on the receiver of this damage event, thus
+        *we assume that by this point the move must be a spread move and that move must be the source of
+        the current damage event*
+        """
+        pre_event_text = turn.text.split(event)[0]
+        matches = reversed(
+            list(re.finditer(self.move_patterns["spread"], pre_event_text))
+        )
+        # spread moves hit all enemies and thus we can't rely on the receiver of this damage event
+        match = next((m for m in matches), None)
+
+        if match:
+            dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
+            source = match.group("source")
+            return dealer, source
+        raise ValueError(f"Could not find dealer for event: {event}")
+
+    def _get_match(self, matches, receiver_raw_name):
+        return next(
+            (m for m in matches if m.group("receiver") == receiver_raw_name),
+            None,
+        )
+
+    def _get_receiver_raw_from_event(self, event: str) -> str:
+        return event.split("|")[2]
 
     # TODO: now implement a way to find the event and turn_text for the other types of moves such that
     # get_dealer_source can then be utilized

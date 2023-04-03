@@ -10,7 +10,7 @@ from models import (
     StatusOrHazardDataFinder,
     PassiveDataFinder,
     DamageData,
-    MoveDealerFinder,
+    DealerSourceFinder,
 )
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================
@@ -72,7 +72,7 @@ class MockTurn:
 # =================== MOCK PROTOCOLS FOR TESTING ===================
 
 
-class TestMoveDealerFinder(unittest.TestCase):
+class TestDealerSourceFinder(unittest.TestCase):
     def setUp(self):
         """
         normal:
@@ -107,8 +107,14 @@ class TestMoveDealerFinder(unittest.TestCase):
         -------------
         |-anim||move|p1b: Dragapult|Dragon Darts|p2a: Pelipper
         |-damage|p2a: Pelipper|65/100
-        |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroarp1b: Dragapult|Dragon Darts|p2b: Incineroar
+        |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
         |-damage|p2b: Incineroar|31/100
+
+        spread:
+        -------
+        |move|p2a: Regidrago|Dragon Energy|p1b: Regieleki|[spread] p1a,p1b
+        |-damage|p1a: Indeedee|15/100
+        |-damage|p1b: Regieleki|0 fnt
         """
         self.normalturn = MockTurn(
             1,
@@ -130,14 +136,23 @@ class TestMoveDealerFinder(unittest.TestCase):
         self.animatedturn = MockTurn(
             5,
             """
-            |move|p1b: Dragapult|Dragon Darts|p2b: Incineroar
-            |-damage|p2b: Incineroar|76/100
+            |-anim||move|p1b: Dragapult|Dragon Darts|p2a: Pelipper
+            |-damage|p2a: Pelipper|65/100
             |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
-            |-damage|p2b: Incineroar|52/100
+            |-damage|p2b: Incineroar|31/100
             """,
         )
 
-        self.move_dealer_finder = MoveDealerFinder(mock_battle_pokemon)
+        self.spreadturn1 = MockTurn(
+            6,
+            """
+            |move|p2a: Regidrago|Dragon Energy|p1b: Regieleki|[spread] p1a,p1b
+            |-damage|p1a: Indeedee|15/100
+            |-damage|p1b: Regieleki|0 fnt
+            """,
+        )
+
+        self.move_dealer_finder = DealerSourceFinder(mock_battle_pokemon)
 
     def test_get_normal_dealer_and_source(self):
         # test expected case
@@ -146,7 +161,6 @@ class TestMoveDealerFinder(unittest.TestCase):
         self.assertEqual(
             self.move_dealer_finder._get_normal_dealer_and_source(
                 event="|-damage|p1a: Cuss-Tran|67/100",
-                receiver_raw="p1a: Cuss-Tran",
                 turn=self.normalturn,
             ),
             expected_output,
@@ -157,7 +171,6 @@ class TestMoveDealerFinder(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.move_dealer_finder._get_normal_dealer_and_source(
                 event="|-damage|p1a: Cuss-Tran|67/100",
-                receiver_raw="p1a: Cuss-Tran",
                 turn=MockTurn(1, bad_turn_text),
             )
 
@@ -190,7 +203,6 @@ class TestMoveDealerFinder(unittest.TestCase):
         self.assertEqual(
             self.move_dealer_finder._get_delayed_dealer_and_source(
                 event="|-damage|p1a: Ninetales|44/100",
-                receiver_raw="p1a: Ninetales",
                 turn=self.delayedturn,
                 battle=mock_battle,
             ),
@@ -201,176 +213,71 @@ class TestMoveDealerFinder(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.move_dealer_finder._get_delayed_dealer_and_source(
                 event="|-damage|p1a: Ninetales|44/100",
-                receiver_raw="p1a: Ninetales",
                 turn=self.normalturn,
                 battle=MockBattle(),
             )
 
+    def test_get_animated_dealer_and_source(self):
+        # test expected case
+        # (dealer, source)
+        expected_output = ((1, "Dragapult"), "Dragon Darts")
+        self.assertEqual(
+            self.move_dealer_finder._get_animated_dealer_and_source(
+                event="|-damage|p2b: Incineroar|52/100",
+                turn=self.animatedturn,
+            ),
+            expected_output,
+        )
 
-# class TestDamageData(unittest.TestCase):
-#     def setUp(self):
-#         """
-#         normal:
-#         -------
-#         |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
-#         |-damage|p1a: Cuss-Tran|67/100
+        # test expected case
+        # (dealer, source)
+        expected_output = ((1, "Dragapult"), "Dragon Darts")
+        self.assertEqual(
+            self.move_dealer_finder._get_animated_dealer_and_source(
+                event="|-damage|p2a: Pelipper|65/100",
+                turn=self.animatedturn,
+            ),
+            expected_output,
+        )
 
-#         delayed:
-#         --------
-#         |turn|14
-#         ...
-#         |move|p2a: Slowking|Future Sight|p1a: Ninetales
-#         |-start|p2a: Slowking|move: Future Sight
-#         ...
-#         |turn|15
-#         ...
-#         |turn|16
-#         ...
-#         |-end|p1a: Ninetales|move: Future Sight
-#         |-damage|p1a: Ninetales|44/100
-#         ...
-#         |turn|17
+        # test bad input case
+        bad_turn_text = "a bad turn text"
+        with self.assertRaises(ValueError):
+            self.move_dealer_finder._get_animated_dealer_and_source(
+                event="|-damage|p2b: Incineroar|52/100",
+                turn=MockTurn(1, bad_turn_text),
+            )
 
-#         doubles:
-#         --------
-#         |move|p2a: Genesect|Techno Blast|p1a: Palossand
-#         |-damage|p1a: Palossand|65/100
-#         |move|p1a: Palossand|Scorching Sands|p2b: Incineroar
-#         |-damage|p2b: Incineroar|76/100
+    def test_get_spread_dealer_and_source(self):
+        # test first damage event of spread move
+        # (dealer, source)
+        expected_output = ((2, "Regidrago"), "Dragon Energy")
+        self.assertEqual(
+            self.move_dealer_finder._get_spread_dealer_and_source(
+                event="|-damage|p1a: Indeedee|15/100",
+                turn=self.spreadturn1,
+            ),
+            expected_output,
+        )
 
-#         doubles_anim:
-#         -------------
-#         |-anim||move|p1b: Dragapult|Dragon Darts|p2a: Pelipper
-#         |-damage|p2a: Pelipper|65/100
-#         |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroarp1b: Dragapult|Dragon Darts|p2b: Incineroar
-#         |-damage|p2b: Incineroar|31/100
-#         """
+        # test second damage event of spread move
+        # (dealer, source)
+        expected_output = ((2, "Regidrago"), "Dragon Energy")
+        self.assertEqual(
+            self.move_dealer_finder._get_spread_dealer_and_source(
+                event="|-damage|p1a: Indeedee|15/100",
+                turn=self.spreadturn1,
+            ),
+            expected_output,
+        )
 
-#         self.normalturn = MockTurn(
-#             1,
-#             """
-#             |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
-#             |-damage|p1a: Cuss-Tran|67/100
-#             """,
-#         )
-#         self.delayedturn = MockTurn(
-#             17,
-#             """
-#             |-end|p1a: Ninetales|move: Future Sight
-#             |-damage|p1a: Ninetales|44/100
-#             """,
-#         )
-#         self.doublesturn1 = MockTurn(3, "|move|p2a: Genesect|Techno Blast|p1a: Palossand")
-#         self.doublesturn2 = MockTurn(
-#             4, "|move|p1a: Palossand|Scorching Sands|p2b: Incineroar"
-#         )
-#         self.animatedturn = MockTurn(
-#             5,
-#             """
-#             |move|p1b: Dragapult|Dragon Darts|p2b: Incineroar
-#             |-damage|p2b: Incineroar|76/100
-#             |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
-#             |-damage|p2b: Incineroar|52/100
-#             """,
-#         )
-
-#     def test_normal_get_damage_data(self):
-#         # not needed for normal
-#         mock_battle = Mock()
-
-#         expected_output = {
-#             "Dealer": "Blissey",
-#             "Dealer_Player_Number": 2,
-#             "Receiver": "Cuss-Tran",
-#             "Receiver_Player_Number": 1,
-#             "Source_Name": "Seismic Toss",
-#             "Damage": 33.0,
-#             "Type": "Move",
-#             "Turn": 1,
-#         }
-#         actual_output = DamageData.get_damage_data(
-#             "|-damage|p1a: Cuss-Tran|67/100", self.normalturn, mock_battle
-#         )
-#         self.assertEqual(actual_output, expected_output)
-
-#     def test_delayed_get_damage_data(self):
-#         mock_battle = MockBattle()
-#         fsight_start_turn = MockTurn(
-#             14,
-#             """
-#             |move|p2a: Slowking|Future Sight|p1a: Ninetales
-#             |-start|p2a: Slowking|move: Future Sight
-#             """,
-#         )
-#         fsight_middle_turn = MockTurn(
-#             15,
-#             """
-#             |
-#             |t:|1680411602
-#             |switch|p2a: Clefable|Clefable, M|100/100
-#             |move|p1a: Ninetales|Aurora Veil|p1a: Ninetales
-#             |-sidestart|p1: rhkp23|move: Aurora Veil
-#             |
-#             |-weather|Hail|[upkeep]
-#             |upkeep
-#             """,
-#         )
-#         fsight_end_turn = self.delayedturn
-#         mock_battle.turns = [fsight_start_turn, fsight_middle_turn, fsight_end_turn]
-
-#         expected_output = {
-#             "Dealer": "Slowking",
-#             "Dealer_Player_Number": 2,
-#             "Receiver": "Ninetales",
-#             "Receiver_Player_Number": 1,
-#             "Source_Name": "Future Sight",
-#             "Damage": 56.0,
-#             "Type": "Move",
-#             "Turn": 17,
-#         }
-#         actual_output = DamageData.get_damage_data(
-#             "|-damage|p1a: Ninetales|44/100", self.delayedturn, mock_battle
-#         )
-
-#         self.assertEqual(actual_output, expected_output)
-
-#     def test_doubles_get_damage_data(self):
-#         mock_battle = MockBattle()
-
-#         expected_output = {
-#             "Dealer": "Genesect",
-#             "Dealer_Player_Number": 2,
-#             "Receiver": "Palossand",
-#             "Receiver_Player_Number": 1,
-#             "Source_Name": "Techno Blast",
-#             "Damage": 35.0,
-#             "Type": "Move",
-#             "Turn": 3,
-#         }
-#         actual_output = DamageData.get_damage_data(
-#             "|-damage|p1a: Palossand|65/100", self.doublesturn1, mock_battle
-#         )
-
-#         self.assertEqual(actual_output, expected_output)
-
-#     def test_animated_get_damage_data(self):
-#         mock_battle = MockBattle()
-
-#         expected_output = {
-#             "Dealer": "Dragapult",
-#             "Dealer_Player_Number": 1,
-#             "Receiver": "Incineroar",
-#             "Receiver_Player_Number": 2,
-#             "Source_Name": "Dragon Darts",
-#             "Damage": 69.0,
-#             "Type": "Move",
-#             "Turn": 5,
-#         }
-#         actual_output = DamageData.get_damage_data(
-#             "|-damage|p2b: Incineroar|31/100", self.animatedturn, mock_battle
-#         )
-
-#         self.assertEqual(actual_output, expected_output)
+        # test bad input case
+        bad_turn_text = "a bad turn text"
+        with self.assertRaises(ValueError):
+            self.move_dealer_finder._get_spread_dealer_and_source(
+                event="|-damage|p1a: Indeedee|15/100",
+                turn=MockTurn(1, bad_turn_text),
+            )
 
 
 class TestItemOrAbilityDataFinder(unittest.TestCase):
