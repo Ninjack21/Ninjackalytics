@@ -179,14 +179,39 @@ class DealerSourceFinder:
                 r"\|-anim\|(\|move\||)(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
             ),
         }
+        self.move_type_methods = {
+            "normal": self._get_normal_dealer_and_source,
+            "delayed": self._get_delayed_dealer_and_source,
+            "spread": self._get_spread_dealer_and_source,
+            "anim": self._get_animated_dealer_and_source,
+        }
 
     def get_dealer_and_source(
         self, event: str, turn: Turn, battle: Battle
     ) -> Tuple[Tuple[int, str], str]:
-        pass
+        # look for the most recent move type indicator in the turn lines right before the event
+        previous_turn_lines = reversed(list(turn.text.split(event)[0].splitlines()))
+        move_type = next(
+            (self._get_move_type(line) for line in previous_turn_lines), None
+        )
+
+        if move_type not in self.move_type_methods:
+            raise ValueError(f"Unable to determine move type for event: {event}")
+
+        return self.move_type_methods[move_type](event, turn, battle)
+
+    def _get_move_type(self, line: str) -> str:
+        if line.startswith("|move|") and "[spread]" in line:
+            return "spread"
+        elif line.startswith("|move|"):
+            return "normal"
+        elif line.startswith("|-anim|"):
+            return "anim"
+        elif line.startswith("|-end|"):
+            return "delayed"
 
     def _get_normal_dealer_and_source(
-        self, event: str, turn: Turn
+        self, event: str, turn: Turn, battle: Battle = None
     ) -> Tuple[Tuple[int, str], str]:
         """
         Example Event:
@@ -264,7 +289,7 @@ class DealerSourceFinder:
         return dealer, source_name
 
     def _get_animated_dealer_and_source(
-        self, event: str, turn: Turn
+        self, event: str, turn: Turn, battle: Battle = None
     ) -> Tuple[Tuple[int, str], str]:
         """
         Example Event:
@@ -291,7 +316,7 @@ class DealerSourceFinder:
         raise ValueError(f"Could not find dealer for event: {event}")
 
     def _get_spread_dealer_and_source(
-        self, event: str, turn: Turn
+        self, event: str, turn: Turn, battle: Battle = None
     ) -> Tuple[Tuple[int, str], str]:
         """
         Example Event:
@@ -332,15 +357,11 @@ class DealerSourceFinder:
     def _get_receiver_raw_from_event(self, event: str) -> str:
         return event.split("|")[2]
 
-    # TODO: now implement a way to find the event and turn_text for the other types of moves such that
-    # get_dealer_source can then be utilized
-
-    # TODO: then build unit tests for MoveDealerFinder
-    # TODO: then build out MoveReceiverFinder and create unit tests
-    # TODO: finally, implement MoveReceiverFinder to see if passes tests
+    # TODO: build out ReceiverFinder and create unit tests
+    # TODO: finally, implement ReceiverFinder to see if passes tests
 
 
-class MoveReceiverFinder:
+class ReceiverFinder:
     def __init__(self, battle_pokemon: BattlePokemon):
         self.battle_pokemon = battle_pokemon
 
