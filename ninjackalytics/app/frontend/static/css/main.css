@@ -1,0 +1,55 @@
+/* main.css */
+
+:root {
+    --primary-color: #6A0DAD;
+    --secondary-color: #9A48D0;
+    --background-color: #1F1F1F;
+    --text-color: #FFFFFF;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: var(--primary-color);
+    padding: 1rem;
+}
+
+nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+nav a:hover {
+    color: var(--secondary-color);
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-top: 2rem;
+}
+
+.background-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/static/images/purple_aesthetic.jpg');
+    /* Replace this with the correct file name */
+    background-size: cover;
+    background-position: center;
+    opacity: 0.7;
+    /* Adjust the transparency (0 to 1) */
+    z-index: -1;
+}
