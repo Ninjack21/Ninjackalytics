@@ -7,5 +7,5 @@ app = FastAPI()
 # Mount the static files
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
-# Include the home routes
+# Include the different routes
 app.include_router(home.router)
