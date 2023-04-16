@@ -2,6 +2,16 @@ import requests
 import re
 from typing import Optional, List
 
+import os
+import sys
+
+file_path = os.path.dirname(os.path.realpath(__file__))
+app_path = file_path.split("ninjackalytics")[0]
+app_path = app_path + "ninjackalytics"
+sys.path.insert(1, app_path)
+
+from app.services.battle_parsing.log_models import Response, Turn, Line
+
 
 class Battle:
     def __init__(self, url: str):
@@ -117,111 +127,3 @@ class Battle:
             The battle format.
         """
         return self.response.log
-
-
-class Response:
-    def __init__(self, response):
-        """
-        Initialize a Response object from a JSON response.
-
-        Parameters:
-        -----------
-        response: dict
-            A dictionary containing the JSON response.
-
-        """
-        self._log = response["log"]
-        self._battle_id = response["id"]
-        self._format = response["format"]
-
-        try:
-            battle_start = self.log.split("|start\n")[1]
-            log_turns = battle_start.split("|turn|")
-            self.turns = [
-                Turn(turn_num, turn_str) for turn_num, turn_str in enumerate(log_turns)
-            ]
-        except:
-            self.turns = []
-
-    @property
-    def battle_id(self) -> str:
-        """
-        Get the battle ID.
-
-        Returns:
-        --------
-        str:
-            The battle ID.
-        """
-        return self._battle_id
-
-    @property
-    def format(self) -> str:
-        """
-        Get the battle format.
-
-        Returns:
-        --------
-        str:
-            The battle format.
-        """
-        return self._format
-
-    @property
-    def log(self) -> str:
-        """
-        Get the battle format.
-
-        Returns:
-        --------
-        str:
-            The battle format.
-        """
-        return self._log
-
-
-class Turn:
-    def __init__(self, turn_num: int, turn_str: str):
-        """
-        Initialize a Turn object from a turn number and a string containing battle events.
-        Only non-comment, non-raw, and non-turn-initialization Lines are created.
-
-
-        Parameters:
-        -----------
-        turn_num: int
-            The turn number for the Turn object.
-        turn_str: str
-            A string containing the battle events for the Turn object.
-
-        """
-        self.number = turn_num
-        self.text = turn_str
-
-        self.lines = [
-            Line(line_num, line_str)
-            for line_num, line_str in enumerate(self.text.split("\n"), start=1)
-            if not line_str.startswith("|c|")
-            and not line_str.startswith("|raw|")
-            and not "|turn|" in line_str
-        ]
-
-
-class Line:
-    def __init__(self, line_num: int, line_str: str):
-        """
-        Initialize a Line object from a line number and a string containing a single battle event.
-
-        Not sure the Line objects are ever going to do anything besides store data, but have
-        object just in case
-
-        Parameters:
-        -----------
-        line_num: int
-            The line number for the Line object.
-        line_str: str
-            A string containing a single battle event.
-
-        """
-        self.text = line_str
-        self.number = line_num

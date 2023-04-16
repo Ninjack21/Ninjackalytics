@@ -2,65 +2,17 @@ import unittest
 from unittest.mock import patch, Mock
 from typing import Iterable, Optional, List
 import requests_mock
-from models import Battle, Response, Turn, Line
 
+import os
+import sys
 
-class TestTurn(unittest.TestCase):
-    def setUp(self) -> None:
-        self.turn_num = 1
-        self.turn_str = "|turn| 1\n|foo| bar\n|c| baz"
+file_path = os.path.dirname(os.path.realpath(__file__))
+app_path = file_path.split("ninjackalytics")[0]
+app_path = app_path + "ninjackalytics"
+sys.path.insert(1, app_path)
 
-    def test_init(self) -> None:
-        turn = Turn(self.turn_num, self.turn_str)
-
-        self.assertEqual(turn.number, self.turn_num)
-        self.assertEqual(turn.text, self.turn_str)
-
-    @patch.object(Line, "__init__", return_value=None)
-    def test_init_creates_lines(self, mock_line_init: Mock) -> None:
-        turn = Turn(self.turn_num, self.turn_str)
-
-        self.assertTrue(isinstance(turn.lines, List))
-        self.assertEqual(len(turn.lines), 1)
-
-    @patch.object(Line, "__init__", return_value=None)
-    def test_init_skips_c_and_raw_lines(self, mock_line_init: Mock) -> None:
-        turn_str = "|turn| 1\n|foo| bar\n|c| baz\n|raw| qux"
-        turn = Turn(self.turn_num, turn_str)
-
-        mock_line_init.assert_called_once_with(2, "|foo| bar")
-
-
-class TestResponse(unittest.TestCase):
-    def test_init(self):
-        # Test successful initialization
-        json_response = {
-            "id": "1",
-            "format": "gen8",
-            "log": "|start\n|switch|p1a: Venusaur|...",
-        }
-        response = Response(json_response)
-        self.assertEqual(response.battle_id, "1")
-        self.assertEqual(response.format, "gen8")
-        self.assertEqual(len(response.turns), 1)
-        self.assertIsInstance(response.turns[0], Turn)
-
-        # Test failed initialization
-        json_response = {"id": "1", "format": "gen8", "log": ""}
-        response = Response(json_response)
-        self.assertEqual(response.battle_id, "1")
-        self.assertEqual(response.format, "gen8")
-        self.assertEqual(len(response.turns), 0)
-
-    def test_battle_id(self):
-        json_response = {"id": "1", "format": "gen8", "log": "|start\n"}
-        response = Response(json_response)
-        self.assertEqual(response.battle_id, "1")
-
-    def test_format(self):
-        json_response = {"id": "1", "format": "gen8", "log": "|start\n"}
-        response = Response(json_response)
-        self.assertEqual(response.format, "gen8")
+from app.services.battle_parsing.log_models import Response, Turn
+from app.services.battle_parsing.log import Battle
 
 
 class TestBattle(unittest.TestCase):
@@ -203,14 +155,11 @@ class TestBattle(unittest.TestCase):
         ]
 
         # Test that all lines appear and in the presumed order
-        # Dealing with turn filtering of lines right now - doesn't read whole line, only number of turn since
-        # split on that
         for i, line in enumerate(lines):
-            print("==================")
-            print(f"{i}: {line.text}")
-            print(f"{i}: {log_lines[i]}")
-
-            # self.assertEqual(line.text, log_lines[i])
+            # simple log_lines for test don't remove |turn| from lines that indicate new turns
+            # only test loglines where |turn| not in it since not worried about this behavior
+            if "|turn|" not in log_lines[i]:
+                self.assertEqual(line.text, log_lines[i])
 
 
 if __name__ == "__main__":
