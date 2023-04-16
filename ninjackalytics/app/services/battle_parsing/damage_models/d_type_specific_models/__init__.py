@@ -12,15 +12,15 @@ from app.services.battle_parsing.damage_models.d_type_specific_models.abstract_m
     BattlePokemon,
     Turn,
 )
-from app.services.battle_parsing.damage_models.d_type_specific_models.item_ability_data_finder import (
+from app.services.battle_parsing.damage_models.d_type_specific_models.item_ability import (
     ItemAbilityDataFinder,
 )
-from app.services.battle_parsing.damage_models.d_type_specific_models.move_data_finder import (
+from app.services.battle_parsing.damage_models.d_type_specific_models.move import (
     MoveDataFinder,
 )
-from app.services.battle_parsing.damage_models.d_type_specific_models.passive_data_finder import (
+from app.services.battle_parsing.damage_models.d_type_specific_models.passive import (
     PassiveDataFinder,
 )
-from app.services.battle_parsing.damage_models.d_type_specific_models.status_hazard_data_finder import (
+from app.services.battle_parsing.damage_models.d_type_specific_models.status_hazard import (
     StatusHazardDataFinder,
 )
