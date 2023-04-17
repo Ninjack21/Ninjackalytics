@@ -52,14 +52,74 @@ class MockBattlePokemon:
 mock_battle_pokemon = MockBattlePokemon()
 
 
+class MockBattle:
+    def __init__(self):
+        turns = []
+
+    # quick implementation for testing
+    def get_turns(self) -> list:
+        return self.turns
+
+
+mock_battle = MockBattle()
+
+
 class MockTurn:
     def __init__(self, number: int, text: str):
         self.number = number
         self.text = text
 
 
-# =================== MOCK PROTOCOLS FOR TESTING ===================
+# =================== useful functions for testing ===================
+def strip_leading_spaces(text: str) -> str:
+    return "\n".join(line.lstrip() for line in text.strip().split("\n"))
 
-print("no tests implemented yet")
+
+# =================== UnitTests ===================
+
+
+class TestMoveDataFinder(unittest.TestCase):
+    def setUp(self):
+        self.move_data_finder = MoveDataFinder(mock_battle_pokemon)
+
+    def test_get_damage_data(self):
+        # move types tested in DealerSourceFinder already, just check other parts
+        normal_turn = MockTurn(
+            1,
+            strip_leading_spaces(
+                """
+            |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
+            |-damage|p1a: Cuss-Tran|67/100
+            """
+            ),
+        )
+
+        event = "|-damage|p1a: Cuss-Tran|67/100"
+        mock_battle.turns = [normal_turn]
+
+        damage_data = self.move_data_finder.get_damage_data(
+            event, normal_turn, mock_battle
+        )
+
+        self.assertEqual(damage_data["Type"], "move")
+        self.assertEqual(damage_data["Dealer"], "Blissey")
+        self.assertEqual(damage_data["Dealer_Player_Number"], 2)
+        self.assertEqual(damage_data["Source_Name"], "Seismic Toss")
+        self.assertEqual(damage_data["Damage"], 33.0)
+        self.assertEqual(damage_data["Receiver"], "Cuss-Tran")
+        self.assertEqual(damage_data["Receiver_Player_Number"], 1)
+        self.assertEqual(damage_data["Turn"], 1)
+
+        # test bad input
+        bad_turn = MockTurn(2, "|-damage|p1a: Cuss-Tran|67/100| [from] non-move")
+        bad_event = "|-damage|p1a: Cuss-Tran|67/100| [from] non-move"
+        mock_battle.turns = [bad_turn]
+
+        with self.assertRaises(ValueError):
+            damage_data = self.move_data_finder.get_damage_data(
+                bad_event, bad_turn, mock_battle
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
