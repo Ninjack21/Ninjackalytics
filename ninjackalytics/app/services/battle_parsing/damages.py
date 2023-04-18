@@ -10,7 +10,13 @@ app_path = app_path + "ninjackalytics"
 sys.path.insert(1, app_path)
 
 from app.services.battle_parsing.damage_models.d_type_specific_models.abstract_model import (
-    AbstractDamageDataFinder,
+    DamageDataFinder,
+)
+from app.services.battle_parsing.damage_models.d_type_specific_models import (
+    ItemAbilityDataFinder,
+    MoveDataFinder,
+    PassiveDataFinder,
+    StatusHazardDataFinder,
 )
 
 
@@ -97,5 +103,5 @@ class DamageData:
         else:
             raise Exception("Unknown source type")
 
-    def _get_source_data_finder(self, source_type: str) -> AbstractDamageDataFinder:
+    def _get_source_data_finder(self, source_type: str) -> DamageDataFinder:
         return self.source_routing[source_type]

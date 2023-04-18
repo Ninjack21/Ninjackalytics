@@ -103,4 +103,4 @@ class MoveDataFinder(DamageDataFinder):
         if "[from]" in event:
             raise ValueError(f"Event {event} is not a move event.")
         else:
-            return "move"
+            return "Move"

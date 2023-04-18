@@ -78,46 +78,106 @@ def strip_leading_spaces(text: str) -> str:
 
 class TestDamageData(unittest.TestCase):
     def setUp(self):
-        self.mock_battle = Mock(spec=Battle)
-        self.mock_battle_pokemon = Mock(spec=BattlePokemon)
-        self.damage_data = DamageData(self.mock_battle, self.mock_battle_pokemon)
+        self.damage_data = DamageData(mock_battle, mock_battle_pokemon)
 
-    def test_get_source(self):
-        test_cases = [
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292",
-                "expected_source": "move",
-            },
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292|[from] item: Life Orb",
-                "expected_source": "item",
-            },
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292|[from] ability: Rough Skin",
-                "expected_source": "ability",
-            },
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292|[from] Stealth Rock",
-                "expected_source": "hazard",
-            },
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292|[from] psn",
-                "expected_source": "status",
-            },
-            {
-                "event": "|-damage|p2a: AMagicalFox|213/292|[from] some_unknown_event",
-                "expected_source": "passive",
-            },
-        ]
+    def test_get_move_data(self):
+        move_turn = MockTurn(
+            1,
+            strip_leading_spaces(
+                """
+                |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
+                |-damage|p1a: Cuss-Tran|67/100
+                """
+            ),
+        )
 
-        for test_case in test_cases:
-            event = test_case["event"]
-            expected_source = test_case["expected_source"]
-            actual_source = self.damage_data.get_source(event)
+        event = "|-damage|p1a: Cuss-Tran|67/100"
 
-            self.assertEqual(
-                actual_source, expected_source, f"Failed for event: {event}"
-            )
+        move_data = self.damage_data.get_damage_data(event, move_turn)
+
+        self.assertEqual(move_data["Damage"], 33)
+        self.assertEqual(move_data["Dealer"], "Blissey")
+        self.assertEqual(move_data["Dealer_Player_Number"], 2)
+        self.assertEqual(move_data["Source_Name"], "Seismic Toss")
+        self.assertEqual(move_data["Receiver"], "Cuss-Tran")
+        self.assertEqual(move_data["Receiver_Player_Number"], 1)
+        self.assertEqual(move_data["Turn"], 1)
+        self.assertEqual(move_data["Type"], "Move")
+
+    def test_get_item_data(self):
+        event = "|-damage|p2a: BrainCell|50/100|[from] item: Life Orb"
+        turn = MockTurn(1, event)
+
+        item_data = self.damage_data.get_damage_data(event, turn)
+
+        self.assertEqual(item_data["Damage"], 50)
+        self.assertEqual(item_data["Dealer"], "Life Orb")
+        self.assertEqual(item_data["Dealer_Player_Number"], 2)
+        self.assertEqual(item_data["Source_Name"], "Life Orb")
+        self.assertEqual(item_data["Receiver"], "BrainCell")
+        self.assertEqual(item_data["Receiver_Player_Number"], 2)
+        self.assertEqual(item_data["Turn"], 1)
+        self.assertEqual(item_data["Type"], "Item")
+
+    def test_get_ability_data(self):
+        event = "|-damage|p1a: Pikachu|80/100|[from] ability: Static"
+        turn = MockTurn(1, event)
+
+        move_data = self.damage_data.get_damage_data(event, turn)
+
+        self.assertEqual(move_data["Damage"], 20)
+        self.assertEqual(move_data["Dealer"], "Static")
+        self.assertEqual(move_data["Dealer_Player_Number"], 1)
+        self.assertEqual(move_data["Source_Name"], "Static")
+        self.assertEqual(move_data["Receiver"], "Pikachu")
+        self.assertEqual(move_data["Receiver_Player_Number"], 1)
+        self.assertEqual(move_data["Turn"], 1)
+        self.assertEqual(move_data["Type"], "Ability")
+
+    def test_get_hazard_data(self):
+        event = "|-damage|p2a: Ferrothorn|94/100|[from] Stealth Rock"
+        turn = MockTurn(1, event)
+
+        move_data = self.damage_data.get_damage_data(event, turn)
+
+        self.assertEqual(move_data["Damage"], 6)
+        self.assertEqual(move_data["Dealer"], "Stealth Rock")
+        self.assertEqual(move_data["Dealer_Player_Number"], 1)
+        self.assertEqual(move_data["Source_Name"], "Stealth Rock")
+        self.assertEqual(move_data["Receiver"], "Ferrothorn")
+        self.assertEqual(move_data["Receiver_Player_Number"], 2)
+        self.assertEqual(move_data["Turn"], 1)
+        self.assertEqual(move_data["Type"], "Hazard")
+
+    def test_get_status_data(self):
+        event = "|-damage|p1a: Rillaboom|94/100 tox|[from] psn"
+        turn = MockTurn(1, event)
+
+        move_data = self.damage_data.get_damage_data(event, turn)
+
+        self.assertEqual(move_data["Damage"], 6)
+        self.assertEqual(move_data["Dealer"], "tox")
+        self.assertEqual(move_data["Dealer_Player_Number"], 2)
+        self.assertEqual(move_data["Source_Name"], "tox")
+        self.assertEqual(move_data["Receiver"], "Rillaboom")
+        self.assertEqual(move_data["Receiver_Player_Number"], 1)
+        self.assertEqual(move_data["Turn"], 1)
+        self.assertEqual(move_data["Type"], "Status")
+
+    def test_get_passive_data(self):
+        event = "|-damage|p1a: Druddigon|88/100|[from] Leech Seed|[of] p2a: Ferrothorn"
+        turn = MockTurn(1, event)
+
+        move_data = self.damage_data.get_damage_data(event, turn)
+
+        self.assertEqual(move_data["Damage"], 12)
+        self.assertEqual(move_data["Dealer"], "Ferrothorn")
+        self.assertEqual(move_data["Dealer_Player_Number"], 2)
+        self.assertEqual(move_data["Source_Name"], "Leech Seed")
+        self.assertEqual(move_data["Receiver"], "Druddigon")
+        self.assertEqual(move_data["Receiver_Player_Number"], 1)
+        self.assertEqual(move_data["Turn"], 1)
+        self.assertEqual(move_data["Type"], "Passive")
 
 
 if __name__ == "__main__":

@@ -101,7 +101,7 @@ class TestMoveDataFinder(unittest.TestCase):
             event, normal_turn, mock_battle
         )
 
-        self.assertEqual(damage_data["Type"], "move")
+        self.assertEqual(damage_data["Type"], "Move")
         self.assertEqual(damage_data["Dealer"], "Blissey")
         self.assertEqual(damage_data["Dealer_Player_Number"], 2)
         self.assertEqual(damage_data["Source_Name"], "Seismic Toss")
