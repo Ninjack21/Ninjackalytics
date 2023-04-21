@@ -9,6 +9,13 @@ app_path = file_path.split("ninjackalytics")[0]
 app_path = app_path + "ninjackalytics"
 sys.path.insert(1, app_path)
 
+from app.services.battle_parsing.heal_models.abstract_model import HealDataFinder
+from app.services.battle_parsing.heal_models import (
+    AbilityHealData,
+    DrainHealData,
+    ItemHealData,
+)
+
 
 # ============= START PROTOCOLS =============
 class Turn(Protocol):
@@ -38,40 +45,48 @@ class BattlePokemon(Protocol):
 # ============= END PROTOCOLS =============
 
 
+# Modify the HealData class
 class HealData:
     def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
         self.battle = battle
-        self.move_data_finder = MoveDataFinder(battle_pokemon)
-        self.passive_data_finder = PassiveDataFinder(battle_pokemon)
-        self.item_ability_data_finder = ItemAbilityDataFinder(battle_pokemon)
+
         self.source_routing = {
-            "move": self.move_data_finder,
-            "passive": self.passive_data_finder,
-            "item": self.item_ability_data_finder,
-            "ability": self.item_ability_data_finder,
+            "move": MoveHealData(battle_pokemon),
+            "passive": PassiveHealData(battle_pokemon),
+            "item": ItemHealData(battle_pokemon),
+            "ability": AbilityHealData(battle_pokemon),
+            "drain move": DrainHealData(battle_pokemon),
+            "terrain": TerrainHealData(battle_pokemon),
         }
 
     def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
-        Get the heal data from an event.
+        Gets the heal data when provided with an event str and turn object.
 
-        Parameters:
-        -----------
-        event: str
-            - The event
-        turn: Turn
-            - The turn the event occurred on.
+        Parameters
+        ----------
+        event : str
+            - The event where a |-heal| or |switch| was seen.
+        turn : Turn
+            - A turn object containing the event
 
-        Returns:
-        --------
-        Dict[str, str]:
-            - The heal data from the event.
+        Returns
+        -------
+        Dict[str, str]
+            - A dictionary with the following keys:
+                - Healing
+                - Receiver
+                - Receiver_Player_Number
+                - Source_Name
+                - Turn
+                - Type
         ---
         """
-
         source_type = self._get_source_type(event)
         source_data_finder = self._get_source_data_finder(source_type)
-        heal_dict = source_data_finder.get_heal_data(event, turn, self.battle)
+        heal_dict = source_data_finder.get_heal_data(
+            event, turn, self.battle, self.battle_pokemon
+        )
 
         return heal_dict
 
@@ -122,5 +137,5 @@ class HealData:
             heal_type = "passive"  # this indicates something like aqua ring
         return heal_type
 
-    def _get_source_data_finder(self, source_type: str) -> DamageDataFinder:
+    def _get_source_data_finder(self, source_type: str) -> HealDataFinder:
         return self.source_routing[source_type]
