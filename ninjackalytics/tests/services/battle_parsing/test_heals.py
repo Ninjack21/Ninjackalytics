@@ -72,6 +72,14 @@ class MockTurn:
 # =================== MOCK PROTOCOLS FOR TESTING ===================
 
 
+# =================== useful functions for testing ===================
+def strip_leading_spaces(text: str) -> str:
+    return "\n".join(line.lstrip() for line in text.strip().split("\n"))
+
+
+# =================== useful functions for testing ===================
+
+
 class TestHealData(unittest.TestCase):
     def setUp(self):
         # ==========ALL HEAL TYPE TURNS SETUP HERE ==========
@@ -81,6 +89,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p2a: Bisharp|100/100|[from] item: Leftovers
             |upkeep
             """
+        item_turn.text = strip_leading_spaces(item_turn.text)
 
         self.item_turn = item_turn
 
@@ -91,6 +100,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p2a: Moltres|96/100
             |upkeep
             """
+        move_turn.textt = strip_leading_spaces(move_turn.text)
 
         self.move_turn = move_turn
 
@@ -100,6 +110,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p1a: Avalugg|21/100|[from] ability: Ice Body
             |upkeep
             """
+        ability_turn.text = strip_leading_spaces(ability_turn.text)
 
         self.ability_turn = ability_turn
 
@@ -109,6 +120,7 @@ class TestHealData(unittest.TestCase):
         regenerator_turn.text = """
             |switch|p1a: Slowbro|Slowbro, F|90/100
             """
+        regenerator_turn.text = strip_leading_spaces(regenerator_turn.text)
 
         self.regenerator_turn = regenerator_turn
 
@@ -118,6 +130,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p2a: Tyranitar|91/100|[from] Grassy Terrain
             |upkeep
             """
+        terrain_turn.text = strip_leading_spaces(terrain_turn.text)
 
         self.terrain_turn = terrain_turn
 
@@ -130,6 +143,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p1a: Frosmoth|82/100 tox|[silent]
             |upkeep
             """
+        passive_turn.text = strip_leading_spaces(passive_turn.text)
 
         self.passive_turn = passive_turn
 
@@ -141,6 +155,7 @@ class TestHealData(unittest.TestCase):
             |-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal
             |upkeep
             """
+        drain_turn.text = strip_leading_spaces(drain_turn.text)
 
         self.drain_turn = drain_turn
 
@@ -160,29 +175,32 @@ class TestHealData(unittest.TestCase):
         self.heal_data = HealData(self.battle, self.battle_pokemon)
 
     def test_get_heal_data_move(self):
-        heal_data = self.heal_data.get_heal_data(self.move_turn)
+        event = "|-heal|p2a: Moltres|96/100"
+        heal_data = self.heal_data.get_heal_data(event, self.move_turn, self.battle)
         self.assertEqual(heal_data["Healing"], 96)
         self.assertEqual(heal_data["Receiver"], "Moltres")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
-        self.assertEqual(heal_data["Source_name"], "Roost")
+        self.assertEqual(heal_data["Source_Name"], "Roost")
         self.assertEqual(heal_data["Turn"], 22)
         self.assertEqual(heal_data["Type"], "Move")
 
     def test_get_heal_data_item(self):
-        heal_data = self.heal_data.get_heal_data(self.item_turn)
+        event = "|-heal|p2a: Bisharp|100/100|[from] item: Leftovers"
+        heal_data = self.heal_data.get_heal_data(event, self.item_turn, self.battle)
         self.assertEqual(heal_data["Healing"], 100)
         self.assertEqual(heal_data["Receiver"], "Bisharp")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
-        self.assertEqual(heal_data["Source_name"], "Leftovers")
+        self.assertEqual(heal_data["Source_Name"], "Leftovers")
         self.assertEqual(heal_data["Turn"], 1)
         self.assertEqual(heal_data["Type"], "Item")
 
     def test_get_heal_data_ability(self):
-        heal_data = self.heal_data.get_heal_data(self.ability_turn)
+        event = "|-heal|p1a: Avalugg|21/100|[from] ability: Ice Body"
+        heal_data = self.heal_data.get_heal_data(event, self.ability_turn, self.battle)
         self.assertEqual(heal_data["Healing"], 21)
         self.assertEqual(heal_data["Receiver"], "Avalugg")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-        self.assertEqual(heal_data["Source_name"], "Ice Body")
+        self.assertEqual(heal_data["Source_Name"], "Ice Body")
         self.assertEqual(heal_data["Turn"], 22)
         self.assertEqual(heal_data["Type"], "Ability")
 
@@ -192,38 +210,44 @@ class TestHealData(unittest.TestCase):
         pokemon that enters a battle to see if its hp is different from what it was when it left. If it is,
         then we will simply call that an ability heal with the source name Regenerator.
         """
-        heal_data = self.heal_data.get_heal_data(self.regenerator_turn)
+        event = "|switch|p1a: Slowbro|Slowbro, F|90/100"
+        heal_data = self.heal_data.get_heal_data(
+            event, self.regenerator_turn, self.battle
+        )
         self.assertEqual(heal_data["Healing"], 90)
         self.assertEqual(heal_data["Receiver"], "Slowbro")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-        self.assertEqual(heal_data["Source_name"], "Regenerator")
+        self.assertEqual(heal_data["Source_Name"], "Regenerator")
         self.assertEqual(heal_data["Turn"], 6)
         self.assertEqual(heal_data["Type"], "Ability")
 
     def test_get_heal_data_terrain(self):
-        heal_data = self.heal_data.get_heal_data(self.terrain_turn)
+        event = "|-heal|p2a: Tyranitar|91/100|[from] Grassy Terrain"
+        heal_data = self.heal_data.get_heal_data(event, self.terrain_turn, self.battle)
         self.assertEqual(heal_data["Healing"], 91)
         self.assertEqual(heal_data["Receiver"], "Tyranitar")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
-        self.assertEqual(heal_data["Source_name"], "Grassy Terrain")
+        self.assertEqual(heal_data["Source_Name"], "Grassy Terrain")
         self.assertEqual(heal_data["Turn"], 4)
         self.assertEqual(heal_data["Type"], "Terrain")
 
     def test_get_heal_data_passive(self):
-        heal_data = self.heal_data.get_heal_data(self.passive_turn)
+        event = "|-heal|p1a: Frosmoth|82/100|[from] Leech Seed"
+        heal_data = self.heal_data.get_heal_data(event, self.passive_turn, self.battle)
         self.assertEqual(heal_data["Healing"], 82)
         self.assertEqual(heal_data["Receiver"], "Frosmoth")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-        self.assertEqual(heal_data["Source_name"], "Leech Seed")
+        self.assertEqual(heal_data["Source_Name"], "Leech Seed")
         self.assertEqual(heal_data["Turn"], 9)
         self.assertEqual(heal_data["Type"], "Passive")
 
     def test_get_heal_data_drain(self):
+        event = "|-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal"
         heal_data = self.heal_data.get_heal_data(self.drain_turn)
         self.assertEqual(heal_data["Healing"], 58)
         self.assertEqual(heal_data["Receiver"], "Abomasnow")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-        self.assertEqual(heal_data["Source_name"], "Torkoal")
+        self.assertEqual(heal_data["Source_Name"], "Giga Drain")
         self.assertEqual(heal_data["Turn"], 15)
         self.assertEqual(heal_data["Type"], "Drain")
 
