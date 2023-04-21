@@ -1,6 +1,23 @@
 import re
-from typing import Dict, List, Tuple, Protocol, Optional
-from abc import ABC, abstractmethod
+from typing import Dict, List, Tuple, Protocol
+
+import os
+import sys
+
+file_path = os.path.dirname(os.path.realpath(__file__))
+app_path = file_path.split("ninjackalytics")[0]
+app_path = app_path + "ninjackalytics"
+sys.path.insert(1, app_path)
+
+from app.services.battle_parsing.damage_models.d_type_specific_models.abstract_model import (
+    DamageDataFinder,
+)
+from app.services.battle_parsing.damage_models.d_type_specific_models import (
+    ItemAbilityDataFinder,
+    MoveDataFinder,
+    PassiveDataFinder,
+    StatusHazardDataFinder,
+)
 
 
 class Turn(Protocol):
@@ -29,97 +46,62 @@ class BattlePokemon(Protocol):
 
 class DamageData:
     def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
-        self.move_data_finder = MoveDataFinder(battle, battle_pokemon)
-        self.passive_data_finder = PassiveDataFinder(battle, battle_pokemon)
-        self.item_ability_data_finder = ItemAbilityDataFinder(battle, battle_pokemon)
-        self.status_hazard_data_finder = StatusHazardDataFinder(battle, battle_pokemon)
+        self.battle = battle
+        self.move_data_finder = MoveDataFinder(battle_pokemon)
+        self.passive_data_finder = PassiveDataFinder(battle_pokemon)
+        self.item_ability_data_finder = ItemAbilityDataFinder(battle_pokemon)
+        self.status_hazard_data_finder = StatusHazardDataFinder(battle_pokemon)
+        self.source_routing = {
+            "move": self.move_data_finder,
+            "passive": self.passive_data_finder,
+            "item": self.item_ability_data_finder,
+            "ability": self.item_ability_data_finder,
+            "status": self.status_hazard_data_finder,
+            "hazard": self.status_hazard_data_finder,
+        }
 
-    def _get_damage_source(self, event: str) -> str:
+    def get_damage_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
-        Get the source of the damage event.
+        Get the damage data from an event.
 
         Parameters:
         -----------
         event: str
-            The damage event.
+            The event
+        turn: Turn
+            The turn the event occurred on.
 
         Returns:
         --------
-        str:
-            The source of the damage event.
+        Dict[str, str]:
+            The damage data from the event.
         ---
         """
-        for source, pattern in self.source_patterns.items():
-            if re.search(pattern, event):
-                return source
 
-        return "move" if not "[from]" in event else "passive"
+        source_type = self._get_source_type(event)
+        source_data_finder = self._get_source_data_finder(source_type)
+        damage_dict = source_data_finder.get_damage_data(event, turn, self.battle)
 
-    def _get_mon_pnum_and_name(self, raw_name: str) -> Tuple[int, str]:
-        """
-        Get the player number and name of the Pokemon.
+        return damage_dict
 
-        Parameters:
-        -----------
-        raw_name: str
-            The raw name of the Pokemon.
+    def _get_source_type(self, event: str) -> str:
+        if "[from]" not in event:
+            return "move"
+        elif "[from] item:" in event:
+            return "item"
+        elif "[from] ability:" in event:
+            return "ability"
+        elif "[from]" in event:
+            # need to check for status, hazard, or passive
+            source = event.split("[from] ")[1]
+            if source in self.status_hazard_data_finder.statuses:
+                return "status"
+            elif source in self.status_hazard_data_finder.hazards:
+                return "hazard"
+            else:
+                return "passive"
+        else:
+            raise Exception("Unknown source type")
 
-        Returns:
-        --------
-        Tuple[int, str]:
-            The player number and name of the Pokemon.
-        ---
-        """
-        return self.battle_pokemon.get_pnum_and_name(raw_name)
-
-    def _get_receiver_raw_name(self, event: str) -> str:
-        """
-        Get the raw name of the Pokemon receiving the damage.
-
-        e.x.
-        ============================
-        |move|p1a: May Day Parade|Sucker Punch|p2a: AMagicalFox
-              ^^^^^^^^^^^^^^^^^^^ (dealer)
-        ...
-        |-damage|p2a: AMagicalFox|0 fnt <-- expected event
-                 ^^^^^^^^^^^^^^^^ (receiver)
-        ============================
-        Parameters:
-        -----------
-        event: str
-            The damage event.
-
-        Returns:
-        --------
-        str:
-            The raw name of the Pokemon receiving the damage.
-        ---
-        NOTE: This logic is currently the same as _get_dealer_raw_name but separated for rigor
-        """
-        return event.split("|")[2]
-
-    def _get_dealer_raw_name(self, event: str) -> str:
-        """
-        Get the raw name of the Pokemon dealing the damage.
-
-        e.x.
-        ============================
-        |move|p1a: May Day Parade|Sucker Punch|p2a: AMagicalFox <-- expected event
-              ^^^^^^^^^^^^^^^^^^^ (dealer)
-        ...
-        |-damage|p2a: AMagicalFox|0 fnt
-                 ^^^^^^^^^^^^^^^^ (receiver)
-        ============================
-
-        Parameters:
-        -----------
-        event: str
-            The damage event.
-
-        Returns:
-        --------
-        str:
-            The raw name of the Pokemon dealing the damage.
-        ---
-        """
-        return event.split("|")[2]
+    def _get_source_data_finder(self, source_type: str) -> DamageDataFinder:
+        return self.source_routing[source_type]
