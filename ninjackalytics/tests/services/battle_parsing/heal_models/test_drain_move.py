@@ -76,6 +76,7 @@ class TestDrainMoveHealData(unittest.TestCase):
         drain_turn = Mock(Turn)
         drain_turn.number = 15
         drain_turn.text = """
+            |move|p2a: Torkoal|Should Not Be Me|p1a: Abomasnow
             |move|p1a: Abomasnow|Giga Drain|p2a: Torkoal
             |-damage|p2a: Torkoal|60/100
             |-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal
@@ -89,13 +90,13 @@ class TestDrainMoveHealData(unittest.TestCase):
 
     def test_get_heal_data_drain(self):
         event = "|-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal"
-        heal_data = self.heal_data.get_heal_data(self.drain_turn)
+        heal_data = self.data_finder.get_heal_data(self.drain_turn)
         self.assertEqual(heal_data["Healing"], 58)
         self.assertEqual(heal_data["Receiver"], "Abomasnow")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
         self.assertEqual(heal_data["Source_Name"], "Giga Drain")
         self.assertEqual(heal_data["Turn"], 15)
-        self.assertEqual(heal_data["Type"], "Drain")
+        self.assertEqual(heal_data["Type"], "Drain Move")
 
 
 if __name__ == "__main__":
