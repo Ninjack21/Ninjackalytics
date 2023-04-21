@@ -24,6 +24,28 @@ class RegeneratorHealData(HealDataFinder):
     def get_heal_data(
         self, event: str, turn: Turn, battle=None
     ) -> Optional[Dict[str, str]]:
+        """
+        Gets the healing data for a regenerator related healing event.
+
+        Parameters
+        ----------
+        turn : Turn
+            - An object containing the text of the turn and the turn number.
+        battle : Battle, optional
+            - Not needed for DrainMoveData, by default None
+
+        Returns
+        -------
+        Dict[str, str]
+            - A dictionary containing the healing data for a drain move. Has the following expected columns:
+                - Healing
+                - Receiver
+                - Receiver_Player_Number
+                - Source_Name
+                - Turn
+                - Type
+        ---
+        """
         heal_parts = event.split("|")
         raw_name = heal_parts[2].strip()
         new_hp = float(heal_parts[4].split("/")[0])
@@ -46,6 +68,7 @@ class RegeneratorHealData(HealDataFinder):
 
     def _get_hp_change(self, event: str, receiver_raw_name: str) -> float:
         """
+        Parent method has to be overwritten because the event is different for regenerator.
         Example events:
         ---------------
         |switch|p1a: Slowbro|Slowbro, F|90/100

@@ -22,6 +22,28 @@ class TerrainHealData(HealDataFinder):
         self.battle_pokemon = battle_pokemon
 
     def get_heal_data(self, event: str, turn: Turn, battle=None) -> Dict[str, str]:
+        """
+        Gets the healing data for a terrain healing.
+
+        Parameters
+        ----------
+        turn : Turn
+            - An object containing the text of the turn and the turn number.
+        battle : Battle, optional
+            - Not needed for DrainMoveData, by default None
+
+        Returns
+        -------
+        Dict[str, str]
+            - A dictionary containing the healing data for a drain move. Has the following expected columns:
+                - Healing
+                - Receiver
+                - Receiver_Player_Number
+                - Source_Name
+                - Turn
+                - Type
+        ---
+        """
         heal_parts = event.split("|")
         raw_name = heal_parts[2].strip()
         new_hp = float(heal_parts[3].split("/")[0])
