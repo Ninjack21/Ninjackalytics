@@ -159,14 +159,14 @@ class TestHealData(unittest.TestCase):
 
         self.heal_data = HealData(self.battle, self.battle_pokemon)
 
-    # def test_get_heal_data_move(self):
-    #     heal_data = self.heal_data.get_heal_data(self.move_turn)
-    #     self.assertEqual(heal_data["Healing"], 96)
-    #     self.assertEqual(heal_data["Receiver"], "Moltres")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 2)
-    #     self.assertEqual(heal_data["Source_name"], "Roost")
-    #     self.assertEqual(heal_data["Turn"], 22)
-    #     self.assertEqual(heal_data["Type"], "Move")
+    def test_get_heal_data_move(self):
+        heal_data = self.heal_data.get_heal_data(self.move_turn)
+        self.assertEqual(heal_data["Healing"], 96)
+        self.assertEqual(heal_data["Receiver"], "Moltres")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 2)
+        self.assertEqual(heal_data["Source_name"], "Roost")
+        self.assertEqual(heal_data["Turn"], 22)
+        self.assertEqual(heal_data["Type"], "Move")
 
     def test_get_heal_data_item(self):
         heal_data = self.heal_data.get_heal_data(self.item_turn)
@@ -177,52 +177,56 @@ class TestHealData(unittest.TestCase):
         self.assertEqual(heal_data["Turn"], 1)
         self.assertEqual(heal_data["Type"], "Item")
 
-    # def test_get_heal_data_ability(self):
-    #     heal_data = self.heal_data.get_heal_data(self.ability_turn)
-    #     self.assertEqual(heal_data["Healing"], 21)
-    #     self.assertEqual(heal_data["Receiver"], "Avalugg")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-    #     self.assertEqual(heal_data["Source_name"], "Ice Body")
-    #     self.assertEqual(heal_data["Turn"], 22)
-    #     self.assertEqual(heal_data["Type"], "Ability")
+    def test_get_heal_data_ability(self):
+        heal_data = self.heal_data.get_heal_data(self.ability_turn)
+        self.assertEqual(heal_data["Healing"], 21)
+        self.assertEqual(heal_data["Receiver"], "Avalugg")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 1)
+        self.assertEqual(heal_data["Source_name"], "Ice Body")
+        self.assertEqual(heal_data["Turn"], 22)
+        self.assertEqual(heal_data["Type"], "Ability")
 
-    # def test_get_heal_data_regenerator(self):
-    #     """
-    #     This is a special case because the heal is not in the turn text. Instead, we will have to analyze every
-    #     pokemon that enters a battle to see if its hp is different from what it was when it left. If it is,
-    #     then we will simply call that an ability heal with the source name Regenerator.
-    #     """
-    #     heal_data = self.heal_data.get_heal_data(self.regenerator_turn)
-    #     self.assertEqual(heal_data["Healing"], 90)
-    #     self.assertEqual(heal_data["Receiver"], "Slowbro")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-    #     self.assertEqual(heal_data["Source_name"], "Regenerator")
-    #     self.assertEqual(heal_data["Turn"], 6)
-    #     self.assertEqual(heal_data["Type"], "Ability")
+    def test_get_heal_data_regenerator(self):
+        """
+        This is a special case because the heal is not in the turn text. Instead, we will have to analyze every
+        pokemon that enters a battle to see if its hp is different from what it was when it left. If it is,
+        then we will simply call that an ability heal with the source name Regenerator.
+        """
+        heal_data = self.heal_data.get_heal_data(self.regenerator_turn)
+        self.assertEqual(heal_data["Healing"], 90)
+        self.assertEqual(heal_data["Receiver"], "Slowbro")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 1)
+        self.assertEqual(heal_data["Source_name"], "Regenerator")
+        self.assertEqual(heal_data["Turn"], 6)
+        self.assertEqual(heal_data["Type"], "Ability")
 
-    # def test_get_heal_data_terrain(self):
-    #     heal_data = self.heal_data.get_heal_data(self.terrain_turn)
-    #     self.assertEqual(heal_data["Healing"], 91)
-    #     self.assertEqual(heal_data["Receiver"], "Tyranitar")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 2)
-    #     self.assertEqual(heal_data["Source_name"], "Grassy Terrain")
-    #     self.assertEqual(heal_data["Turn"], 4)
-    #     self.assertEqual(heal_data["Type"], "Terrain")
+    def test_get_heal_data_terrain(self):
+        heal_data = self.heal_data.get_heal_data(self.terrain_turn)
+        self.assertEqual(heal_data["Healing"], 91)
+        self.assertEqual(heal_data["Receiver"], "Tyranitar")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 2)
+        self.assertEqual(heal_data["Source_name"], "Grassy Terrain")
+        self.assertEqual(heal_data["Turn"], 4)
+        self.assertEqual(heal_data["Type"], "Terrain")
 
-    # def test_get_heal_data_passive(self):
-    #     heal_data = self.heal_data.get_heal_data(self.passive_turn)
-    #     self.assertEqual(heal_data["Healing"], 82)
-    #     self.assertEqual(heal_data["Receiver"], "Frosmoth")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-    #     self.assertEqual(heal_data["Source_name"], "Leech Seed")
-    #     self.assertEqual(heal_data["Turn"], 9)
-    #     self.assertEqual(heal_data["Type"], "Passive")
+    def test_get_heal_data_passive(self):
+        heal_data = self.heal_data.get_heal_data(self.passive_turn)
+        self.assertEqual(heal_data["Healing"], 82)
+        self.assertEqual(heal_data["Receiver"], "Frosmoth")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 1)
+        self.assertEqual(heal_data["Source_name"], "Leech Seed")
+        self.assertEqual(heal_data["Turn"], 9)
+        self.assertEqual(heal_data["Type"], "Passive")
 
-    # def test_get_heal_data_drain(self):
-    #     heal_data = self.heal_data.get_heal_data(self.drain_turn)
-    #     self.assertEqual(heal_data["Healing"], 58)
-    #     self.assertEqual(heal_data["Receiver"], "Abomasnow")
-    #     self.assertEqual(heal_data["Receiver_Player_Number"], 1)
-    #     self.assertEqual(heal_data["Source_name"], "Torkoal")
-    #     self.assertEqual(heal_data["Turn"], 15)
-    #     self.assertEqual(heal_data["Type"], "Drain")
+    def test_get_heal_data_drain(self):
+        heal_data = self.heal_data.get_heal_data(self.drain_turn)
+        self.assertEqual(heal_data["Healing"], 58)
+        self.assertEqual(heal_data["Receiver"], "Abomasnow")
+        self.assertEqual(heal_data["Receiver_Player_Number"], 1)
+        self.assertEqual(heal_data["Source_name"], "Torkoal")
+        self.assertEqual(heal_data["Turn"], 15)
+        self.assertEqual(heal_data["Type"], "Drain")
+
+
+if __name__ == "__main__":
+    unittest.main()
