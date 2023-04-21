@@ -87,7 +87,7 @@ class TestPassiveHealData(unittest.TestCase):
 
     def test_get_heal_data_terrain(self):
         event = "|-heal|p2a: Tyranitar|91/100|[from] Grassy Terrain"
-        heal_data = self.heal_data.get_heal_data(event, self.terrain_turn, self.battle)
+        heal_data = self.data_finder.get_heal_data(event, self.terrain_turn)
         self.assertEqual(heal_data["Healing"], 91)
         self.assertEqual(heal_data["Receiver"], "Tyranitar")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
