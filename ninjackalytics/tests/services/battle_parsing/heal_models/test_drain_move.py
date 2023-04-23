@@ -90,7 +90,7 @@ class TestDrainMoveHealData(unittest.TestCase):
 
     def test_get_heal_data_drain(self):
         event = "|-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal"
-        heal_data = self.data_finder.get_heal_data(self.drain_turn)
+        heal_data = self.data_finder.get_heal_data(event, self.drain_turn)
         self.assertEqual(heal_data["Healing"], 58)
         self.assertEqual(heal_data["Receiver"], "Abomasnow")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)

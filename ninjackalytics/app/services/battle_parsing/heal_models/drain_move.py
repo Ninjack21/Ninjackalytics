@@ -21,12 +21,14 @@ class DrainMoveHealData(HealDataFinder):
     def __init__(self, battle_pokemon: BattlePokemon):
         self.battle_pokemon = battle_pokemon
 
-    def get_heal_data(self, turn: Turn, battle=None) -> Dict[str, str]:
+    def get_heal_data(self, event: str, turn: Turn, battle=None) -> Dict[str, str]:
         """
         Gets the healing data for a drain move.
 
         Parameters
         ----------
+        event : str
+            - The event string where the -|heal| event is found.
         turn : Turn
             - An object containing the text of the turn and the turn number.
         battle : Battle, optional
@@ -43,30 +45,27 @@ class DrainMoveHealData(HealDataFinder):
                 - Turn
                 - Type
         ---
+        Example Turn:
+        |move|p1a: Abomasnow|Giga Drain|p2a: Torkoal
+        |-damage|p2a: Torkoal|60/100
+        |-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal
         """
-        drain_heal_regex = re.compile(
-            r"\|-heal\|(.+?)\|(.+?)\|\[from\] drain\|\[of\] (.+)"
-        )
-        match = drain_heal_regex.search(turn.text)
+        heal_parts = event.split("|")
+        raw_name = heal_parts[2]
+        pnum, name = self.battle_pokemon.get_pnum_and_name(raw_name)
+        new_hp = float(heal_parts[3].split("/")[0])
 
-        if match:
-            raw_name = match.group(1)
-            pnum, name = self.battle_pokemon.get_pnum_and_name(raw_name)
-            new_hp = float(match.group(2).split("/")[0])
+        source_name = self._find_drain_move(turn, pnum)
 
-            source_name = self._find_drain_move(turn, pnum)
-
-            heal_dict = {
-                "Healing": new_hp,
-                "Receiver": name,
-                "Receiver_Player_Number": pnum,
-                "Source_Name": source_name,
-                "Turn": turn.number,
-                "Type": "Drain Move",
-            }
-            return heal_dict
-        else:
-            return None
+        heal_dict = {
+            "Healing": new_hp,
+            "Receiver": name,
+            "Receiver_Player_Number": pnum,
+            "Source_Name": source_name,
+            "Turn": turn.number,
+            "Type": "Drain Move",
+        }
+        return heal_dict
 
     def _find_drain_move(self, turn: Turn, receiver_pnum: int) -> str:
         """

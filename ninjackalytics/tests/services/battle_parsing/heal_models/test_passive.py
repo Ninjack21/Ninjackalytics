@@ -90,7 +90,7 @@ class TestPassiveHealData(unittest.TestCase):
 
     def test_get_heal_data_passive(self):
         event = "|-heal|p1a: Frosmoth|82/100|[from] Leech Seed"
-        heal_data = self.heal_data.get_heal_data(event, self.passive_turn, self.battle)
+        heal_data = self.data_finder.get_heal_data(event, self.passive_turn)
         self.assertEqual(heal_data["Healing"], 82)
         self.assertEqual(heal_data["Receiver"], "Frosmoth")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
