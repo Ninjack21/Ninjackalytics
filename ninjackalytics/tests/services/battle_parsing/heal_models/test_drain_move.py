@@ -37,9 +37,11 @@ class MockBattlePokemon:
         current_hp = self.mon_hps[raw_name]
         self.mon_hp_changes[raw_name] = new_hp - current_hp
         self.mon_hps[raw_name] = new_hp
+        print(
+            f"updated hp for {raw_name} to {new_hp} (change: {self.mon_hp_changes[raw_name]}"
+        )
 
     def get_pokemon_hp_change(self, raw_name: str) -> float:
-        # assumes not called before get_current_hp, which inits mon_hps
         return self.mon_hp_changes[raw_name]
 
     def get_pokemon_current_hp(self, raw_name: str) -> float:
@@ -89,9 +91,10 @@ class TestDrainMoveHealData(unittest.TestCase):
         self.data_finder = DrainMoveHealData(mock_battle_pokemon)
 
     def test_get_heal_data_drain(self):
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p1a: Abomasnow", 50)
         event = "|-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal"
         heal_data = self.data_finder.get_heal_data(event, self.drain_turn)
-        self.assertEqual(heal_data["Healing"], 58)
+        self.assertAlmostEqual(heal_data["Healing"], 8)
         self.assertEqual(heal_data["Receiver"], "Abomasnow")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
         self.assertEqual(heal_data["Source_Name"], "Giga Drain")

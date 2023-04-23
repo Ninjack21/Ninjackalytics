@@ -37,9 +37,11 @@ class MockBattlePokemon:
         current_hp = self.mon_hps[raw_name]
         self.mon_hp_changes[raw_name] = new_hp - current_hp
         self.mon_hps[raw_name] = new_hp
+        print(
+            f"updated hp for {raw_name} to {new_hp} (change: {self.mon_hp_changes[raw_name]}"
+        )
 
     def get_pokemon_hp_change(self, raw_name: str) -> float:
-        # assumes not called before get_current_hp, which inits mon_hps
         return self.mon_hp_changes[raw_name]
 
     def get_pokemon_current_hp(self, raw_name: str) -> float:
@@ -89,9 +91,12 @@ class TestPassiveHealData(unittest.TestCase):
         self.data_finder = PassiveHealData(mock_battle_pokemon)
 
     def test_get_heal_data_passive(self):
+        # need to set an initial hp that isn't 0 so that simply returning current
+        # hp does not work
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p1a: Frosmoth", 50)
         event = "|-heal|p1a: Frosmoth|82/100|[from] Leech Seed"
         heal_data = self.data_finder.get_heal_data(event, self.passive_turn)
-        self.assertEqual(heal_data["Healing"], 82)
+        self.assertEqual(heal_data["Healing"], 32)
         self.assertEqual(heal_data["Receiver"], "Frosmoth")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
         self.assertEqual(heal_data["Source_Name"], "Leech Seed")

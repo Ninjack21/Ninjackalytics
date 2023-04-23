@@ -95,7 +95,7 @@ class TestRegeneratorHealData(unittest.TestCase):
         then we will simply call that an ability heal with the source name Regenerator.
         """
         # to test this, we need to set up the mock_battle_pokemon to believe that Slowbro had less than 90 hp
-        mock_battle_pokemon.update_hp_for_pokemon("p1a: Slowbro", 40)
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p1a: Slowbro", 40)
 
         event = "|switch|p1a: Slowbro|Slowbro, F|90/100"
         heal_data = self.data_finder.get_heal_data(event, self.regenerator_turn)
@@ -113,7 +113,7 @@ class TestRegeneratorHealData(unittest.TestCase):
         then we will simply call that an ability heal with the source name Regenerator.
         """
         # to test this, we need to set up the mock_battle_pokemon to believe that Slowbro had less than 90 hp
-        mock_battle_pokemon.update_hp_for_pokemon("p1a: Slowbro", 90)
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p1a: Slowbro", 90)
 
         event = "|switch|p1a: Slowbro|Slowbro, F|90/100"
         heal_data = self.data_finder.get_heal_data(event, self.regenerator_turn)

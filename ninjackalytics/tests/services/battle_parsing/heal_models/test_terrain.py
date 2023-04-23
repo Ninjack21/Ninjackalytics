@@ -86,9 +86,10 @@ class TestPassiveHealData(unittest.TestCase):
         self.data_finder = TerrainHealData(mock_battle_pokemon)
 
     def test_get_heal_data_terrain(self):
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p2a: Tyranitar", 50)
         event = "|-heal|p2a: Tyranitar|91/100|[from] Grassy Terrain"
         heal_data = self.data_finder.get_heal_data(event, self.terrain_turn)
-        self.assertEqual(heal_data["Healing"], 91)
+        self.assertEqual(heal_data["Healing"], 41)
         self.assertEqual(heal_data["Receiver"], "Tyranitar")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
         self.assertEqual(heal_data["Source_Name"], "Grassy Terrain")

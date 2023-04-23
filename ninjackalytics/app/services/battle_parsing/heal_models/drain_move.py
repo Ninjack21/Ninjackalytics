@@ -53,12 +53,12 @@ class DrainMoveHealData(HealDataFinder):
         heal_parts = event.split("|")
         raw_name = heal_parts[2]
         pnum, name = self.battle_pokemon.get_pnum_and_name(raw_name)
-        new_hp = float(heal_parts[3].split("/")[0])
+        hp_change = self._get_hp_change(event, raw_name)
 
         source_name = self._find_drain_move(turn, pnum)
 
         heal_dict = {
-            "Healing": new_hp,
+            "Healing": hp_change,
             "Receiver": name,
             "Receiver_Player_Number": pnum,
             "Source_Name": source_name,

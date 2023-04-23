@@ -86,9 +86,10 @@ class TestItemHealData(unittest.TestCase):
         self.data_finder = ItemHealData(mock_battle_pokemon)
 
     def test_get_heal_data_item(self):
+        self.data_finder.battle_pokemon.update_hp_for_pokemon("p2a: Bisharp", 50)
         event = "|-heal|p2a: Bisharp|100/100|[from] item: Leftovers"
         heal_data = self.data_finder.get_heal_data(event, self.item_turn)
-        self.assertEqual(heal_data["Healing"], 100)
+        self.assertEqual(heal_data["Healing"], 50)
         self.assertEqual(heal_data["Receiver"], "Bisharp")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
         self.assertEqual(heal_data["Source_Name"], "Leftovers")
