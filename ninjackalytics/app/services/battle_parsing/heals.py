@@ -12,8 +12,12 @@ sys.path.insert(1, app_path)
 from app.services.battle_parsing.heal_models.abstract_model import HealDataFinder
 from app.services.battle_parsing.heal_models import (
     AbilityHealData,
-    DrainHealData,
+    DrainMoveHealData,
     ItemHealData,
+    MoveHealData,
+    PassiveHealData,
+    TerrainHealData,
+    RegeneratorHealData,
 )
 
 
@@ -55,8 +59,9 @@ class HealData:
             "passive": PassiveHealData(battle_pokemon),
             "item": ItemHealData(battle_pokemon),
             "ability": AbilityHealData(battle_pokemon),
-            "drain move": DrainHealData(battle_pokemon),
+            "drain move": DrainMoveHealData(battle_pokemon),
             "terrain": TerrainHealData(battle_pokemon),
+            "regenerator": RegeneratorHealData(battle_pokemon),
         }
 
     def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
@@ -80,13 +85,15 @@ class HealData:
                 - Source_Name
                 - Turn
                 - Type
+        Notes:
+        ------
+        Right now, we pass the self.battle object to all get_heal_data calls but it is not used in any
+        of them. I suspect this may change in the future but at the moment, it is technically not needed.
         ---
         """
         source_type = self._get_source_type(event)
         source_data_finder = self._get_source_data_finder(source_type)
-        heal_dict = source_data_finder.get_heal_data(
-            event, turn, self.battle, self.battle_pokemon
-        )
+        heal_dict = source_data_finder.get_heal_data(event, turn, self.battle)
 
         return heal_dict
 
@@ -115,23 +122,32 @@ class HealData:
         item : |-heal|p2a: Garchomp|100/100|[from] item: Leftovers
         ability : |-heal|p2a: Avalugg|100/100|[from] ability: Ice Body
         move : |-heal|p2a: Moltres|100/100
+        delayed_move : |-heal|p2a: Seismitoad|100/100|[from] move: Wish|[wisher] Clefable
         drain move : |-heal|p2a: Venusaur|100/100|[from] drain: Giga Drain
         passive : |-heal|p2a: Garchomp|100/100|[silent]
         terrain : |-heal|p2a: Garchomp|100/100|[from] terrain: Grassy Terrain
+        regenerator : |switch|p2a: Slowbro||100/100
         ---
         """
-        # TODO: need to change line_parts aspect of this
-        if "[silent]" in line_parts[3]:
+        line_parts = event.split("|")
+        # start with move because it has the shortest length and will cause an IndexError if not first
+        if (
+            len(line_parts) == 4 and "switch" not in line_parts[1]
+        ):  # minimal info = move used, normal len > 4
+            heal_type = "move"
+        elif "move:" in line_parts[4]:
+            heal_type = "move"
+        elif "switch" in line_parts[1]:
+            heal_type = "regenerator"
+        elif "[silent]" in line_parts[4]:
             heal_type = "passive"
-        elif "item:" in line_parts[3]:
+        elif "item:" in line_parts[4]:
             heal_type = "item"
-        elif "ability:" in line_parts[3]:
+        elif "ability:" in line_parts[4]:
             heal_type = "ability"
-        elif "move:" in line_parts[3]:
-            heal_type = "move"  # this means delayed heal like wish
-        elif "drain" in line_parts[3]:
+        elif "drain" in line_parts[4]:
             heal_type = "drain move"
-        elif "Terrain" in line_parts[3]:
+        elif "Terrain" in line_parts[4]:
             heal_type = "terrain"
         else:
             heal_type = "passive"  # this indicates something like aqua ring
