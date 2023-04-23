@@ -64,6 +64,8 @@ class HealData:
             "regenerator": RegeneratorHealData(battle_pokemon),
         }
 
+        self.heal_data = []
+
     def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
         Gets the heal data when provided with an event str and turn object.
@@ -95,7 +97,8 @@ class HealData:
         source_data_finder = self._get_source_data_finder(source_type)
         heal_dict = source_data_finder.get_heal_data(event, turn, self.battle)
 
-        return heal_dict
+        if heal_dict:
+            self.heal_data.append(heal_dict)
 
     def _get_source_type(self, event: str) -> str:
         """
