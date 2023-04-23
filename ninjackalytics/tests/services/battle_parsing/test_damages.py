@@ -34,7 +34,7 @@ class MockBattlePokemon:
     def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
         # assumes not called before get_current_hp, which inits mon_hps
         current_hp = self.mon_hps[raw_name]
-        self.mon_hp_changes[raw_name] = current_hp - new_hp
+        self.mon_hp_changes[raw_name] = new_hp - current_hp
         self.mon_hps[raw_name] = new_hp
 
     def get_pokemon_hp_change(self, raw_name: str) -> float:
