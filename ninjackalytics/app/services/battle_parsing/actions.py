@@ -19,7 +19,7 @@ class ActionData:
     def __init__(self, battle: Battle):
         self.battle = battle
 
-    def get_action_data(self, battle_id: int) -> List[dict]:
+    def get_action_data(self) -> List[dict]:
         """
         Retuns a list of dictionaries containing the keys:
         - Battle_ID
@@ -40,7 +40,6 @@ class ActionData:
         players = self._get_player_numbers()
         action_data = [
             {
-                "Battle_ID": battle_id,
                 "Player_Number": player,
                 "Turn": turn.number,
                 **self._get_player_action(turn.text, player),

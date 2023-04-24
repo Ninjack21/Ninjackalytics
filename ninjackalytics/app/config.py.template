@@ -1,0 +1,20 @@
+import os
+
+# Get the base directory of your application
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+
+class Config:
+    # Default configurations go here
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'testing.db')}"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'testing.db')}"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
+# Add more environment-specific configurations (e.g., DevelopmentConfig, ProductionConfig)

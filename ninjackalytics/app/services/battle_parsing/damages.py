@@ -60,6 +60,34 @@ class DamageData:
             "hazard": self.status_hazard_data_finder,
         }
 
+    def get_all_damage_data(self) -> List[Dict[str, str]]:
+        """
+        Get all the damage data from the battle.
+
+        Returns:
+        --------
+        List[Dict[str, str]]:
+            - The damage data from the battle. Each dict has the following keys:
+                - Damage
+                - Dealer
+                - Dealer_Player_Number
+                - Source_Name
+                - Receiver
+                - Receiver_Player_Number
+                - Turn_Number
+                - Type
+        ---
+        """
+
+        damage_data = []
+
+        for turn in self.battle.get_turns():
+            events = re.findall(r"\|-damage\|.*", turn.text)
+            for event in events:
+                damage_data.append(self.get_damage_data(event, turn))
+
+        return damage_data
+
     def get_damage_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
         Get the damage data from an event.

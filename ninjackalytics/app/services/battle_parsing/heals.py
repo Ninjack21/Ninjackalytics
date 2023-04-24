@@ -49,7 +49,6 @@ class BattlePokemon(Protocol):
 # ============= END PROTOCOLS =============
 
 
-# Modify the HealData class
 class HealData:
     def __init__(self, battle: Battle, battle_pokemon: BattlePokemon):
         self.battle = battle
@@ -65,6 +64,34 @@ class HealData:
         }
 
         self.heal_data = []
+
+    def get_all_heal_data(self) -> List[Dict[str, str]]:
+        """
+        Get all the heal data from the battle.
+
+        Returns:
+        --------
+        List[Dict[str, str]]:
+            - The heal data from the battle. Each dict has the following keys:
+                - Healing
+                - Source_Name
+                - Receiver
+                - Receiver_Player_Number
+                - Turn_Number
+                - Type
+        ---
+        """
+
+        heal_data = []
+        for turn in self.battle.get_turns():
+            heal_events = re.findall(r"\|-heal\|.*", turn.text)
+            switch_events = re.findall(r"\|switch\|.*", turn.text)
+            for event in heal_events + switch_events:
+                event_data = self.get_heal_data(event, turn)
+                if event_data:
+                    heal_data.append(event_data)
+
+        return heal_data
 
     def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
@@ -97,8 +124,7 @@ class HealData:
         source_data_finder = self._get_source_data_finder(source_type)
         heal_dict = source_data_finder.get_heal_data(event, turn, self.battle)
 
-        if heal_dict:
-            self.heal_data.append(heal_dict)
+        return heal_dict
 
     def _get_source_type(self, event: str) -> str:
         """
@@ -154,6 +180,7 @@ class HealData:
             heal_type = "terrain"
         else:
             heal_type = "passive"  # this indicates something like aqua ring
+
         return heal_type
 
     def _get_source_data_finder(self, source_type: str) -> HealDataFinder:

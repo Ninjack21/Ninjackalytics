@@ -32,7 +32,9 @@ class MockBattlePokemon:
         self.mock_battle_pokemon = MockBattlePokemon()
 
     def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
-        # assumes not called before get_current_hp, which inits mon_hps
+        if not raw_name in self.mon_hps:
+            self.mon_hps[raw_name] = 100.0
+
         current_hp = self.mon_hps[raw_name]
         self.mon_hp_changes[raw_name] = new_hp - current_hp
         self.mon_hps[raw_name] = new_hp
@@ -138,16 +140,16 @@ class TestDamageData(unittest.TestCase):
         event = "|-damage|p2a: Ferrothorn|94/100|[from] Stealth Rock"
         turn = MockTurn(1, event)
 
-        move_data = self.damage_data.get_damage_data(event, turn)
+        dmg_data = self.damage_data.get_damage_data(event, turn)
 
-        self.assertEqual(move_data["Damage"], 6)
-        self.assertEqual(move_data["Dealer"], "Stealth Rock")
-        self.assertEqual(move_data["Dealer_Player_Number"], 1)
-        self.assertEqual(move_data["Source_Name"], "Stealth Rock")
-        self.assertEqual(move_data["Receiver"], "Ferrothorn")
-        self.assertEqual(move_data["Receiver_Player_Number"], 2)
-        self.assertEqual(move_data["Turn"], 1)
-        self.assertEqual(move_data["Type"], "Hazard")
+        self.assertEqual(dmg_data["Damage"], 6)
+        self.assertEqual(dmg_data["Dealer"], "Stealth Rock")
+        self.assertEqual(dmg_data["Dealer_Player_Number"], 1)
+        self.assertEqual(dmg_data["Source_Name"], "Stealth Rock")
+        self.assertEqual(dmg_data["Receiver"], "Ferrothorn")
+        self.assertEqual(dmg_data["Receiver_Player_Number"], 2)
+        self.assertEqual(dmg_data["Turn"], 1)
+        self.assertEqual(dmg_data["Type"], "Hazard")
 
     def test_get_status_data(self):
         event = "|-damage|p1a: Rillaboom|94/100 tox|[from] psn"
@@ -178,6 +180,52 @@ class TestDamageData(unittest.TestCase):
         self.assertEqual(move_data["Receiver_Player_Number"], 1)
         self.assertEqual(move_data["Turn"], 1)
         self.assertEqual(move_data["Type"], "Passive")
+
+    def test_get_all_damage_data(self):
+        turn1 = MockTurn(
+            1,
+            strip_leading_spaces(
+                """
+                |move|p2a: Blissey|Seismic Toss|p1a: Heatran
+                |-damage|p1a: Heatran|67/100
+                """
+            ),
+        )
+
+        turn2 = MockTurn(
+            2,
+            strip_leading_spaces(
+                """
+                |-damage|p1a: Raichu|80/100|[from] ability: Static
+                """
+            ),
+        )
+
+        self.damage_data.battle.turns = [turn1, turn2]
+
+        all_damage_data = self.damage_data.get_all_damage_data()
+
+        # Assert the first event
+        first_event = all_damage_data[0]
+        self.assertEqual(first_event["Damage"], 33)
+        self.assertEqual(first_event["Dealer"], "Blissey")
+        self.assertEqual(first_event["Dealer_Player_Number"], 2)
+        self.assertEqual(first_event["Source_Name"], "Seismic Toss")
+        self.assertEqual(first_event["Receiver"], "Heatran")
+        self.assertEqual(first_event["Receiver_Player_Number"], 1)
+        self.assertEqual(first_event["Turn"], 1)
+        self.assertEqual(first_event["Type"], "Move")
+
+        # Assert the second event
+        second_event = all_damage_data[1]
+        self.assertEqual(second_event["Damage"], 20)
+        self.assertEqual(second_event["Dealer"], "Static")
+        self.assertEqual(second_event["Dealer_Player_Number"], 1)
+        self.assertEqual(second_event["Source_Name"], "Static")
+        self.assertEqual(second_event["Receiver"], "Raichu")
+        self.assertEqual(second_event["Receiver_Player_Number"], 1)
+        self.assertEqual(second_event["Turn"], 2)
+        self.assertEqual(second_event["Type"], "Ability")
 
 
 if __name__ == "__main__":

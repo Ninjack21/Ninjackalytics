@@ -56,16 +56,15 @@ class TestActionData(unittest.TestCase):
         )
 
     def test_get_action_data(self):
-        battle_id = 1
         expected_output = [
-            {"Battle_ID": battle_id, "Player_Number": 1, "Turn": 1, "Action": "move"},
-            {"Battle_ID": battle_id, "Player_Number": 1, "Turn": 2, "Action": "move"},
-            {"Battle_ID": battle_id, "Player_Number": 1, "Turn": 3, "Action": "move"},
-            {"Battle_ID": battle_id, "Player_Number": 2, "Turn": 1, "Action": "switch"},
-            {"Battle_ID": battle_id, "Player_Number": 2, "Turn": 2, "Action": "move"},
-            {"Battle_ID": battle_id, "Player_Number": 2, "Turn": 3, "Action": "move"},
+            {"Player_Number": 1, "Turn": 1, "Action": "move"},
+            {"Player_Number": 1, "Turn": 2, "Action": "move"},
+            {"Player_Number": 1, "Turn": 3, "Action": "move"},
+            {"Player_Number": 2, "Turn": 1, "Action": "switch"},
+            {"Player_Number": 2, "Turn": 2, "Action": "move"},
+            {"Player_Number": 2, "Turn": 3, "Action": "move"},
         ]
-        self.assertEqual(self.action_data.get_action_data(battle_id), expected_output)
+        self.assertEqual(self.action_data.get_action_data(), expected_output)
 
 
 if __name__ == "__main__":
