@@ -45,7 +45,7 @@ class TestBattleData(unittest.TestCase):
         self.battle_data = BattleData(self.battle_mock, self.battle_pokemon_mock)
 
     def test_get_db_info(self):
-        db_info = self.battle_data.get_db_info(team_ids={"P1_team": 1, "P2_team": 2})
+        db_info = self.battle_data.get_db_info()
         self.assertIsInstance(db_info, dict)
         self.assertIn("Battle_ID", db_info)
         self.assertEqual(db_info["Battle_ID"], "12345")
@@ -53,8 +53,6 @@ class TestBattleData(unittest.TestCase):
         self.assertEqual(db_info["Format"], "gen6oumonotype")
         self.assertIn("P1", db_info)
         self.assertIn("P2", db_info)
-        self.assertIn("P1_team", db_info)
-        self.assertIn("P2_team", db_info)
         self.assertIn("Rank", db_info)
         self.assertIn("Winner", db_info)
         self.assertIn("Date_Submitted", db_info)

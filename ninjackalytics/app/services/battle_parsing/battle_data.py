@@ -56,38 +56,30 @@ class BattleData:
         self.format = battle.get_format()
         self.teams_pokemon = battle_pokemon.teams
 
-    def get_db_info(self, team_ids: dict) -> dict:
+    def get_db_info(self) -> dict:
         """
-        Provided the foreign key ids for the P1_team and P2_team, parses the battle log and returns a
-        dictionary with the following keys:
-        - Battle_ID
-        - Format
-        - P1
-        - P2
-        - P1_team
-        - P2_team
-        - Rank
-        - Winner
-        - Date_Submitted
-
-        Parameters
-        ----------
-        team_ids : dict
-            A dictionary containing the team IDs for each player.
+        Returns a dictionary with the non-foreign-key columns needed for the battle_info table.
 
         Returns
         -------
         dict
-            A dictionary containing the P1_team and P2_team keys.
+            A dictionary containing the following keys:
+            - Battle_ID
+            - Format
+            - P1
+            - P2
+            - Rank
+            - Winner
+            - Date_Submitted
 
-        Note: We need to find the team's id in the database or create a new one if it doesn't exist before
-        the BattleData object can add it's data. the P1_team and P2_team columns have foreign keys.
+        Note: As a design choice I decided that the parts dependent on foreign keys would be handled by an
+        external class that understands the relationships between the tables. This keeps the requirements of
+        the database isolated from this class, whose sole purpose is to find general info from the battle log.
         """
         db_info = self._return_general_info()
         db_info.update(self._parse_player_names())
         db_info.update(self._parse_rank())
         db_info.update(self._parse_winner())
-        db_info.update(team_ids)
 
         return db_info
 

@@ -15,3 +15,4 @@ from app.services.battle_parsing.damages import DamageData
 from app.services.battle_parsing.heals import HealData
 from app.services.battle_parsing.log import Battle
 from app.services.battle_parsing.pivots import PivotData
+from app.services.battle_parsing.battle_parser import BattleParser
