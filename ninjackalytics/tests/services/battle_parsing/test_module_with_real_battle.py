@@ -19,12 +19,14 @@ from app.services.battle_parsing import (
 )
 
 # TODO: Test each module independently with the real battle to confirm code functions in production
+url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
+battle = Battle(url)
 
 
-class TestBattleMethods(unittest.TestCase):
+class TestBattle(unittest.TestCase):
     def setUp(self):
         self.url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
-        self.battle = Battle(self.url)
+        self.battle = battle
 
     def test_get_id(self):
         expected_id = "gen8ou-1849244413"
@@ -48,7 +50,7 @@ class TestBattleMethods(unittest.TestCase):
 class TestBattlePokemon(unittest.TestCase):
     def setUp(self):
         self.url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
-        self.battle = Battle(self.url)
+        self.battle = battle
         self.battle_mons = BattlePokemon(self.battle)
 
     def test_get_pnum_and_name(self):
@@ -116,6 +118,31 @@ class TestBattlePokemon(unittest.TestCase):
         self.assertEqual(len(team2), len(expected_teams2_mons))
         for mon in team2:
             self.assertIn(mon.real_name, expected_teams2_mons)
+
+
+class TestActionData(unittest.TestCase):
+    def setUp(self):
+        self.battle = battle
+        self.data_finder = ActionData(self.battle)
+
+    def test_get_action_data(self):
+        turn_actions = self.data_finder.get_action_data()
+        # 33 turns x 2 actions / turn
+        self.assertEqual(len(turn_actions), 66)
+
+        turn1_actions = [action for action in turn_actions if action["Turn"] == 1]
+        # should only be 1 action / player
+        self.assertEqual(len(turn1_actions), 2)
+
+        p1_action = [
+            action for action in turn1_actions if action["Player_Number"] == 1
+        ][0]
+        p2_action = [
+            action for action in turn1_actions if action["Player_Number"] == 2
+        ][0]
+
+        self.assertEqual(p1_action["Action"], "move")
+        self.assertEqual(p2_action["Action"], "move")
 
 
 if __name__ == "__main__":
