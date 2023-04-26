@@ -150,5 +150,44 @@ class PokemonFinder:
         other_mons = list(set(other_mons))  # ensure no duplicates exist
 
         unique_mons = nicknamed_mons + other_mons
+        form_handled_mons = self._handle_pokemon_with_multiple_forms(unique_mons)
+
+        return form_handled_mons
+
+    def _handle_pokemon_with_multiple_forms(self, mons: list) -> list:
+        """
+        Handle Pokemon with multiple forms.
+
+        Parameters
+        ----------
+        mons : list
+            A list of Pokemon objects.
+
+        Returns
+        -------
+        list
+            A list of Pokemon objects with unidentified forms from the preview removed if the
+            identified form appears in the entrances.
+
+        Example
+        -------
+        Preview: Urshifu-*
+        Entrance: Urshifu-Rapid-Strike
+        """
+        unique_mons = []
+        for mon in mons:
+            other_mons = [other_mon for other_mon in mons if other_mon != mon]
+            full_form_names = [
+                possible_full_form
+                for possible_full_form in other_mons
+                if mon.real_name
+                in possible_full_form.real_name  # Urshifu in Urshifu-Rapid-Strike
+                and possible_full_form.player_num
+                == mon.player_num  # ensure same player
+            ]
+            if len(full_form_names) == 0:
+                # this means the current mon's name was not a smaller part of another mon's name
+                # which would indicate the current mon is actually the preview mon's unidentified form
+                unique_mons.append(mon)
 
         return unique_mons
