@@ -21,6 +21,7 @@ from app.services.battle_parsing import (
 # TODO: Test each module independently with the real battle to confirm code functions in production
 url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
 battle = Battle(url)
+battle_pokemon = BattlePokemon(battle)
 
 
 class TestBattle(unittest.TestCase):
@@ -51,7 +52,7 @@ class TestBattlePokemon(unittest.TestCase):
     def setUp(self):
         self.url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
         self.battle = battle
-        self.battle_mons = BattlePokemon(self.battle)
+        self.battle_mons = battle_pokemon
 
     def test_get_pnum_and_name(self):
         raw_name_from_log = "p2a: Gardevoir"
@@ -143,6 +144,31 @@ class TestActionData(unittest.TestCase):
 
         self.assertEqual(p1_action["Action"], "move")
         self.assertEqual(p2_action["Action"], "move")
+
+
+class TestPivotData(unittest.TestCase):
+    def setUp(self):
+        self.battle = battle
+        self.battle_pokemon = battle_pokemon
+        self.data_finder = PivotData(self.battle, self.battle_pokemon)
+
+    def test_get_pivot_data(self):
+        pivots = self.data_finder.get_pivot_data()
+        # 21 |switch| instances found in log with cmd + f
+        self.assertEqual(len(pivots), 21)
+
+        turn0_pivots = [pivot for pivot in pivots if pivot["Turn"] == 0]
+        # should only be 1 action / player
+        self.assertEqual(len(turn0_pivots), 2)
+
+        p1_pivot = [pivot for pivot in turn0_pivots if pivot["Player_Number"] == 1][0]
+        p2_pivot = [pivot for pivot in turn0_pivots if pivot["Player_Number"] == 2][0]
+
+        self.assertEqual(p1_pivot["Pokemon_Enter"], "Zapdos")
+        self.assertEqual(p1_pivot["Source_Name"], "action")
+
+        self.assertEqual(p2_pivot["Pokemon_Enter"], "Gardevoir")
+        self.assertEqual(p2_pivot["Source_Name"], "action")
 
 
 if __name__ == "__main__":
