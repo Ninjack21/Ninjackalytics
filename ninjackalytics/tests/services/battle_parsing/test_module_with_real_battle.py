@@ -18,7 +18,6 @@ from app.services.battle_parsing import (
     HealData,
 )
 
-# TODO: Test each module independently with the real battle to confirm code functions in production
 url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
 battle = Battle(url)
 battle_pokemon = BattlePokemon(battle)
@@ -169,6 +168,30 @@ class TestPivotData(unittest.TestCase):
 
         self.assertEqual(p2_pivot["Pokemon_Enter"], "Gardevoir")
         self.assertEqual(p2_pivot["Source_Name"], "action")
+
+
+class TestDamageData(unittest.TestCase):
+    def setUp(self):
+        self.battle = battle
+        self.battle_pokemon = battle_pokemon
+        self.data_finder = DamageData(self.battle, self.battle_pokemon)
+
+    def test_get_damage_data(self):
+        damages = self.data_finder.get_all_damage_data()
+
+        # 39 |damage| instances found in log with cmd + f
+        self.assertEqual(len(damages), 39)
+
+        # only one damage event in turn 1
+        turn1_damage_event = [damage for damage in damages if damage["Turn"] == 1][0]
+
+        self.assertEqual(turn1_damage_event["Damage"], 40)
+        self.assertEqual(turn1_damage_event["Source_Name"], "Volt Switch")
+        self.assertEqual(turn1_damage_event["Dealer"], "Zapdos")
+        self.assertEqual(turn1_damage_event["Dealer_Player_Number"], 1)
+        self.assertEqual(turn1_damage_event["Receiver"], "Gardevoir")
+        self.assertEqual(turn1_damage_event["Receiver_Player_Number"], 2)
+        self.assertEqual(turn1_damage_event["Type"], "move")
 
 
 if __name__ == "__main__":

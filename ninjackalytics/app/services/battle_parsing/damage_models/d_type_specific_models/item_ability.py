@@ -79,7 +79,6 @@ class ItemAbilityDataFinder(DamageDataFinder):
             return (pnum, self._get_source_name(event))
 
     def _get_damage_source(self, event: str) -> str:
-
         if "item" in event:
             return "Item"
         elif "ability" in event:

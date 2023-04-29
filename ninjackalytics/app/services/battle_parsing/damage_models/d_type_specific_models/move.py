@@ -68,7 +68,9 @@ class MoveDataFinder(DamageDataFinder):
         damage_dict["Receiver"] = receiver
         damage_dict["Receiver_Player_Number"] = receiver_pnum
 
-        hp_change = self._get_hp_change(event, receiver)
+        # _get_hp_change expects a raw name, not the already parsed name
+        receiver_raw = event.split("|")[2]
+        hp_change = self._get_hp_change(event, receiver_raw)
         damage_dict["Damage"] = abs(hp_change)
 
         damage_dict["Turn"] = turn.number

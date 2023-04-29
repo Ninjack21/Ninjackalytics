@@ -403,6 +403,37 @@ class TestDealerSourceFinder(unittest.TestCase):
                 turn=MockTurn(1, bad_turn_text),
             )
 
+    def test_get_move_type_normal_move(self):
+        """
+        Not sure how yet, but this scenario failed the DealerSourceFinder. It raised the ValueError I added
+        to say that a move type was unable to be determined.
+        """
+        # NOTE: still need to figure out how to make this test replicate what we see in the real battle
+        # TODO: make this test fail - figure out what is throwing it
+        event = "|-damage|p1a: Melmetal|83/100"
+        turn_text = """|move|p2a: Gardevoir|Psyshock|p1a: Melmetal
+            |-resisted|p1a: Melmetal
+            |-damage|p1a: Melmetal|83/100
+            """
+        turn_text = strip_leading_spaces(turn_text)
+        turn = MockTurn(1, turn_text)
+
+        # first, let's check that the move_type is found by the _move_method
+        for line in reversed(list(turn_text.split(event)[0].splitlines())):
+            move_type = self.move_dealer_finder._get_move_type(line)
+            if move_type is not None:
+                break
+
+        self.assertEqual(move_type, "normal")
+
+        # now test the top level code implementation
+        (pnum, dealer), source = self.move_dealer_finder.get_dealer_and_source(
+            event, turn, MockBattle()
+        )
+        self.assertEqual(pnum, 2)
+        self.assertEqual(dealer, "Gardevoir")
+        self.assertEqual(source, "Psyshock")
+
 
 if __name__ == "__main__":
     unittest.main()

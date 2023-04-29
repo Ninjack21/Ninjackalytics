@@ -84,6 +84,8 @@ class Pokemon:
         prefix = the p1[a-d] part (== "p1a" here)
         player_num = prefix[1], i.e. the second character of the prefix, here 1
         """
+        if not re.findall("[p][1-2][a-d]: ", name):
+            print(f"\nError: {name} is not a valid name\n")
         prefix = re.findall("[p][1-2][a-d]: ", name)[0]
         player_num = int(prefix[1])
         name = name.split(prefix)[1]
