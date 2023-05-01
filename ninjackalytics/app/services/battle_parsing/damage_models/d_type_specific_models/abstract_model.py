@@ -85,4 +85,5 @@ class DamageDataFinder(ABC):
         if len(raw_hp_list) == 1:
             return 0
         else:
-            return float(raw_hp_list[0]) / float(raw_hp_list[1]) * 100
+            # split on space to handle cases where a status is in the hp string
+            return float(raw_hp_list[0]) / float(raw_hp_list[1].split(" ")[0]) * 100

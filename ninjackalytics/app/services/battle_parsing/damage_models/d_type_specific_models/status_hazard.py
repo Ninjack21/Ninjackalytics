@@ -55,7 +55,9 @@ class StatusHazardDataFinder(DamageDataFinder):
 
         damage_dict["Source_Name"] = source_name
 
-        hp_change = self._get_hp_change(event, receiver)
+        # need raw receiver for _get_hp_change
+        receiver_raw_name = event.split("|")[2]
+        hp_change = self._get_hp_change(event, receiver_raw_name)
         damage_dict["Damage"] = abs(hp_change)
 
         damage_dict["Turn"] = turn.number

@@ -124,6 +124,17 @@ class TestDamageDataFinder(unittest.TestCase):
         actual_hp_change = self.damage_data_finder._get_hp_change(event, receiver)
         self.assertEqual(actual_hp_change, expected_hp_change)
 
+    def test_get_hp_change_if_toxic_in_hp(self):
+        """
+        We had an issue where if the hp change had "tox" in it, it would fail to convert to float
+        """
+        event = "|-damage|p2a: Pelipper|82/100 tox|[from] psn"
+        receiver = "p2a: Pelipper"
+
+        expected_hp_change = 18
+        actual_hp_change = self.damage_data_finder._get_hp_change(event, receiver)
+        self.assertEqual(actual_hp_change, expected_hp_change)
+
 
 if __name__ == "__main__":
     unittest.main()
