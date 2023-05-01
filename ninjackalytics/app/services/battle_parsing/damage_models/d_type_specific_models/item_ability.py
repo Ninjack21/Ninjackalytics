@@ -62,7 +62,7 @@ class ItemAbilityDataFinder(DamageDataFinder):
 
     def _get_source_name(self, event: str) -> str:
         # should see at least 5 elements when split by "|" for an item or ability event
-        if len(event.split("|")) != 5:
+        if len(event.split("|")) < 5:
             raise ValueError(f"Event does not appear to be item or ability: {event}")
         return event.split("|")[4].split(": ")[1]
 
