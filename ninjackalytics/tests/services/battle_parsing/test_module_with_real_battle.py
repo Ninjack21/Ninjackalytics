@@ -77,15 +77,15 @@ class TestBattlePokemon(unittest.TestCase):
 
     def test_update_hp_for_pokemon(self):
         p2_gardevoir = "p2a: Gardevoir"
-        expected_hp = 50
-        self.battle_mons.update_hp_for_pokemon(p2_gardevoir, expected_hp)
+        new_hp = 60
+        self.battle_mons.update_hp_for_pokemon(p2_gardevoir, new_hp)
         hp = self.battle_mons.get_pokemon_current_hp(p2_gardevoir)
-        self.assertEqual(hp, expected_hp)
+        self.assertEqual(hp, new_hp)
 
     def test_get_pokemon_hp_change(self):
         p1_melmetal = "p1a: Melmetal"
-        self.battle_mons.update_hp_for_pokemon(p1_melmetal, 50)
-        expected_hp_change = -50
+        self.battle_mons.update_hp_for_pokemon(p1_melmetal, 60)
+        expected_hp_change = -40
         hp_change = self.battle_mons.get_pokemon_hp_change(p1_melmetal)
         self.assertEqual(hp_change, expected_hp_change)
 
@@ -173,7 +173,8 @@ class TestPivotData(unittest.TestCase):
 class TestDamageData(unittest.TestCase):
     def setUp(self):
         self.battle = battle
-        self.battle_pokemon = battle_pokemon
+        # have to re-init battle_pokemon to get the correct hp
+        self.battle_pokemon = BattlePokemon(self.battle)
         self.data_finder = DamageData(self.battle, self.battle_pokemon)
 
     def test_get_damage_data(self):
@@ -191,7 +192,7 @@ class TestDamageData(unittest.TestCase):
         self.assertEqual(turn1_damage_event["Dealer_Player_Number"], 1)
         self.assertEqual(turn1_damage_event["Receiver"], "Gardevoir")
         self.assertEqual(turn1_damage_event["Receiver_Player_Number"], 2)
-        self.assertEqual(turn1_damage_event["Type"], "move")
+        self.assertEqual(turn1_damage_event["Type"], "Move")
 
 
 if __name__ == "__main__":
