@@ -65,34 +65,6 @@ class HealData:
 
         self.heal_data = []
 
-    def get_all_heal_data(self) -> List[Dict[str, str]]:
-        """
-        Get all the heal data from the battle.
-
-        Returns:
-        --------
-        List[Dict[str, str]]:
-            - The heal data from the battle. Each dict has the following keys:
-                - Healing
-                - Source_Name
-                - Receiver
-                - Receiver_Player_Number
-                - Turn_Number
-                - Type
-        ---
-        """
-
-        heal_data = []
-        for turn in self.battle.get_turns():
-            heal_events = re.findall(r"\|-heal\|.*", turn.text)
-            switch_events = re.findall(r"\|switch\|.*", turn.text)
-            for event in heal_events + switch_events:
-                event_data = self.get_heal_data(event, turn)
-                if event_data:
-                    heal_data.append(event_data)
-
-        return heal_data
-
     def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
         """
         Gets the heal data when provided with an event str and turn object.
@@ -104,8 +76,8 @@ class HealData:
         turn : Turn
             - A turn object containing the event
 
-        Returns
-        -------
+        Appends to self.heal_data
+        -------------------------
         Dict[str, str]
             - A dictionary with the following keys:
                 - Healing
@@ -114,17 +86,13 @@ class HealData:
                 - Source_Name
                 - Turn
                 - Type
-        Notes:
-        ------
-        Right now, we pass the self.battle object to all get_heal_data calls but it is not used in any
-        of them. I suspect this may change in the future but at the moment, it is technically not needed.
         ---
         """
         source_type = self._get_source_type(event)
         source_data_finder = self._get_source_data_finder(source_type)
         heal_dict = source_data_finder.get_heal_data(event, turn, self.battle)
-
-        return heal_dict
+        if heal_dict:
+            self.heal_data.append(heal_dict)
 
     def _get_source_type(self, event: str) -> str:
         """
