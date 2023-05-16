@@ -69,4 +69,4 @@ class HpEventsHandler:
         return self.damage_data.damage_events
 
     def get_heal_events(self) -> List[Dict[str, str]]:
-        return self.heal_data.heal_events
+        return self.heal_data.heal_data
