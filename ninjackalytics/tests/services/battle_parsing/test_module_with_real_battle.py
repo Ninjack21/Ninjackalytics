@@ -226,31 +226,7 @@ class TestHpEventsHandler(unittest.TestCase):
         self.assertEqual(turn2_heal_event["Type"], "Item")
 
 
-# class TestHealData(unittest.TestCase):
-#     def setUp(self):
-#         self.battle = battle
-#         # have to re-init battle_pokemon to get the correct hp
-#         self.battle_pokemon = BattlePokemon(self.battle)
-#         self.data_finder = HealData(self.battle, self.battle_pokemon)
-
-#     def test_get_heal_data(self):
-#         heals = self.data_finder.get_all_heal_data()
-
-#         # 19 |-heal| instances found in log with cmd + f (and no regen mons)
-#         print("\n============================\n")
-#         for event in heals:
-#             print(f"{event}\n")
-#         self.assertEqual(len(heals), 19)
-
-#         # only one heal event in turn 2
-#         turn2_heal_event = [heal for heal in heals if heal["Turn"] == 2][0]
-
-#         self.assertEqual(turn2_heal_event["Healing"], 6)
-#         self.assertEqual(turn2_heal_event["Receiver"], "Melmetal")
-#         self.assertEqual(turn2_heal_event["Receiver_Player_Number"], 1)
-#         self.assertEqual(turn2_heal_event["Source_Name"], "Leftovers")
-#         self.assertEqual(turn2_heal_event["Type"], "Item")
-
+# TODO: continue testing the other data finders
 
 if __name__ == "__main__":
     unittest.main()
