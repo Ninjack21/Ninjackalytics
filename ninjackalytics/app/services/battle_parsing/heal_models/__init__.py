@@ -13,3 +13,4 @@ from app.services.battle_parsing.heal_models.move import MoveHealData
 from app.services.battle_parsing.heal_models.passive import PassiveHealData
 from app.services.battle_parsing.heal_models.terrain import TerrainHealData
 from app.services.battle_parsing.heal_models.regenerator import RegeneratorHealData
+from app.services.battle_parsing.heal_models.heals import HealData

@@ -16,3 +16,4 @@ from app.services.battle_parsing.damage_models.d_type_specific_models import (
     ItemAbilityDataFinder,
     StatusHazardDataFinder,
 )
+from app.services.battle_parsing.damage_models.damages import DamageData
