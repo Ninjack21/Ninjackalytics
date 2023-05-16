@@ -11,9 +11,8 @@ from app.services.battle_parsing import (
     BattlePokemon,
     ActionData,
     PivotData,
-    DamageData,
-    HealData,
     BattleData,
+    HpEventsHandler,
 )
 
 
@@ -25,8 +24,7 @@ class BattleParser:
         self.battle_data = BattleData(self.battle, self.battle_pokemon)
         self.action_data = ActionData(self.battle)
         self.pivot_data = PivotData(self.battle, self.battle_pokemon)
-        self.damage_data = DamageData(self.battle, self.battle_pokemon)
-        self.heal_data = HealData(self.battle, self.battle_pokemon)
+        self.hp_events_handler = HpEventsHandler(self.battle, self.battle_pokemon)
         # ------ store battle data for db ------
         self.teams = []
         self.general_info = None

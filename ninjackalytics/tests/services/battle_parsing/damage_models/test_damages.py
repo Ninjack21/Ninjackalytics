@@ -9,7 +9,7 @@ app_path = file_path.split("ninjackalytics")[0]
 app_path = app_path + "ninjackalytics"
 sys.path.insert(1, app_path)
 
-from app.services.battle_parsing.damages import DamageData
+from app.services.battle_parsing.damage_models.damages import DamageData
 
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================
@@ -157,13 +157,6 @@ class TestDamageData(unittest.TestCase):
         self.assertEqual(dmg_data["Receiver_Player_Number"], 2)
         self.assertEqual(dmg_data["Turn"], 1)
         self.assertEqual(dmg_data["Type"], "Hazard")
-
-    """
-    TODO:
-    2. do the same with heal data
-    3. create an integrated damage / heal data module that handles the simultaneous running of these two
-    data finders such that the battle pokemon hps are always up to date. 
-    """
 
     def test_get_status_data(self):
         event = "|-damage|p1a: Rillaboom|94/100 tox|[from] psn"

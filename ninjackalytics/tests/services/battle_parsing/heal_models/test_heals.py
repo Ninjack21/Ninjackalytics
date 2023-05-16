@@ -9,7 +9,12 @@ app_path = file_path.split("ninjackalytics")[0]
 app_path = app_path + "ninjackalytics"
 sys.path.insert(1, app_path)
 
-from app.services.battle_parsing.heals import HealData, Turn, Battle, BattlePokemon
+from app.services.battle_parsing.heal_models.heals import (
+    HealData,
+    Turn,
+    Battle,
+    BattlePokemon,
+)
 
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================

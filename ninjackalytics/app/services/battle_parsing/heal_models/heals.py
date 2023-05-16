@@ -65,7 +65,7 @@ class HealData:
 
         self.heal_data = []
 
-    def get_heal_data(self, event: str, turn: Turn) -> Dict[str, str]:
+    def get_heal_data(self, event: str, turn: Turn) -> None:
         """
         Gets the heal data when provided with an event str and turn object.
 
