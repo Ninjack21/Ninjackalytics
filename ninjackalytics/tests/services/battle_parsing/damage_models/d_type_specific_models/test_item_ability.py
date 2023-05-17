@@ -120,6 +120,30 @@ class TestItemAbilityDataFinder(unittest.TestCase):
             turn3 = MockTurn(5, event3)
             self.item_or_ability_data_finder.get_damage_data(event3, turn3)
 
+    def test_get_rocky_helmet_damages(self):
+        """
+        We ran into a bug where a Rocky Helmet event was not being recognized as an item event.
+        """
+        event = "|-damage|p1a: Melmetal|67/100|[from] item: Rocky Helmet|[of] p2a: Gardevoir"
+        turn = MockTurn(1, event)
+
+        expected_output = {
+            "Dealer": "Gardevoir",
+            "Dealer_Player_Number": 2,
+            "Receiver": "Melmetal",
+            "Receiver_Player_Number": 1,
+            "Source_Name": "Rocky Helmet",
+            "Damage": 33.0,
+            "Type": "Item",
+            "Turn": 1,
+        }
+        actual_output = self.item_or_ability_data_finder.get_damage_data(event, turn)
+
+        self.assertEqual(
+            actual_output,
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

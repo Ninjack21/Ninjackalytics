@@ -57,10 +57,33 @@ class DamageDataFinder(ABC):
         old_hp = self.battle_pokemon.get_pokemon_current_hp(receiver)
         # determine new hp in terms of %
         new_raw_hp = event.split("|")[3].split("/")
-        # have to split on space for some statuses : |-damage|p1a: Rillaboom|94/100 tox|[from] psn
-        new_hp = float(new_raw_hp[0]) / float(new_raw_hp[1].split(" ")[0]) * 100
+
+        new_hp = self._get_new_hp(new_raw_hp)
 
         self.battle_pokemon.update_hp_for_pokemon(receiver, new_hp)
         # return the inverse of the hp_change because we want to report damage as positive
         # but the hp_change is negative
         return self.battle_pokemon.get_pokemon_hp_change(receiver) * -1
+
+    def _get_new_hp(self, raw_hp_list: List[str]) -> float:
+        """
+        Cases:
+        Status: |-damage|p1a: Rillaboom|94/100 tox|[from] psn
+        Faint: |-damage|p2a: Gardevoir|0 fnt
+
+        Parameters
+        ----------
+        raw_hp_list : List[str]
+            - expects a list of length 1 or 2 (either a faint, 1, or
+            a current hp and max hp, 2)
+
+        Returns
+        -------
+        float
+            - The new hp value normalized to a percentage
+        """
+        if len(raw_hp_list) == 1:
+            return 0
+        else:
+            # split on space to handle cases where a status is in the hp string
+            return float(raw_hp_list[0]) / float(raw_hp_list[1].split(" ")[0]) * 100

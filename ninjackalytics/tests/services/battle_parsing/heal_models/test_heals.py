@@ -9,7 +9,12 @@ app_path = file_path.split("ninjackalytics")[0]
 app_path = app_path + "ninjackalytics"
 sys.path.insert(1, app_path)
 
-from app.services.battle_parsing.heals import HealData, Turn, Battle, BattlePokemon
+from app.services.battle_parsing.heal_models.heals import (
+    HealData,
+    Turn,
+    Battle,
+    BattlePokemon,
+)
 
 
 # =================== MOCK PROTOCOLS FOR TESTING ===================
@@ -189,11 +194,16 @@ class TestHealData(unittest.TestCase):
             self.drain_turn,
         ]
 
-        self.heal_data = HealData(self.battle, self.battle_pokemon)
+        self.data_finder = HealData(self.battle, self.battle_pokemon)
+
+    def tearDown(self):
+        self.data_finder.heal_data = []
 
     def test_get_heal_data_move(self):
         event = "|-heal|p2a: Moltres|96/100"
-        heal_data = self.heal_data.get_heal_data(event, self.move_turn)
+        self.data_finder.get_heal_data(event, self.move_turn)
+        heal_data = self.data_finder.heal_data[0]
+
         self.assertEqual(heal_data["Healing"], 96)
         self.assertEqual(heal_data["Receiver"], "Moltres")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
@@ -203,7 +213,8 @@ class TestHealData(unittest.TestCase):
 
     def test_get_heal_data_delayed_move(self):
         event = "|-heal|p2a: Seismitoad|100/100|[from] move: Wish|[wisher] Clefable"
-        heal_data = self.heal_data.get_heal_data(event, self.wish_turn)
+        self.data_finder.get_heal_data(event, self.wish_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 100)
         self.assertEqual(heal_data["Receiver"], "Seismitoad")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
@@ -213,7 +224,8 @@ class TestHealData(unittest.TestCase):
 
     def test_get_heal_data_item(self):
         event = "|-heal|p2a: Bisharp|100/100|[from] item: Leftovers"
-        heal_data = self.heal_data.get_heal_data(event, self.item_turn)
+        self.data_finder.get_heal_data(event, self.item_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 100)
         self.assertEqual(heal_data["Receiver"], "Bisharp")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
@@ -223,7 +235,8 @@ class TestHealData(unittest.TestCase):
 
     def test_get_heal_data_ability(self):
         event = "|-heal|p1a: Avalugg|21/100|[from] ability: Ice Body"
-        heal_data = self.heal_data.get_heal_data(event, self.ability_turn)
+        self.data_finder.get_heal_data(event, self.ability_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 21)
         self.assertEqual(heal_data["Receiver"], "Avalugg")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
@@ -240,7 +253,8 @@ class TestHealData(unittest.TestCase):
         # to test this, we need to set up the mock_battle_pokemon to believe that Slowbro had less than 90 hp
 
         event = "|switch|p1a: Slowbro|Slowbro, F|90/100"
-        heal_data = self.heal_data.get_heal_data(event, self.regenerator_turn)
+        self.data_finder.get_heal_data(event, self.regenerator_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 90)
         self.assertEqual(heal_data["Receiver"], "Slowbro")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
@@ -252,12 +266,13 @@ class TestHealData(unittest.TestCase):
         # note that here we set the hp of the swapped in Slowbro to 0 so that it should not trigger a regenerator heal
         # return
         event = "|switch|p1a: Slowbro|Slowbro, F|0/100"
-        heal_data = self.heal_data.get_heal_data(event, self.regenerator_turn)
-        self.assertEqual(len(self.heal_data.heal_data), 0)
+        self.data_finder.get_heal_data(event, self.regenerator_turn)
+        self.assertEqual(len(self.data_finder.heal_data), 0)
 
     def test_get_heal_data_terrain(self):
         event = "|-heal|p2a: Tyranitar|91/100|[from] Grassy Terrain"
-        heal_data = self.heal_data.get_heal_data(event, self.terrain_turn)
+        self.data_finder.get_heal_data(event, self.terrain_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 91)
         self.assertEqual(heal_data["Receiver"], "Tyranitar")
         self.assertEqual(heal_data["Receiver_Player_Number"], 2)
@@ -269,7 +284,8 @@ class TestHealData(unittest.TestCase):
         # need to set an initial hp that isn't 0 so that simply returning current
         # hp does not work
         event = "|-heal|p1a: Frosmoth|82/100|[from] Leech Seed"
-        heal_data = self.heal_data.get_heal_data(event, self.passive_turn)
+        self.data_finder.get_heal_data(event, self.passive_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertEqual(heal_data["Healing"], 82)
         self.assertEqual(heal_data["Receiver"], "Frosmoth")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
@@ -279,41 +295,14 @@ class TestHealData(unittest.TestCase):
 
     def test_get_heal_data_drain(self):
         event = "|-heal|p1a: Abomasnow|58/100|[from] drain|[of] p2a: Torkoal"
-        heal_data = self.heal_data.get_heal_data(event, self.drain_turn)
+        self.data_finder.get_heal_data(event, self.drain_turn)
+        heal_data = self.data_finder.heal_data[0]
         self.assertAlmostEqual(heal_data["Healing"], 58)
         self.assertEqual(heal_data["Receiver"], "Abomasnow")
         self.assertEqual(heal_data["Receiver_Player_Number"], 1)
         self.assertEqual(heal_data["Source_Name"], "Giga Drain")
         self.assertEqual(heal_data["Turn"], 15)
         self.assertEqual(heal_data["Type"], "Drain Move")
-
-    def test_get_all_heal_data(self):
-        new_battle_mons = MockBattlePokemon()
-
-        new_battle = MockBattle()
-        new_battle.turns = [self.regenerator_turn, self.terrain_turn]
-
-        new_heal_data = HealData(new_battle, new_battle_mons)
-
-        heal_events = new_heal_data.get_all_heal_data()
-
-        self.assertEqual(len(heal_events), 2)
-
-        first_event = heal_events[0]
-        self.assertEqual(first_event["Healing"], 90)
-        self.assertEqual(first_event["Receiver"], "Slowbro")
-        self.assertEqual(first_event["Receiver_Player_Number"], 1)
-        self.assertEqual(first_event["Source_Name"], "Regenerator")
-        self.assertEqual(first_event["Turn"], 6)
-        self.assertEqual(first_event["Type"], "Ability")
-
-        second_event = heal_events[1]
-        self.assertEqual(second_event["Healing"], 91)
-        self.assertEqual(second_event["Receiver"], "Tyranitar")
-        self.assertEqual(second_event["Receiver_Player_Number"], 2)
-        self.assertEqual(second_event["Source_Name"], "Grassy Terrain")
-        self.assertEqual(second_event["Turn"], 4)
-        self.assertEqual(second_event["Type"], "Terrain")
 
 
 if __name__ == "__main__":

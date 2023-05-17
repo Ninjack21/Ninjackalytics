@@ -200,6 +200,32 @@ class TestPokemonFinder(unittest.TestCase):
         ]
         self.assertTrue(len(extras) == 0)
 
+    def test_handle_pokemon_with_forms(self):
+        """
+        There is a bug currently (4/26/23) where if a pokemon has multiple forms, like Urshifu, the tool
+        will consider both to be unique. Example was first found in this battle:
+        https://replay.pokemonshowdown.com/gen8ou-1849244413
+        """
+        # only providing parts where Urshifu appeared
+        log_with_urshifu = """
+        |gen|8
+        |poke|p1|Urshifu-*, M|
+        |start
+        |switch|p1a: Urshifu|Urshifu-Rapid-Strike, M|100/100|[from] U-turn
+        |switch|p1a: Urshifu|Urshifu-Rapid-Strike, M|53/100
+        """
+        finder = PokemonFinder(log_with_urshifu)
+        expected_mon_real_name = "Urshifu-Rapid-Strike"
+        expected_pnum = 1
+
+        # only expect 1 pokemon to be found
+        self.assertEqual(len(finder.get_pokemon()), 1)
+
+        mon = finder.get_pokemon()[0]
+
+        self.assertEqual(mon.real_name, expected_mon_real_name)
+        self.assertEqual(mon.player_num, expected_pnum)
+
 
 if __name__ == "__main__":
     unittest.main()

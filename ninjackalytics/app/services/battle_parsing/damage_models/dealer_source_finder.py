@@ -11,6 +11,7 @@ class BattlePokemon(Protocol):
 class Turn(Protocol):
     number: int
     text: str
+    lines: List[object]
 
 
 class Battle(Protocol):
@@ -51,7 +52,12 @@ class DealerSourceFinder:
         # look for the most recent move type indicator in the turn lines right before the event
         previous_turn_lines = reversed(list(turn.text.split(event)[0].splitlines()))
         move_type = next(
-            (self._get_move_type(line) for line in previous_turn_lines), None
+            (
+                move_type
+                for line in previous_turn_lines
+                if (move_type := self._get_move_type(line)) is not None
+            ),
+            None,
         )
 
         if move_type not in self.move_type_methods:

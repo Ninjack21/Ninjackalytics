@@ -52,7 +52,9 @@ class ItemAbilityDataFinder(DamageDataFinder):
         source_name = self._get_source_name(event)
         damage_dict["Source_Name"] = source_name
 
-        hp_change = self._get_hp_change(event, receiver)
+        # need raw receiver for _get_hp_change
+        receiver_raw_name = event.split("|")[2]
+        hp_change = self._get_hp_change(event, receiver_raw_name)
         damage_dict["Damage"] = abs(hp_change)
 
         damage_dict["Type"] = self._get_damage_source(event)
@@ -62,7 +64,7 @@ class ItemAbilityDataFinder(DamageDataFinder):
 
     def _get_source_name(self, event: str) -> str:
         # should see at least 5 elements when split by "|" for an item or ability event
-        if len(event.split("|")) != 5:
+        if len(event.split("|")) < 5:
             raise ValueError(f"Event does not appear to be item or ability: {event}")
         return event.split("|")[4].split(": ")[1]
 
@@ -79,7 +81,6 @@ class ItemAbilityDataFinder(DamageDataFinder):
             return (pnum, self._get_source_name(event))
 
     def _get_damage_source(self, event: str) -> str:
-
         if "item" in event:
             return "Item"
         elif "ability" in event:
