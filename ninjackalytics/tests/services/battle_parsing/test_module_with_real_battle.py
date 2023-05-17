@@ -68,7 +68,7 @@ class TestBattlePokemon(unittest.TestCase):
         expected_pnum = 2
         expected_name = "Gardevoir"
         mon = self.battle_mons.get_mon_obj(p2_gardevoir)
-        self.assertEqual(mon.player_num, expected_pnum)
+        self.assertEqual(mon.player_num, expected_pnum) # type: ignore
         self.assertEqual(mon.real_name, expected_name)
 
     def test_get_pokemon_current_hp(self):
@@ -227,6 +227,20 @@ class TestHpEventsHandler(unittest.TestCase):
 
 
 # TODO: continue testing the other data finders
+
+
+class TestBattleParser(unittest.TestCase):
+    def setUp(self):
+        self.url = url
+        # have to re-init battle_pokemon to get the correct info
+        bat_mons = BattlePokemon(battle)
+        self.parser = BattleParser(battle, bat_mons)
+
+    def test_parse_battle(self):
+        try:
+            self.parser.analyze_battle()
+        except Exception as e:
+            self.fail(f"analyze_battle raised an exception: {e}")
 
 if __name__ == "__main__":
     unittest.main()
