@@ -11,10 +11,12 @@ from app.services.battle_parsing import (
     BattlePokemon,
     ActionData,
     PivotData,
-    DamageData,
-    HealData,
     BattleData,
+    HpEventsHandler,
 )
+
+from app.services.battle_parsing.damage_models import DamageData
+from app.services.battle_parsing.heal_models import HealData
 
 
 class BattleParser:
@@ -25,8 +27,11 @@ class BattleParser:
         self.battle_data = BattleData(self.battle, self.battle_pokemon)
         self.action_data = ActionData(self.battle)
         self.pivot_data = PivotData(self.battle, self.battle_pokemon)
-        self.damage_data = DamageData(self.battle, self.battle_pokemon)
-        self.heal_data = HealData(self.battle, self.battle_pokemon)
+
+        # ------ initialize hp events handler ------
+        dmg_data = DamageData(self.battle, self.battle_pokemon)
+        heal_data = HealData(self.battle, self.battle_pokemon)
+        self.hp_events_handler = HpEventsHandler(self.battle, heal_data, dmg_data)
         # ------ store battle data for db ------
         self.teams = []
         self.general_info = None
@@ -43,8 +48,9 @@ class BattleParser:
         battle_info = self.battle_data.get_db_info()
         pivot_info = self.pivot_data.get_pivot_data()
         action_info = self.action_data.get_action_data()
-        damages_info = self.damage_data.get_all_damage_data()
-        heals_info = self.heal_data.get_all_heal_data()
+        self.hp_events_handler.handle_events()
+        damages_info = self.hp_events_handler.get_damage_events()
+        heals_info = self.hp_events_handler.get_heal_events()
 
         self.teams = self.battle_pokemon.teams
         self.general_info = battle_info

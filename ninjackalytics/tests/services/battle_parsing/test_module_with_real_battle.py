@@ -14,9 +14,11 @@ from app.services.battle_parsing import (
     BattlePokemon,
     ActionData,
     PivotData,
-    DamageData,
-    HealData,
+    HpEventsHandler,
 )
+
+from app.services.battle_parsing.damage_models import DamageData
+from app.services.battle_parsing.heal_models import HealData
 
 url = "https://replay.pokemonshowdown.com/gen8ou-1849244413"
 battle = Battle(url)
@@ -66,7 +68,7 @@ class TestBattlePokemon(unittest.TestCase):
         expected_pnum = 2
         expected_name = "Gardevoir"
         mon = self.battle_mons.get_mon_obj(p2_gardevoir)
-        self.assertEqual(mon.player_num, expected_pnum)
+        self.assertEqual(mon.player_num, expected_pnum) # type: ignore
         self.assertEqual(mon.real_name, expected_name)
 
     def test_get_pokemon_current_hp(self):
@@ -170,30 +172,75 @@ class TestPivotData(unittest.TestCase):
         self.assertEqual(p2_pivot["Source_Name"], "action")
 
 
-class TestDamageData(unittest.TestCase):
+class TestHpEventsHandler(unittest.TestCase):
     def setUp(self):
         self.battle = battle
         # have to re-init battle_pokemon to get the correct hp
         self.battle_pokemon = BattlePokemon(self.battle)
-        self.data_finder = DamageData(self.battle, self.battle_pokemon)
+        dmg_data_handler = DamageData(self.battle, self.battle_pokemon)
+        heal_data_handler = HealData(self.battle, self.battle_pokemon)
+        self.hp_events_handler = HpEventsHandler(
+            self.battle, heal_data_handler, dmg_data_handler
+        )
+        self.hp_events_handler.handle_events()
 
-    def test_get_damage_data(self):
-        damages = self.data_finder.get_all_damage_data()
+    # -------------------- verify hp events run correctly --------------------
 
+    def test_get_hp_events(self):
+        # verify that damage events and heal events were found
+        self.assertIsNotNone(self.hp_events_handler.get_damage_events())
+        self.assertIsNotNone(self.hp_events_handler.get_heal_events())
+
+    # -------------------- check damage events --------------------
+    def test_correct_number_dmg_events_found(self):
+        dmg_events = self.hp_events_handler.get_damage_events()
         # 39 |damage| instances found in log with cmd + f
-        self.assertEqual(len(damages), 39)
+        self.assertEqual(len(dmg_events), 39)
 
+    def test_turn1_dmg_event_correct(self):
+        dmg_events = self.hp_events_handler.get_damage_events()
         # only one damage event in turn 1
-        turn1_damage_event = [damage for damage in damages if damage["Turn"] == 1][0]
+        turn1_dmg_event = [dmg for dmg in dmg_events if dmg["Turn"] == 1][0]
+        self.assertEqual(turn1_dmg_event["Damage"], 40)
+        self.assertEqual(turn1_dmg_event["Source_Name"], "Volt Switch")
+        self.assertEqual(turn1_dmg_event["Dealer"], "Zapdos")
+        self.assertEqual(turn1_dmg_event["Dealer_Player_Number"], 1)
+        self.assertEqual(turn1_dmg_event["Receiver"], "Gardevoir")
+        self.assertEqual(turn1_dmg_event["Receiver_Player_Number"], 2)
+        self.assertEqual(turn1_dmg_event["Type"], "Move")
 
-        self.assertEqual(turn1_damage_event["Damage"], 40)
-        self.assertEqual(turn1_damage_event["Source_Name"], "Volt Switch")
-        self.assertEqual(turn1_damage_event["Dealer"], "Zapdos")
-        self.assertEqual(turn1_damage_event["Dealer_Player_Number"], 1)
-        self.assertEqual(turn1_damage_event["Receiver"], "Gardevoir")
-        self.assertEqual(turn1_damage_event["Receiver_Player_Number"], 2)
-        self.assertEqual(turn1_damage_event["Type"], "Move")
+    # -------------------- check heal events --------------------
+    def test_correct_number_heal_events_found(self):
+        heal_events = self.hp_events_handler.get_heal_events()
+        # 19 |-heal| instances found in log with cmd + f (and no regen mons)
+        self.assertEqual(len(heal_events), 19)
 
+    def test_turn2_heal_event_correct(self):
+        heal_events = self.hp_events_handler.get_heal_events()
+        # only one heal event in turn 2
+        turn2_heal_event = [heal for heal in heal_events if heal["Turn"] == 2][0]
+        self.assertEqual(turn2_heal_event["Healing"], 6)
+        self.assertEqual(turn2_heal_event["Source_Name"], "Leftovers")
+        self.assertEqual(turn2_heal_event["Receiver"], "Melmetal")
+        self.assertEqual(turn2_heal_event["Receiver_Player_Number"], 1)
+        self.assertEqual(turn2_heal_event["Type"], "Item")
+
+
+# TODO: continue testing the other data finders
+
+
+class TestBattleParser(unittest.TestCase):
+    def setUp(self):
+        self.url = url
+        # have to re-init battle_pokemon to get the correct info
+        bat_mons = BattlePokemon(battle)
+        self.parser = BattleParser(battle, bat_mons)
+
+    def test_parse_battle(self):
+        try:
+            self.parser.analyze_battle()
+        except Exception as e:
+            self.fail(f"analyze_battle raised an exception: {e}")
 
 if __name__ == "__main__":
     unittest.main()

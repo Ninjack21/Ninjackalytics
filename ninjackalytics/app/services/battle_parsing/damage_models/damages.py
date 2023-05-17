@@ -59,38 +59,12 @@ class DamageData:
             "status": self.status_hazard_data_finder,
             "hazard": self.status_hazard_data_finder,
         }
+        self.damage_events = []
 
-    def get_all_damage_data(self) -> List[Dict[str, str]]:
+    def get_damage_data(self, event: str, turn: Turn) -> None:
         """
-        Get all the damage data from the battle.
-
-        Returns:
-        --------
-        List[Dict[str, str]]:
-            - The damage data from the battle. Each dict has the following keys:
-                - Damage
-                - Dealer
-                - Dealer_Player_Number
-                - Source_Name
-                - Receiver
-                - Receiver_Player_Number
-                - Turn_Number
-                - Type
-        ---
-        """
-
-        damage_data = []
-
-        for turn in self.battle.get_turns():
-            events = re.findall(r"\|-damage\|.*", turn.text)
-            for event in events:
-                damage_data.append(self.get_damage_data(event, turn))
-
-        return damage_data
-
-    def get_damage_data(self, event: str, turn: Turn) -> Dict[str, str]:
-        """
-        Get the damage data from an event.
+        Stores an event's data in the self.damage_events list. This is because heals and damages must be done
+        simultaneously or the hps of the battle_pokemon will not update properly.
 
         Parameters:
         -----------
@@ -99,10 +73,22 @@ class DamageData:
         turn: Turn
             The turn the event occurred on.
 
+        Appends to self.damage_events:
+        ------------------------------
+        Dict[str, str]
+            - A dictionary with the following keys:
+                - Damage
+                - Dealer
+                - Dealer_Player_Number
+                - Receiver
+                - Receiver_Player_Number
+                - Source_Name
+                - Type
+                - Turn
+
         Returns:
         --------
-        Dict[str, str]:
-            The damage data from the event.
+        None
         ---
         """
 
@@ -110,7 +96,7 @@ class DamageData:
         source_data_finder = self._get_source_data_finder(source_type)
         damage_dict = source_data_finder.get_damage_data(event, turn, self.battle)
 
-        return damage_dict
+        self.damage_events.append(damage_dict)
 
     def _get_source_type(self, event: str) -> str:
         if "[from]" not in event:

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import os
 import sys
@@ -31,10 +31,11 @@ class TestBattleParser(unittest.TestCase):
         self.battle_parser.action_data.get_action_data = MagicMock(
             return_value="mock_action_info"
         )
-        self.battle_parser.damage_data.get_all_damage_data = MagicMock(
+        self.battle_parser.hp_events_handler.handle_events = Mock()
+        self.battle_parser.hp_events_handler.get_damage_events = MagicMock(
             return_value="mock_damages_info"
         )
-        self.battle_parser.heal_data.get_all_heal_data = MagicMock(
+        self.battle_parser.hp_events_handler.get_heal_events = MagicMock(
             return_value="mock_heals_info"
         )
 
@@ -48,6 +49,9 @@ class TestBattleParser(unittest.TestCase):
         self.assertEqual(self.battle_parser.damages_info, "mock_damages_info")
         self.assertEqual(self.battle_parser.heals_info, "mock_heals_info")
         self.assertEqual(self.battle_parser.teams, ["Team1", "Team2"])
+
+        # Check that handle_events was called
+        self.battle_parser.hp_events_handler.handle_events.assert_called_once()
 
 
 if __name__ == "__main__":
