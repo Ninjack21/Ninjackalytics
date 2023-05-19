@@ -16,3 +16,5 @@ apperrors.log/
 .vscode
 
 config.py
+
+testing.db
