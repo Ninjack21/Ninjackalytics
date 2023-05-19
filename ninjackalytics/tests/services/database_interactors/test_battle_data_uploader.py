@@ -107,6 +107,25 @@ class TestBattleDataUploader(unittest.TestCase):
         self.assertEqual(team1.Pok1, "Abra")
         self.assertEqual(team1.Pok2, "Charizard")
 
+    def test_teams_already_exists(self):
+        # add a team to the database
+        team = teams(Pok1="Pikachu")
+        self.session.add(team)
+        self.session.commit()
+
+        # check that the team is in the database
+        team = (self.session.query(teams).filter(teams.Pok1 == "Pikachu")).first()
+        self.assertEqual(team.Pok1, "Pikachu")
+        expected_id = team.id
+
+        # upload a battle with a team that already exists
+        self.battle_data_uploader.upload_battle(self.mock_parser)
+
+        # check that the team is still in the database
+        team = (self.session.query(teams).filter(teams.Pok1 == "Pikachu")).first()
+        self.assertEqual(team.Pok1, "Pikachu")
+        self.assertEqual(team.id, expected_id)
+
     def test_general_info_uploaded(self):
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
@@ -185,6 +204,30 @@ class TestBattleDataUploader(unittest.TestCase):
         self.assertEqual(query_pivots[0].Player_Number, 1)
         self.assertEqual(query_pivots[0].Turn, 1)
         self.assertEqual(query_pivots[0].Source_Name, "action")
+
+    def test_battle_id_already_exists(self):
+        self.battle_data_uploader.upload_battle(self.mock_parser)
+
+        # check that the battle is in the database
+        battle = (
+            self.session.query(battle_info)
+            .filter(battle_info.P1 == "Player1")
+            .filter(battle_info.P2 == "Player2")
+            .first()
+        )
+        expected_id = battle.id
+
+        # upload the same battle again
+        self.battle_data_uploader.upload_battle(self.mock_parser)
+
+        # check that the battle is still in the database
+        battle = (
+            self.session.query(battle_info)
+            .filter(battle_info.P1 == "Player1")
+            .filter(battle_info.P2 == "Player2")
+            .first()
+        )
+        self.assertEqual(battle.id, expected_id)
 
 
 if __name__ == "__main__":
