@@ -5,16 +5,24 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    # Default configurations go here
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'testing.db')}"
+    TESTING = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'development.db')}"
+    SECRET_KEY = "dev"
 
 
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{os.path.join(basedir, 'testing.db')}"
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SECRET_KEY = "test"
 
 
-# Add more environment-specific configurations (e.g., DevelopmentConfig, ProductionConfig)
+class ProductionConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL"
+    )  # set this env var in your production environment
+    SECRET_KEY = "a secret key"

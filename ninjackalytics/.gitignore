@@ -17,4 +17,4 @@ apperrors.log/
 
 config.py
 
-testing.db
+*.db

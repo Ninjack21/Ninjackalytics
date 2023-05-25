@@ -35,5 +35,8 @@ def create_app(config_name=None):
     from . import database
 
     database.init_app(app)
+    from .blueprints import auth_bp
+
+    app.register_blueprint(auth_bp)
 
     return app
