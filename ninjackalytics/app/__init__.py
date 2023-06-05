@@ -27,16 +27,16 @@ def create_app(config_name=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route("/hello")
-    def hello():
-        return "Hello, World!"
-
     from . import database
 
     database.init_app(app)
     from .blueprints import auth_bp
 
     app.register_blueprint(auth_bp)
+
+    from .blueprints import main_page_bp
+
+    app.register_blueprint(main_page_bp)
+    app.add_url_rule("/", endpoint="index")
 
     return app
