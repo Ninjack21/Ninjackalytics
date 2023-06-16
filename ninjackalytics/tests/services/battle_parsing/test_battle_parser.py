@@ -12,12 +12,25 @@ sys.path.insert(1, app_path)
 from app.services.battle_parsing import BattleParser, Battle, BattlePokemon
 
 
+class MockMon:
+    def __init__(self, real_name):
+        self.real_name = real_name
+
+
+class MockTeam:
+    def __init__(self, pokemon):
+        self.pokemon = pokemon
+
+
 class TestBattleParser(unittest.TestCase):
     def setUp(self):
         self.mock_url = "mock_url"
         self.mock_battle = MagicMock(spec=Battle)
         self.mock_battle_pokemon = MagicMock(spec=BattlePokemon)
-        self.mock_battle_pokemon.teams = ["Team1", "Team2"]
+        self.mock_battle_pokemon.teams = [
+            MockTeam([MockMon("Pikachu")]),
+            MockTeam([MockMon("Charizard"), MockMon("Blastoise")]),
+        ]
         self.battle_parser = BattleParser(self.mock_battle, self.mock_battle_pokemon)
 
     def test_analyze_battle(self):
@@ -48,7 +61,10 @@ class TestBattleParser(unittest.TestCase):
         self.assertEqual(self.battle_parser.action_info, "mock_action_info")
         self.assertEqual(self.battle_parser.damages_info, "mock_damages_info")
         self.assertEqual(self.battle_parser.heals_info, "mock_heals_info")
-        self.assertEqual(self.battle_parser.teams, ["Team1", "Team2"])
+        self.assertEqual(
+            self.battle_parser.teams,
+            [{"Pok1": "Pikachu"}, {"Pok1": "Charizard", "Pok2": "Blastoise"}],
+        )
 
         # Check that handle_events was called
         self.battle_parser.hp_events_handler.handle_events.assert_called_once()

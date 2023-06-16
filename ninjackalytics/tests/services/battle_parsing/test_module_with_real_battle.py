@@ -35,7 +35,7 @@ class TestBattle(unittest.TestCase):
         self.assertEqual(self.battle.get_id(), expected_id)
 
     def test_get_format(self):
-        expected_format = "[Gen 8] OU"
+        expected_format = "gen8ou"
         self.assertEqual(self.battle.get_format(), expected_format)
 
     def test_get_turns(self):
@@ -68,7 +68,7 @@ class TestBattlePokemon(unittest.TestCase):
         expected_pnum = 2
         expected_name = "Gardevoir"
         mon = self.battle_mons.get_mon_obj(p2_gardevoir)
-        self.assertEqual(mon.player_num, expected_pnum) # type: ignore
+        self.assertEqual(mon.player_num, expected_pnum)  # type: ignore
         self.assertEqual(mon.real_name, expected_name)
 
     def test_get_pokemon_current_hp(self):
@@ -241,6 +241,7 @@ class TestBattleParser(unittest.TestCase):
             self.parser.analyze_battle()
         except Exception as e:
             self.fail(f"analyze_battle raised an exception: {e}")
+
 
 if __name__ == "__main__":
     unittest.main()

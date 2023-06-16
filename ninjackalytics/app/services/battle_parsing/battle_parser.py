@@ -1,3 +1,4 @@
+from typing import List, Dict
 import os
 import sys
 
@@ -52,9 +53,23 @@ class BattleParser:
         damages_info = self.hp_events_handler.get_damage_events()
         heals_info = self.hp_events_handler.get_heal_events()
 
-        self.teams = self.battle_pokemon.teams
+        # ------ store battle data for db ------
+        self.teams = self._format_teams()
         self.general_info = battle_info
         self.pivot_info = pivot_info
         self.action_info = action_info
         self.damages_info = damages_info
         self.heals_info = heals_info
+
+    def _format_teams(self) -> List[Dict[str, str]]:
+        # the other objects are in the format of the dictionary of key words and values
+        # the teams in the battle_pokemon object are still objects, though
+
+        teams_list = []
+        for team in self.battle_pokemon.teams:
+            team_dict = {}
+            for i, mon in enumerate(team.pokemon):
+                team_dict[f"Pok{i+1}"] = mon.real_name
+            teams_list.append(team_dict)
+
+        return teams_list
