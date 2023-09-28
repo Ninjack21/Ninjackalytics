@@ -1,29 +1,8 @@
 from typing import Dict, List, Tuple, Protocol
-
-import os
-import sys
-
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-app_path = app_path + "ninjackalytics"
-sys.path.insert(1, app_path)
+from ninjackalytics.protocols.battle_initialization.protocols import Line, Turn, Battle
 
 
 # ============= START PROTOCOLS =============
-class Line(Protocol):
-    text: str
-    number: int
-
-
-class Turn(Protocol):
-    number: int
-    text: str
-    lines: List[Line]
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
 
 
 class HealData(Protocol):

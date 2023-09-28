@@ -173,7 +173,7 @@ class TestBattle:
         return self.response.log
 
 
-b_format = gen9ou
+b_format = "gen9ou"
 
 b_id = "gen9ou-1954574413"
 
