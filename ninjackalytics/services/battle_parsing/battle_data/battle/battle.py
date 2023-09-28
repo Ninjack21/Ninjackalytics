@@ -2,7 +2,7 @@ import requests
 import re
 from typing import Optional, List
 
-from . import Response, Turn, Line
+from .sub_modules import Response, Turn, Line
 
 
 class Battle:

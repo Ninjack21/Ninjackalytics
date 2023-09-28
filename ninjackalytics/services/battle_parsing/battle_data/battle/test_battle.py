@@ -3,8 +3,8 @@ from unittest.mock import patch, Mock
 from typing import Iterable, Optional, List
 
 
-from . import Response, Turn
-from .battle import Battle
+from .sub_modules import Response, Turn
+from . import Battle
 
 
 class TestBattle(unittest.TestCase):
