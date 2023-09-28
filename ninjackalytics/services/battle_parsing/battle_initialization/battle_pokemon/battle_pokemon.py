@@ -1,7 +1,7 @@
 import re
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
-from .pokemon_models import Pokemon, PokemonFinder, Team
+from .sub_modules import Pokemon, PokemonFinder, Team
 
 
 class BattlePokemon:

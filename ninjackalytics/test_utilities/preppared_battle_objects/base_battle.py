@@ -1,3 +1,5 @@
+from typing import Optional
+
 # using gen9OU as this is the current format
 # https://replay.pokemonshowdown.com/gen9ou-1954574413
 
@@ -89,7 +91,6 @@ class TestBattle:
             The URL of the Pokemon battle
 
         """
-        self.url = url
         self.response = TestResponse()
 
     def get_lines(self) -> list:
