@@ -2,7 +2,7 @@ import requests
 import re
 from typing import Optional, List
 
-from .log_models import Response, Turn, Line
+from . import Response, Turn, Line
 
 
 class Battle:
@@ -37,8 +37,10 @@ class Battle:
             response = requests.get(f"{self.url}.json")
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            raise ValueError(f"An error occurred while trying to access the URL")
+        except Exception as e:
+            raise ValueError(
+                f"An error occurred while trying to access the URL\n---\n{e}\n---\n"
+            )
 
     def get_lines(self) -> list:
         """

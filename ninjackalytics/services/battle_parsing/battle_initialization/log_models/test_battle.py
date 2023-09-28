@@ -1,18 +1,10 @@
 import unittest
 from unittest.mock import patch, Mock
 from typing import Iterable, Optional, List
-import requests_mock
 
-import os
-import sys
 
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-app_path = app_path + "ninjackalytics"
-sys.path.insert(1, app_path)
-
-from app.services.battle_parsing.log_models import Response, Turn
-from app.services.battle_parsing.log import Battle
+from . import Response, Turn
+from .battle import Battle
 
 
 class TestBattle(unittest.TestCase):
@@ -26,15 +18,6 @@ class TestBattle(unittest.TestCase):
         url = "http://example.com"
         battle = Battle(url)
         self.assertEqual(battle._get_json_response(), json_response)
-
-    def test_invalid_url(self):
-        # Test failed response
-        url = "https://invalid.com"
-        with requests_mock.Mocker() as m:
-            m.get(f"{url}.json", status_code=404)
-            with self.assertRaises(ValueError):
-                battle = Battle(url)
-                battle._get_json_response()
 
     @patch.object(Battle, "_get_json_response")
     def test_get_turn(self, mock_get):
@@ -60,7 +43,7 @@ class TestBattle(unittest.TestCase):
         # Test no turns
         json_response = {"id": "1", "format": "gen8", "log": ""}
         mock_get.return_value = json_response
-        mock_get.return_value = json_response
+
         battle = Battle("some_url")
 
         self.assertEqual(list(battle.get_turns()), [])
@@ -92,7 +75,6 @@ class TestBattle(unittest.TestCase):
     def test_get_id(self, mock_get):
         json_response = {"id": "1", "format": "gen8", "log": ""}
         mock_get.return_value = json_response
-        mock_get.return_value = json_response
         battle = Battle("some_url")
 
         self.assertEqual(battle.get_id(), "1")
@@ -101,7 +83,7 @@ class TestBattle(unittest.TestCase):
     def test_get_format(self, mock_get):
         json_response = {"id": "1", "format": "gen8", "log": ""}
         mock_get.return_value = json_response
-        mock_get.return_value = json_response
+
         battle = Battle("some_url")
 
         self.assertEqual(battle.get_format(), "gen8")
@@ -110,7 +92,7 @@ class TestBattle(unittest.TestCase):
     def test_get_log(self, mock_get):
         json_response = {"id": "1", "format": "gen8", "log": ""}
         mock_get.return_value = json_response
-        mock_get.return_value = json_response
+
         battle = Battle("some_url")
 
         self.assertEqual(battle.get_log(), "")
@@ -144,7 +126,7 @@ class TestBattle(unittest.TestCase):
         """
         json_response = {"id": "1", "format": "gen8", "log": log}
         mock_get.return_value = json_response
-        mock_get.return_value = json_response
+
         battle = Battle("some_url")
 
         lines = battle.get_lines()

@@ -20,7 +20,7 @@ class TestResponse(unittest.TestCase):
         self.assertEqual(len(response.turns), 1)
         self.assertIsInstance(response.turns[0], Turn)
 
-        # Test failed initialization
+        # Test initialization with no turns
         json_response = {"id": "1", "format": "gen8", "log": ""}
         response = Response(json_response)
         self.assertEqual(response.battle_id, "1")
