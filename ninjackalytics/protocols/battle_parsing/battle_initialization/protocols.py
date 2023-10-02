@@ -15,3 +15,7 @@ class Turn(Protocol):
 class Battle(Protocol):
     def get_turns(self) -> List[Turn]:
         ...
+
+class BattlePokemon(Protocol):
+    def get_pnum_and_name(self) -> Tuple[int, str]:
+        ...

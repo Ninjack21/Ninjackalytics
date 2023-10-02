@@ -1,26 +1,11 @@
 from typing import Dict, Tuple, List, Protocol
 import re
 
-
-# =================== DEFINE PROTOCOLS ===================
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
-
-
-class Turn(Protocol):
-    number: int
-    text: str
-    lines: List[object]
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (Battle, BattlePokemon, Turn)
 
 
 # =================== DEFINE MODEL ===================
-
 
 class DealerSourceFinder:
     def __init__(self, battle_pokemon: BattlePokemon):

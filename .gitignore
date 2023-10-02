@@ -18,3 +18,5 @@ apperrors.log/
 config.py
 
 *.db
+
+nj_env/
