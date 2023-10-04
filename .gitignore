@@ -20,3 +20,4 @@ config.py
 *.db
 
 nj_env/
+ninjackalytics/.DS_Store
