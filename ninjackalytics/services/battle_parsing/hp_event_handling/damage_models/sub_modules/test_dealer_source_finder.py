@@ -8,12 +8,10 @@ import sys
 file_path = os.path.dirname(os.path.realpath(__file__))
 app_path = file_path.split("ninjackalytics")[0]
 sys.path.insert(1, app_path)
-from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
-    TestBattle,
-)
-#===bring in actual object dependencies===
-from ninjackalytics.services.battle_parsing.battle_data.battle_pokemon.battle_pokemon import BattlePokemon
+from ninjackalytics.test_utilities.utils import MockBattle, MockBattlePokemon, MockTurn
 
+# ===bring in object to test===
+from .dealer_source_finder import DealerSourceFinder
 
 
 class TestDealerSourceFinder(unittest.TestCase):
@@ -58,71 +56,64 @@ class TestDealerSourceFinder(unittest.TestCase):
         """
         normal_turn = MockTurn(
             1,
-            strip_leading_spaces(
-                """
+            """
             |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
             |-damage|p1a: Cuss-Tran|67/100
-            """
-            ),
+            """,
         )
+
         delayed_turn = MockTurn(
-            17,
-            strip_leading_spaces(
-                """
-                |-end|p1a: Ninetales|move: Future Sight
-                |-damage|p1a: Ninetales|44/100
-                """
-            ),
+            1,
+            """
+            |-end|p1a: Ninetales|move: Future Sight
+            |-damage|p1a: Ninetales|44/100
+            """,
         )
 
         doubles_turn1 = MockTurn(
             3,
-            strip_leading_spaces(
-                """
-                |move|p2a: Genesect|Techno Blast|p1a: Palossand
-                |-damage|p1a: Palossand|65/100
-                """
-            ),
+            """
+            |move|p2a: Genesect|Techno Blast|p1a: Palossand
+            |-damage|p1a: Palossand|65/100
+            """,
         )
 
         doubles_turn2 = MockTurn(
             4,
-            strip_leading_spaces(
-                """
+            """
                 |move|p1a: Palossand|Scorching Sands|p2b: Incineroar
                 |-damage|p2b: Incineroar|76/100
-                """
-            ),
+                """,
         )
 
         doubles_anim_turn = MockTurn(
             5,
-            strip_leading_spaces(
-                """
+            """
                 |-anim||move|p1b: Dragapult|Dragon Darts|p2a: Pelipper
                 |-damage|p2a: Pelipper|65/100
                 |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
                 |-damage|p2b: Incineroar|31/100
-                """
-            ),
+                """,
         )
 
         spread_turn1 = MockTurn(
             6,
-            strip_leading_spaces(
-                """
+            """
                 |move|p2a: Regidrago|Dragon Energy|p1b: Regieleki|[spread] p1a,p1b
                 |-damage|p1a: Indeedee|15/100
                 |-damage|p1b: Regieleki|0 fnt
-                """
-            ),
+                """,
         )
+
         self.normalturn = normal_turn
         self.delayedturn = delayed_turn
         self.doublesturn1 = doubles_turn1
         self.doublesturn2 = doubles_turn2
         self.animatedturn = doubles_anim_turn
         self.spreadturn1 = spread_turn1
+
+        mock_battle_pokemon = MockBattlePokemon()
+
         self.move_dealer_finder = DealerSourceFinder(mock_battle_pokemon)
 
     def test_get_dealer_and_source(self):
@@ -345,14 +336,12 @@ class TestDealerSourceFinder(unittest.TestCase):
         Not sure how yet, but this scenario failed the DealerSourceFinder. It raised the ValueError I added
         to say that a move type was unable to be determined.
         """
-        # NOTE: still need to figure out how to make this test replicate what we see in the real battle
-        # TODO: make this test fail - figure out what is throwing it
+
         event = "|-damage|p1a: Melmetal|83/100"
         turn_text = """|move|p2a: Gardevoir|Psyshock|p1a: Melmetal
             |-resisted|p1a: Melmetal
             |-damage|p1a: Melmetal|83/100
             """
-        turn_text = strip_leading_spaces(turn_text)
         turn = MockTurn(1, turn_text)
 
         # first, let's check that the move_type is found by the _move_method

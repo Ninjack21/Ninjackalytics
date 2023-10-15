@@ -1,30 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple, List, Protocol
 
-
-# =================== DEFINE PROTOCOLS ===================
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
-
-    def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
-        ...
-
-    def get_pokemon_hp_change(self, raw_name: str) -> float:
-        ...
-
-    def get_pokemon_current_hp(self, raw_name: str) -> float:
-        ...
-
-
-class Turn(Protocol):
-    number: int
-    text: str
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
 
 # =================== DEFINE MODEL ===================

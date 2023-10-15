@@ -1,10 +1,10 @@
 from typing import Dict, Tuple, Protocol
 
 
-# =================== DEFINE PROTOCOLS ===================
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    BattlePokemon,
+)
 
 
 # =================== DEFINE MODEL ===================

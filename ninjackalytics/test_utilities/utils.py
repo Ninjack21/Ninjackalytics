@@ -32,7 +32,7 @@ class MockBattlePokemon:
 class MockTurn:
     def __init__(self, number: int, text: str):
         self.number = number
-        self.text = text
+        self.text = strip_leading_spaces(text)
 
 
 class MockBattle:
