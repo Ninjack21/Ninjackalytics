@@ -2,17 +2,12 @@ from typing import List, Protocol
 import re
 
 
-class Turn(Protocol):
-    number: int
-    text: str
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
-
-    def get_log(self) -> str:
-        ...
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
 
 class ActionData:

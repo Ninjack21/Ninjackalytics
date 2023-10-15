@@ -38,10 +38,14 @@ class MockTurn:
 class MockBattle:
     def __init__(self):
         turns = []
+        log = ""
 
     # quick implementation for testing
     def get_turns(self) -> list:
         return self.turns
+
+    def get_log(self) -> str:
+        return self.log
 
 
 # =================== useful functions for testing ===================

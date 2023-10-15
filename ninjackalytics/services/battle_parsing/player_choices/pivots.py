@@ -1,20 +1,12 @@
 import re
-from typing import Dict, List, Protocol, Tuple
+from typing import Dict, List, Tuple
 
-
-class Turn(Protocol):
-    number: int
-    text: str
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
-
-
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
 
 class PivotData:
