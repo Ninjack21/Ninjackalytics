@@ -1,22 +1,10 @@
-import os
-import sys
-
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-app_path = app_path + "ninjackalytics"
-sys.path.insert(1, app_path)
-
-from app.services.battle_parsing import (
-    Battle,
-    BattlePokemon,
-    ActionData,
-    PivotData,
-    BattleData,
-    HpEventsHandler,
-)
-
-from app.services.battle_parsing.damage_models import DamageData
-from app.services.battle_parsing.heal_models import HealData
+from .battle_data import BattleData
+from .battle_data.battle_pokemon import BattlePokemon
+from .battle_data.battle import Battle
+from .player_choices import ActionData, PivotData
+from .hp_event_handling import HpEventsHandler
+from .hp_event_handling.damage_models import DamageData
+from .hp_event_handling.heal_models import HealData
 
 
 class BattleParser:

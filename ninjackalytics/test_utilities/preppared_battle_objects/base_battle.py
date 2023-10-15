@@ -1,7 +1,6 @@
 from typing import Optional
 
-# using gen9OU as this is the current format
-# https://replay.pokemonshowdown.com/gen9ou-1954574413
+# https://replay.pokemonshowdown.com/smogtours-gen8ou-724225
 
 """
 This file is to provide a Response and Battle object for testing purposes. As such we mimic the interface

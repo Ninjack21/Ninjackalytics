@@ -2,6 +2,7 @@ class MockBattlePokemon:
     def __init__(self):
         self.mon_hps = {}
         self.mon_hp_changes = {}
+        self.teams = []
 
     # quick implementation for testing
     def get_pnum_and_name(self, raw_name):
