@@ -1,21 +1,6 @@
 from typing import Dict, List, Tuple, Protocol
-from ninjackalytics.protocols.battle_initialization.protocols import Line, Turn, Battle
 
-
-# ============= START PROTOCOLS =============
-
-
-class HealData(Protocol):
-    def get_heal_data(self, event: str, turn: Turn) -> None:
-        ...
-
-
-class DamageData(Protocol):
-    def get_damage_data(self, event: str, turn: Turn) -> None:
-        ...
-
-
-# ============= END PROTOCOLS =============
+from ninjackalytics.protocols import Battle, Turn, HealData, DamageData
 
 
 class HpEventsHandler:
