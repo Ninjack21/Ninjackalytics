@@ -1,6 +1,9 @@
-from typing import Dict, List, Protocol
-from app.database import SessionLocal
-from app.models.battles import (
+from typing import Dict, List
+
+from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
+
+from ninjackalytics.database import SessionLocal
+from ninjackalytics.database.models.battles import (
     teams,
     battle_info,
     actions,
@@ -9,15 +12,6 @@ from app.models.battles import (
     pivots,
     errors,
 )
-
-
-class BattleParser(Protocol):
-    teams: List[Dict[str, str]]
-    general_info: Dict[str, str]
-    actions: List[Dict[str, str]]
-    damages: List[Dict[str, str]]
-    healing: List[Dict[str, str]]
-    pivots: List[Dict[str, str]]
 
 
 class BattleDataUploader:
