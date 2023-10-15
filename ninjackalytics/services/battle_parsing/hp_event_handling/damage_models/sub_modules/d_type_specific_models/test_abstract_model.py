@@ -12,14 +12,14 @@ from ninjackalytics.test_utilities.utils import (
 
 
 # ===bring in object to test===
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.abstract_model import (
+from . import (
     DamageDataFinder,
 )
 
 
 class MockDamageDataFinder(DamageDataFinder):
     def get_damage_data(
-        self, event: str, turn: MockTurn, battle: Battle
+        self, event: str, turn: MockTurn, battle: MockBattle
     ) -> Dict[str, str]:
         return {}
 

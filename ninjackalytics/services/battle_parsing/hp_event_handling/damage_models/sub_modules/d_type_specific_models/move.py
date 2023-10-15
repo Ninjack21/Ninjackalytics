@@ -1,7 +1,7 @@
 from typing import Dict, Tuple, List
 
 
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models import (
+from .abstract_model import (
     DamageDataFinder,
 )
 from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules import (

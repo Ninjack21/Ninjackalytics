@@ -1,47 +1,20 @@
 import re
 from typing import Dict, List, Tuple, Protocol
 
-import os
-import sys
 
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-app_path = app_path + "ninjackalytics"
-sys.path.insert(1, app_path)
-
-from app.services.battle_parsing.damage_models.d_type_specific_models.abstract_model import (
+from .sub_modules.d_type_specific_models import (
     DamageDataFinder,
-)
-from app.services.battle_parsing.damage_models.d_type_specific_models import (
     ItemAbilityDataFinder,
     MoveDataFinder,
     PassiveDataFinder,
     StatusHazardDataFinder,
 )
 
-
-class Turn(Protocol):
-    number: int
-    text: str
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
-
-
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
-
-    def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
-        ...
-
-    def get_pokemon_hp_change(self, raw_name: str) -> float:
-        ...
-
-    def get_pokemon_current_hp(self, raw_name: str) -> float:
-        ...
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Turn,
+    Battle,
+    BattlePokemon,
+)
 
 
 class DamageData:

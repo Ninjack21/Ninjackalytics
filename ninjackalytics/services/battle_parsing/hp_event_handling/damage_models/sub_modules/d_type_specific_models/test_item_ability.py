@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models import (
+from . import (
     ItemAbilityDataFinder,
 )
 

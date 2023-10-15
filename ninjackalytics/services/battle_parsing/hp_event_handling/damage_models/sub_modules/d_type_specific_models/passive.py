@@ -1,10 +1,14 @@
 from typing import Dict, Tuple, List, Protocol
 
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models import (
+from .abstract_model import (
     DamageDataFinder,
+)
+
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
     BattlePokemon,
     Turn,
-    Battle,
 )
 
 

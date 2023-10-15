@@ -1,18 +1,18 @@
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.abstract_model import (
+from .abstract_model import (
     DamageDataFinder,
     Battle,
     BattlePokemon,
     Turn,
 )
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.item_ability import (
+from .item_ability import (
     ItemAbilityDataFinder,
 )
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.move import (
+from .move import (
     MoveDataFinder,
 )
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.passive import (
+from .passive import (
     PassiveDataFinder,
 )
-from ninjackalytics.services.battle_parsing.hp_event_handling.damage_models.sub_modules.d_type_specific_models.status_hazard import (
+from .status_hazard import (
     StatusHazardDataFinder,
 )
