@@ -1,33 +1,12 @@
 from abc import ABC
 from typing import Dict, Protocol, List, Tuple
 
-
-# ============= START PROTOCOLS =============
-class Turn(Protocol):
-    number: int
-    text: str
-
-
-class Battle(Protocol):
-    def get_turns(self) -> List[Turn]:
-        ...
-
-
-class BattlePokemon(Protocol):
-    def get_pnum_and_name(self) -> Tuple[int, str]:
-        ...
-
-    def update_hp_for_pokemon(self, raw_name: str, new_hp: float) -> None:
-        ...
-
-    def get_pokemon_hp_change(self, raw_name: str) -> float:
-        ...
-
-    def get_pokemon_current_hp(self, raw_name: str) -> float:
-        ...
-
-
-# ============= END PROTOCOLS =============
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
 
 class HealDataFinder(ABC):

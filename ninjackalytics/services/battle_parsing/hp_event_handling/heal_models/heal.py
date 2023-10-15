@@ -1,16 +1,16 @@
 import re
 from typing import Dict, List, Tuple, Protocol
 
-import os
-import sys
 
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-app_path = app_path + "ninjackalytics"
-sys.path.insert(1, app_path)
+# =================== IMPORT PROTOCOLS ===================
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
-from app.services.battle_parsing.heal_models.abstract_model import HealDataFinder
-from app.services.battle_parsing.heal_models import (
+from .sub_modules import (
+    HealDataFinder,
     AbilityHealData,
     DrainMoveHealData,
     ItemHealData,
