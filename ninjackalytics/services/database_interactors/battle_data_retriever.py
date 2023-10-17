@@ -72,7 +72,6 @@ class BattleDataRetriever:
             .filter(battle_info.Battle_ID == battle_id)
             .first()
         )
-        print(f"\n\n\n{battle_info_db}\n\n\n")
         return pd.DataFrame([battle_info_db.__dict__])
 
     def get_teams(self, battle_id: int) -> pd.DataFrame:
@@ -89,8 +88,18 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the teams in the battle.
         """
-        teams_db = self.session.query(teams).filter(teams.Battle_ID == battle_id).all()
-        return pd.DataFrame([team.__dict__ for team in teams_db])
+        team1_id = self.session.query(battle_info.P1_team).filter(
+            battle_info.Battle_ID == battle_id
+        )
+        team2_id = self.session.query(battle_info.P2_team).filter(
+            battle_info.Battle_ID == battle_id
+        )
+
+        team1 = self.session.query(teams).filter(teams.id == team1_id).first()
+        team2 = self.session.query(teams).filter(teams.id == team2_id).first()
+        battle_teams = [team1, team2]
+
+        return pd.DataFrame([team.__dict__ for team in battle_teams])
 
     def get_actions(self, battle_id: int) -> pd.DataFrame:
         """
@@ -106,9 +115,8 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the actions taken in the battle.
         """
-        actions_db = (
-            self.session.query(actions).filter(actions.Battle_ID == battle_id).all()
-        )
+        dbid = self.get_db_id(battle_id)
+        actions_db = self.session.query(actions).filter(actions.Battle_ID == dbid).all()
         return pd.DataFrame([action.__dict__ for action in actions_db])
 
     def get_damages(self, battle_id: int) -> pd.DataFrame:
@@ -167,3 +175,24 @@ class BattleDataRetriever:
             self.session.query(pivots).filter(pivots.Battle_ID == battle_id).all()
         )
         return pd.DataFrame([pivot.__dict__ for pivot in pivots_db])
+
+    def get_db_id(self, battle_id: int) -> int:
+        """
+        Retrieves the database ID of a battle from the database.
+
+        Parameters
+        ----------
+        battle_id : int
+            The ID of the battle to retrieve the database ID for.
+
+        Returns
+        -------
+        int
+            The database ID of the battle.
+        """
+        battle_info_db = (
+            self.session.query(battle_info)
+            .filter(battle_info.Battle_ID == battle_id)
+            .first()
+        )
+        return battle_info_db.id
