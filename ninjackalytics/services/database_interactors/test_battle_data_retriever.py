@@ -11,8 +11,9 @@ from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
 
 from ninjackalytics.database.config import TestingConfig
 from ninjackalytics.database import Base, engine, SessionLocal
-from ninjackalytics.services.database_interactors.battle_data_retriever import (
+from ninjackalytics.services.database_interactors import (
     BattleDataRetriever,
+    BattleDataUploader,
 )
 from ninjackalytics.services.battle_parsing import BattleParser
 from ninjackalytics.services.battle_parsing.battle_data.battle_pokemon import (
@@ -41,14 +42,19 @@ class testBattleDataRetriever(unittest.TestCase):
 
         uploader = BattleDataUploader()
         uploader.upload_battle(self.battle_parser)
+        self.uploader = uploader
         uploader.close_session()
 
     def test_get_battle_info(self):
-        battle_id = self.battle_parser.battle.battle_id
+        battle_id = self.uploader.battle_id
         battle_info = BattleDataRetriever().get_battle_info(battle_id)
         self.assertEqual(battle_info["Battle_ID"][0], battle_id)
         self.assertEqual(battle_info["Format"][0], "gen9ou")
         self.assertEqual(battle_info["P1"][0], "massivesket")
-        self.assertEqual(battle_info["P2"][0], "☆Buzzma")
+        self.assertEqual(battle_info["P2"][0], "Buzzma")
         self.assertEqual(battle_info["Rank"][0], 1337)
         self.assertEqual(battle_info["Winner"][0], "massivesket")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -68,8 +68,11 @@ class BattleDataRetriever:
             A pandas DataFrame containing information about the battle.
         """
         battle_info_db = (
-            self.session.query(battle_info).filter(battle_info.id == battle_id).first()
+            self.session.query(battle_info)
+            .filter(battle_info.Battle_ID == battle_id)
+            .first()
         )
+        print(f"\n\n\n{battle_info_db}\n\n\n")
         return pd.DataFrame([battle_info_db.__dict__])
 
     def get_teams(self, battle_id: int) -> pd.DataFrame:
