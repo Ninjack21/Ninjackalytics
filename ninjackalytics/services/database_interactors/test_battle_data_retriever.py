@@ -75,12 +75,66 @@ class testBattleDataRetriever(unittest.TestCase):
 
     def test_get_actions(self):
         battle_id = self.uploader.battle_id
-        actions = self.retriever.get_actions(battle_id)
-        for col in actions.columns:
-            print(col)
-        # not going to be overly rigorous here, first 2 are by default switch
-        self.assertEqual(actions["Action"][0], "switch")
-        self.assertEqual(actions["Action"][1], "switch")
+        allactions = self.retriever.get_actions(battle_id)
+        # found actions in turn 1 for p1 and p2 but not going to be overly rigorous
+        self.assertEqual(
+            allactions["Action"]
+            .loc[(allactions["Player_Number"] == 1) & (allactions["Turn"] == 1)]
+            .iloc[0],
+            "move",
+        )
+        self.assertEqual(
+            allactions["Action"]
+            .loc[(allactions["Player_Number"] == 2) & (allactions["Turn"] == 1)]
+            .iloc[0],
+            "switch",
+        )
+
+    def test_get_damages(self):
+        battle_id = self.uploader.battle_id
+        alldamages = self.retriever.get_damages(battle_id)
+        # found damages in turn 1 and 2 for p1 and p2 but not going to be overly rigorous
+        self.assertEqual(
+            alldamages["Damage"]
+            .loc[
+                (alldamages["Receiver_Player_Number"] == 1) & (alldamages["Turn"] == 1)
+            ]
+            .iloc[0],
+            50,
+        )
+        self.assertEqual(
+            alldamages["Damage"]
+            .loc[
+                (alldamages["Receiver_Player_Number"] == 2) & (alldamages["Turn"] == 2)
+            ]
+            .iloc[0],
+            100,
+        )
+
+    def test_get_healing(self):
+        battle_id = self.uploader.battle_id
+        allhealing = self.retriever.get_healing(battle_id)
+        # found healing in turn 1 for p1 (only healing in battle)
+        self.assertEqual(
+            allhealing["Healing"]
+            .loc[
+                (allhealing["Receiver_Player_Number"] == 1) & (allhealing["Turn"] == 1)
+            ]
+            .iloc[0],
+            25,
+        )
+
+    def test_get_pivots(self):
+        battle_id = self.uploader.battle_id
+        allpivots = self.retriever.get_pivots(battle_id)
+        # found pivots in turn 1 for p2 (only pivot in battle)
+        pivot = allpivots.loc[
+            (allpivots["Player_Number"] == 2) & (allpivots["Turn"] == 1)
+        ].iloc[0]
+        self.assertEqual(pivot["Pokemon_Enter"], "Slowking-Galar")
+        self.assertEqual(pivot["Player_Number"], 2)
+        self.assertEqual(pivot["Source_Name"], "action")
+        self.assertEqual(pivot["Turn"], 1)
 
 
 if __name__ == "__main__":

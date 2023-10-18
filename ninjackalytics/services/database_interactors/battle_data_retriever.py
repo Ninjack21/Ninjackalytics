@@ -72,7 +72,8 @@ class BattleDataRetriever:
             .filter(battle_info.Battle_ID == battle_id)
             .first()
         )
-        return pd.DataFrame([battle_info_db.__dict__])
+        df = self._drop_unwanted_attrs(pd.DataFrame([battle_info_db.__dict__]))
+        return df
 
     def get_teams(self, battle_id: int) -> pd.DataFrame:
         """
@@ -99,7 +100,8 @@ class BattleDataRetriever:
         team2 = self.session.query(teams).filter(teams.id == team2_id).first()
         battle_teams = [team1, team2]
 
-        return pd.DataFrame([team.__dict__ for team in battle_teams])
+        df = pd.DataFrame([team.__dict__ for team in battle_teams])
+        return self._drop_unwanted_attrs(df)
 
     def get_actions(self, battle_id: int) -> pd.DataFrame:
         """
@@ -117,7 +119,8 @@ class BattleDataRetriever:
         """
         dbid = self.get_db_id(battle_id)
         actions_db = self.session.query(actions).filter(actions.Battle_ID == dbid).all()
-        return pd.DataFrame([action.__dict__ for action in actions_db])
+        df = pd.DataFrame([action.__dict__ for action in actions_db])
+        return self._drop_unwanted_attrs(df)
 
     def get_damages(self, battle_id: int) -> pd.DataFrame:
         """
@@ -133,10 +136,12 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the damages dealt in the battle.
         """
+        db_id = self.get_db_id(battle_id)
         damages_db = (
-            self.session.query(damages).filter(damages.Battle_ID == battle_id).all()
+            self.session.query(damages).filter(damages.Battle_ID == db_id).all()
         )
-        return pd.DataFrame([damage.__dict__ for damage in damages_db])
+        df = pd.DataFrame([damage.__dict__ for damage in damages_db])
+        return self._drop_unwanted_attrs(df)
 
     def get_healing(self, battle_id: int) -> pd.DataFrame:
         """
@@ -152,10 +157,12 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the healing done in the battle.
         """
+        db_id = self.get_db_id(battle_id)
         healing_db = (
-            self.session.query(healing).filter(healing.Battle_ID == battle_id).all()
+            self.session.query(healing).filter(healing.Battle_ID == db_id).all()
         )
-        return pd.DataFrame([heal.__dict__ for heal in healing_db])
+        df = pd.DataFrame([heal.__dict__ for heal in healing_db])
+        return self._drop_unwanted_attrs(df)
 
     def get_pivots(self, battle_id: int) -> pd.DataFrame:
         """
@@ -171,10 +178,10 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the pivots in the battle.
         """
-        pivots_db = (
-            self.session.query(pivots).filter(pivots.Battle_ID == battle_id).all()
-        )
-        return pd.DataFrame([pivot.__dict__ for pivot in pivots_db])
+        db_id = self.get_db_id(battle_id)
+        pivots_db = self.session.query(pivots).filter(pivots.Battle_ID == db_id).all()
+        df = pd.DataFrame([pivot.__dict__ for pivot in pivots_db])
+        return self._drop_unwanted_attrs(df)
 
     def get_db_id(self, battle_id: int) -> int:
         """
@@ -196,3 +203,24 @@ class BattleDataRetriever:
             .first()
         )
         return battle_info_db.id
+
+    def _drop_unwanted_attrs(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Drops unwanted attributes from a pandas DataFrame.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The pandas DataFrame to drop unwanted attributes from.
+
+        Returns
+        -------
+        pd.DataFrame
+            The pandas DataFrame with unwanted attributes dropped.
+        """
+        # for some reason the instance state is still getting through
+        unwanted_columns = ["FAIL", "_sa_instance_state"]
+        for col in df.columns:
+            if col in unwanted_columns:
+                df.drop(columns=col)
+        return df
