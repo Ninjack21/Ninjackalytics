@@ -3,13 +3,6 @@ from datetime import datetime
 
 from . import BattleData
 
-# ===bring in base test utilities objects===
-import os
-import sys
-
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-sys.path.insert(1, app_path)
 from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
     TestBattle,
 )
