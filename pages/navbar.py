@@ -6,11 +6,12 @@ import dash_bootstrap_components as dbc
 def navbar():
     navbar = dbc.NavbarSimple(
         children=[
-            dbc.NavItem(dbc.NavLink("Submit Battle", href="/")),
+            dbc.NavItem(dbc.NavLink("Home", href="/")),
+            dbc.NavItem(dbc.NavLink("Team Analysis", href="/team_analysis")),
         ],
         brand="Ninjackalytics",
         brand_href="/",
-        color="primary",
+        color="dark",
         dark=True,
         fluid=True,
         className="navbar",
