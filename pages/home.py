@@ -24,13 +24,14 @@ def layout():
                             "justify-content": "center",
                             "text-align": "center",
                             "width": "50%",
+                            "z-index": "1",
                         },
                     ),
                     html.Div(
                         [
                             html.Img(
-                                src="/assets/Ninjack.png",
-                                style={"height": "50%", "width": "50%"},
+                                src="/assets/showdown_sprites/ninjask.gif",
+                                style={"height": "25%", "width": "25%"},
                             )
                         ],
                         style={
@@ -38,6 +39,7 @@ def layout():
                             "justify-content": "center",
                             "text-align": "center",
                             "width": "50%",
+                            "z-index": "1",
                         },
                     ),
                 ],
@@ -46,6 +48,10 @@ def layout():
                     "flex": "1",
                     "justify-content": "center",
                     "align-items": "center",
+                    "background-image": "url('/assets/background.jpg')",
+                    "background-size": "100% 100%",
+                    "background-repeat": "no-repeat",
+                    "z-index": "0",
                 },
             ),
             html.Div(
@@ -56,8 +62,7 @@ def layout():
                         style={"flex": "1", "margin-left": "10px"},
                     ),
                 ],
-                style={"display": "flex", "margin-top": "10px"},
+                style={"display": "flex", "margin-top": "10px", "margin-bottom": "0"},
             ),
         ],
-        style={"display": "flex", "flex-direction": "column", "flex": "1"},
     )
