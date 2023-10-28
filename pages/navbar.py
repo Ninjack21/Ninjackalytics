@@ -4,18 +4,16 @@ import dash_bootstrap_components as dbc
 
 
 def navbar():
-    return html.Div(
-        dbc.Nav(
-            [
-                dbc.NavLink(
-                    html.Div(page["name"], className="ms-2"),
-                    href=page["path"],
-                    active="exact",
-                )
-                for page in dash.page_registry.values()
-            ],
-            vertical=True,
-            pills=True,
-            className="bg-light",
-        )
+    navbar = dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("Submit Battle", href="/")),
+        ],
+        brand="Ninjackalytics",
+        brand_href="/",
+        color="primary",
+        dark=True,
+        fluid=True,
+        className="navbar",
     )
+
+    return navbar
