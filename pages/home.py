@@ -22,9 +22,11 @@ def layout():
                         style={
                             "display": "flex",
                             "justify-content": "center",
+                            "align-items": "center",
                             "text-align": "center",
                             "width": "50%",
                             "z-index": "1",
+                            "margin-top": "20vh",
                         },
                     ),
                     html.Div(
@@ -53,13 +55,22 @@ def layout():
             ),
             html.Div(
                 [
-                    html.Button("Submit Battle"),
-                    dcc.Input(
+                    dbc.Button(
+                        "Submit Battle",
+                        style={"background-color": "#333", "color": "white"},
+                    ),
+                    dbc.Input(
                         placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
-                        style={"flex": "1", "margin-left": "10px"},
                     ),
                 ],
-                style={"display": "flex", "margin-top": "10px", "margin-bottom": "0"},
+                style={
+                    "width": "50%",
+                    "margin-top": "10px",
+                    "margin-bottom": "0",
+                    "position": "fixed",
+                    "bottom": "20px",
+                    "left": "20px",
+                },
             ),
         ],
         style={
