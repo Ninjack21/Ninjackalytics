@@ -28,22 +28,22 @@ class BattleDataRetriever:
 
     Methods
     -------
-    get_battle_info(battle_id: int) -> pd.DataFrame:
+    get_battle_info(battle_id: str) -> pd.DataFrame:
         Retrieves information about a specific battle from the database.
 
-    get_teams(battle_id: int) -> pd.DataFrame:
+    get_teams(battle_id: str) -> pd.DataFrame:
         Retrieves information about the teams in a specific battle from the database.
 
-    get_actions(battle_id: int) -> pd.DataFrame:
+    get_actions(battle_id: str) -> pd.DataFrame:
         Retrieves information about the actions taken in a specific battle from the database.
 
-    get_damages(battle_id: int) -> pd.DataFrame:
+    get_damages(battle_id: str) -> pd.DataFrame:
         Retrieves information about the damages dealt in a specific battle from the database.
 
-    get_healing(battle_id: int) -> pd.DataFrame:
+    get_healing(battle_id: str) -> pd.DataFrame:
         Retrieves information about the healing done in a specific battle from the database.
 
-    get_pivots(battle_id: int) -> pd.DataFrame:
+    get_pivots(battle_id: str) -> pd.DataFrame:
         Retrieves information about the pivots in a specific battle from the database.
     """
 
@@ -53,7 +53,7 @@ class BattleDataRetriever:
         """
         self.session = SessionLocal()
 
-    def get_battle_info(self, battle_id: int) -> pd.DataFrame:
+    def get_battle_info(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about a specific battle from the database.
 
@@ -75,7 +75,7 @@ class BattleDataRetriever:
         df = self._drop_unwanted_attrs(pd.DataFrame([battle_info_db.__dict__]))
         return df
 
-    def get_teams(self, battle_id: int) -> pd.DataFrame:
+    def get_teams(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about the teams in a specific battle from the database.
 
@@ -103,7 +103,7 @@ class BattleDataRetriever:
         df = pd.DataFrame([team.__dict__ for team in battle_teams])
         return self._drop_unwanted_attrs(df)
 
-    def get_actions(self, battle_id: int) -> pd.DataFrame:
+    def get_actions(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about the actions taken in a specific battle from the database.
 
@@ -122,7 +122,7 @@ class BattleDataRetriever:
         df = pd.DataFrame([action.__dict__ for action in actions_db])
         return self._drop_unwanted_attrs(df)
 
-    def get_damages(self, battle_id: int) -> pd.DataFrame:
+    def get_damages(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about the damages dealt in a specific battle from the database.
 
@@ -143,7 +143,7 @@ class BattleDataRetriever:
         df = pd.DataFrame([damage.__dict__ for damage in damages_db])
         return self._drop_unwanted_attrs(df)
 
-    def get_healing(self, battle_id: int) -> pd.DataFrame:
+    def get_healing(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about the healing done in a specific battle from the database.
 
@@ -164,7 +164,7 @@ class BattleDataRetriever:
         df = pd.DataFrame([heal.__dict__ for heal in healing_db])
         return self._drop_unwanted_attrs(df)
 
-    def get_pivots(self, battle_id: int) -> pd.DataFrame:
+    def get_pivots(self, battle_id: str) -> pd.DataFrame:
         """
         Retrieves information about the pivots in a specific battle from the database.
 
@@ -183,7 +183,7 @@ class BattleDataRetriever:
         df = pd.DataFrame([pivot.__dict__ for pivot in pivots_db])
         return self._drop_unwanted_attrs(df)
 
-    def get_db_id(self, battle_id: int) -> int:
+    def get_db_id(self, battle_id: str) -> int:
         """
         Retrieves the database ID of a battle from the database.
 
