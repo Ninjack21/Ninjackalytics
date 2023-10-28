@@ -36,6 +36,10 @@ def layout():
                             "text-align": "center",
                             "width": "14.28%",
                             "z-index": "1",
+                            "position": "absolute",
+                            "top": "0",
+                            "left": "50%",
+                            "transform": "translate(-50%, -50%)",
                         },
                     ),
                     html.Div(
@@ -48,105 +52,59 @@ def layout():
                         style={
                             "display": "flex",
                             "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Img(
-                                src="/assets/showdown_sprites/ninjask.gif",
-                                style={"height": "25%", "width": "25%"},
+                            circle_size = "10%"
+                            circle_buffer = "2%"
+
+                            circle_divs = []
+                            for i in range(1, 7):
+                                circle_divs.append(
+                                    html.Div(
+                                        [
+                                            html.Img(
+                                                src="/assets/showdown_sprites/ninjask.gif",
+                                                style={"height": "25%", "width": "25%"},
+                                            )
+                                        ],
+                                        style={
+                                            "display": "flex",
+                                            "justify-content": "center",
+                                            "text-align": "center",
+                                            "width": circle_size,
+                                            "z-index": "1",
+                                            "position": "absolute",
+                                            "top": f"{50 - (i-1)*15}%",
+                                            "left": f"{50 - (i-1)*15}%",
+                                            "transform": "translate(-50%, -50%)",
+                                        },
+                                    )
+                                )
+
+                            app.layout = html.Div(
+                                [
+                                    html.Div(
+                                        circle_divs,
+                                        style={
+                                            "display": "flex",
+                                            "flex": "1",
+                                            "justify-content": "center",
+                                            "align-items": "center",
+                                            "z-index": "0",
+                                            "height": "100%",
+                                            "width": "100%",
+                                            "position": "relative",
+                                        },
+                                    ),
+                                    # submit button div
+                                    html.Div(
+                                        [
+                                            html.Button("Submit Battle"),
+                                            dcc.Input(
+                                                placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
+                                                style={"flex": "1", "margin-left": "10px"},
+                                            ),
+                                        ],
+                                        style={"display": "flex", "margin-top": "10px", "margin-bottom": "0"},
+                                    ),
+                                ],
+                                style={"height": "100vh", "width": "100vw"},
                             )
-                        ],
-                        style={
-                            "display": "flex",
-                            "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Img(
-                                src="/assets/Ninjack.png",
-                                style={"height": "50%", "width": "50%"},
-                            )
-                        ],
-                        style={
-                            "display": "flex",
-                            "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Img(
-                                src="/assets/showdown_sprites/ninjask.gif",
-                                style={"height": "25%", "width": "25%"},
-                            )
-                        ],
-                        style={
-                            "display": "flex",
-                            "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Img(
-                                src="/assets/showdown_sprites/ninjask.gif",
-                                style={"height": "25%", "width": "25%"},
-                            )
-                        ],
-                        style={
-                            "display": "flex",
-                            "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                    html.Div(
-                        [
-                            html.Img(
-                                src="/assets/showdown_sprites/ninjask.gif",
-                                style={"height": "25%", "width": "25%"},
-                            )
-                        ],
-                        style={
-                            "display": "flex",
-                            "justify-content": "center",
-                            "text-align": "center",
-                            "width": "14.28%",
-                            "z-index": "1",
-                        },
-                    ),
-                ],
-                style={
-                    "display": "flex",
-                    "flex": "1",
-                    "justify-content": "center",
-                    "align-items": "center",
-                    "z-index": "0",
-                },
-            ),
-            # submit button div
-            html.Div(
-                [
-                    html.Button("Submit Battle"),
-                    dcc.Input(
-                        placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
-                        style={"flex": "1", "margin-left": "10px"},
-                    ),
-                ],
-                style={"display": "flex", "margin-top": "10px", "margin-bottom": "0"},
-            ),
-        ],
-    )
