@@ -224,3 +224,50 @@ class BattleDataRetriever:
             if col in unwanted_columns:
                 df.drop(columns=col)
         return df
+
+    # TODO: ADD UNIT TESTS FOR ALL METHODS BELOW
+    def get_battle_data(self, battle_id: str) -> Dict[str, pd.DataFrame]:
+        """
+        Retrieves all data about a battle from the database.
+
+        Parameters
+        ----------
+        battle_id : int
+            The ID of the battle to retrieve data for.
+
+        Returns
+        -------
+        Dict[str, pd.DataFrame]
+            A dictionary containing all data about the battle.
+        """
+        battle_data = {}
+        battle_data["battle_info"] = self.get_battle_info(battle_id)
+        battle_data["teams"] = self.get_teams(battle_id)
+        battle_data["actions"] = self.get_actions(battle_id)
+        battle_data["damages"] = self.get_damages(battle_id)
+        battle_data["healing"] = self.get_healing(battle_id)
+        battle_data["pivots"] = self.get_pivots(battle_id)
+        return battle_data
+
+    def check_if_battle_exists(self, battle_id: str) -> bool:
+        """
+        Checks if a battle exists in the database.
+
+        Parameters
+        ----------
+        battle_id : int
+            The ID of the battle to check for.
+
+        Returns
+        -------
+        bool
+            True if the battle exists in the database, False otherwise.
+        """
+        battle_info_db = (
+            self.session.query(battle_info)
+            .filter(battle_info.Battle_ID == battle_id)
+            .first()
+        )
+        if battle_info_db:
+            return True
+        return False
