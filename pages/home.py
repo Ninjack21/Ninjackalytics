@@ -257,8 +257,6 @@ def update_output(n_clicks, input_value):
     if n_clicks > 0:
         if input_value:
             parsed_battle_id = input_value.split(".com/")[1]
-            return dcc.Location(
-                pathname=f"/battle/{parsed_battle_id}", id="battle-page"
-            )
+            return dcc.Location(href=f"battle/{parsed_battle_id}", id="Battle")
         else:
             return html.Div("Please enter a valid URL")

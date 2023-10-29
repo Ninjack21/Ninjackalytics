@@ -8,6 +8,7 @@ def navbar():
         children=[
             dbc.NavItem(dbc.NavLink("Home", href="/")),
             dbc.NavItem(dbc.NavLink("Team Analysis", href="/team_analysis")),
+            dbc.NavItem(dbc.NavLink("Page Registry", href="/page_registry")),
         ],
         brand="Ninjackalytics",
         brand_href="/",

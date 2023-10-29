@@ -6,7 +6,7 @@ from ninjackalytics.services.database_interactors.battle_data_retriever import (
 )
 from .navbar import navbar
 
-dash.register_page(__name__, path="/battle/<string:battle_id>", name="battle-page")
+dash.register_page(__name__, path_template="/battle/<battle_id>")
 
 battle_retriever = BattleDataRetriever()
 
