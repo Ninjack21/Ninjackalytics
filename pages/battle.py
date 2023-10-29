@@ -22,12 +22,16 @@ def layout(battle_id=None):
     if battle_id:
         exists = retriever.check_if_battle_exists(battle_id)
         if not exists:
-            battle = Battle(f"https://replay.pokemonshowdown.com/{battle_id}")
-            pokemon = BattlePokemon(battle)
-            parser = BattleParser(battle, pokemon)
-            parser.analyze_battle()
-            uploader = BattleDataUploader()
-            uploader.upload_battle(parser)
+            try:
+                battle = Battle(f"https://replay.pokemonshowdown.com/{battle_id}")
+                pokemon = BattlePokemon(battle)
+                parser = BattleParser(battle, pokemon)
+                parser.analyze_battle()
+                uploader = BattleDataUploader()
+                uploader.upload_battle(parser)
+            except Exception as e:
+                print(e)
+                return html.Div([navbar(), html.H1("Error parsing battle")])
         battle_data = retriever.get_battle_data(battle_id)
         return html.Div([navbar(), html.H1(f"{battle_data}")])
     else:
