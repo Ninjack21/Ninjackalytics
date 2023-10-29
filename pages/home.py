@@ -1,13 +1,13 @@
 import dash
-from dash import html, dcc
+from dash import html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import random
 from .navbar import navbar
 
 dash.register_page(__name__, path="/")
 
-sprite_height = "80%"
-sprite_width = "80%"
+sprite_height = "70%"
+sprite_width = "70%"
 
 import os
 
@@ -22,6 +22,21 @@ sprites = os.listdir(sprite_dir)
 
 
 def layout():
+    def submit_battle():
+        input_value = dcc.Input(
+            id="input-url",
+            placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
+            type="text",
+            value="",
+        ).value
+        if input_value:
+            parsed_battle_id = input_value.split(".com/")[1]
+            return dcc.Location(
+                pathname=f"/battle/{parsed_battle_id}", id="battle-page"
+            )
+        else:
+            return html.Div("Please enter a valid URL")
+
     return html.Div(
         [
             navbar(),
@@ -200,11 +215,17 @@ def layout():
                 [
                     dbc.Button(
                         "Submit Battle",
+                        id="submit-button",
+                        n_clicks=0,
                         style={"background-color": "#333", "color": "white"},
                     ),
-                    dbc.Input(
+                    dcc.Input(
+                        id="input-url",
                         placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
+                        type="text",
+                        value="",
                     ),
+                    html.Div(id="output-div"),
                 ],
                 style={
                     "width": "50%",
@@ -215,6 +236,7 @@ def layout():
                     "left": "20px",
                 },
             ),
+            dcc.Location(id="url", refresh=False),
         ],
         style={
             "background-image": "url('/assets/background.jpg')",
@@ -224,3 +246,19 @@ def layout():
             "z-index": "0",
         },
     )
+
+
+@callback(
+    dash.dependencies.Output("output-div", "children"),
+    [dash.dependencies.Input("submit-button", "n_clicks")],
+    [dash.dependencies.State("input-url", "value")],
+)
+def update_output(n_clicks, input_value):
+    if n_clicks > 0:
+        if input_value:
+            parsed_battle_id = input_value.split(".com/")[1]
+            return dcc.Location(
+                pathname=f"/battle/{parsed_battle_id}", id="battle-page"
+            )
+        else:
+            return html.Div("Please enter a valid URL")

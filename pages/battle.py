@@ -6,10 +6,10 @@ from ninjackalytics.services.database_interactors.battle_data_retriever import (
 )
 from .navbar import navbar
 
-dash.register_page(__name__, path="/battle/<battle_id>")
+dash.register_page(__name__, path="/battle/<string:battle_id>", name="battle-page")
 
 battle_retriever = BattleDataRetriever()
 
 
-def layout(battle_id):
-    return html.Div([navbar(), html.H1(f"Battle ID: {battle_id}")])
+def layout(battle_id=None):
+    return html.Div([navbar(), html.H1(f"battle page: {battle_id}")])
