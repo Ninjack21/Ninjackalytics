@@ -15,12 +15,20 @@ import os
 
 os.environ["FLASK_ENV"] = "testing"
 
-battle_retriever = BattleDataRetriever()
+retriever = BattleDataRetriever()
 
 
 def layout(battle_id=None):
     if battle_id:
-        exists = battle_retriever.check_if_battle_exists(battle_id)
-        return html.Div([navbar(), html.H1(f"Battle Exists = {exists}")])
+        exists = retriever.check_if_battle_exists(battle_id)
+        if not exists:
+            battle = Battle(f"https://replay.pokemonshowdown.com/{battle_id}")
+            pokemon = BattlePokemon(battle)
+            parser = BattleParser(battle, pokemon)
+            parser.analyze_battle()
+            uploader = BattleDataUploader()
+            uploader.upload_battle(parser)
+        battle_data = retriever.get_battle_data(battle_id)
+        return html.Div([navbar(), html.H1(f"{battle_data}")])
     else:
         return html.Div([navbar(), html.H1("No battle id provided")])
