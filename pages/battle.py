@@ -1,5 +1,6 @@
 import dash
-from dash import html
+from dash import html, dcc
+import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from ninjackalytics.services.database_interactors import (
     BattleDataRetriever,
@@ -33,6 +34,57 @@ def layout(battle_id=None):
                 print(e)
                 return html.Div([navbar(), html.H1("Error parsing battle")])
         battle_data = retriever.get_battle_data(battle_id)
-        return html.Div([navbar(), html.H1(f"{battle_data}")])
+        damages = battle_data["damages"]
+
+        # Filter the damages data for each player
+        damages_p1 = damages[damages["Receiver_Player_Number"] == 2]
+        damages_p2 = damages[damages["Receiver_Player_Number"] == 1]
+
+        # Create the bar charts
+        fig_p1 = go.Figure(
+            data=[
+                go.Bar(
+                    y=damages_p1["Receiver"], x=damages_p1["Damage"], orientation="h"
+                )
+            ]
+        )
+        fig_p2 = go.Figure(
+            data=[
+                go.Bar(
+                    y=damages_p2["Receiver"], x=damages_p2["Damage"], orientation="h"
+                )
+            ]
+        )
+
+        # Set the layout for the graphs
+        fig_p1.update_layout(
+            title="Player 1 Damage Chart",
+            xaxis_title="Damage",
+            yaxis_title="Receiver",
+            plot_bgcolor="black",
+            paper_bgcolor="black",
+            font=dict(color="white"),
+        )
+        fig_p2.update_layout(
+            title="Player 2 Damage Chart",
+            xaxis_title="Damage",
+            yaxis_title="Receiver",
+            plot_bgcolor="black",
+            paper_bgcolor="black",
+            font=dict(color="white"),
+        )
+
+        return html.Div(
+            [
+                navbar(),
+                dbc.Row(
+                    [
+                        dbc.Col(dcc.Graph(figure=fig_p1, id="p1-damage-chart")),
+                        dbc.Col(dcc.Graph(figure=fig_p2, id="p2-damage-chart")),
+                    ]
+                ),
+            ],
+            style={"background-color": "black"},
+        )
     else:
         return html.Div([navbar(), html.H1("No battle id provided")])
