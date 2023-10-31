@@ -44,14 +44,28 @@ def layout(battle_id=None):
         fig_p1 = go.Figure(
             data=[
                 go.Bar(
-                    y=damages_p1["Receiver"], x=damages_p1["Damage"], orientation="h"
+                    y=damages_p1["Dealer"],
+                    x=damages_p1["Damage"],
+                    orientation="h",
+                    marker=dict(
+                        color=damages_p1["Damage"],
+                        colorscale="Viridis",
+                        colorbar=dict(title="% HP Dealt"),
+                    ),
                 )
             ]
         )
         fig_p2 = go.Figure(
             data=[
                 go.Bar(
-                    y=damages_p2["Receiver"], x=damages_p2["Damage"], orientation="h"
+                    y=damages_p2["Dealer"],
+                    x=damages_p2["Damage"],
+                    orientation="h",
+                    marker=dict(
+                        color=damages_p2["Damage"],
+                        colorscale="Viridis",
+                        colorbar=dict(title="Total Damage"),
+                    ),
                 )
             ]
         )
@@ -59,16 +73,16 @@ def layout(battle_id=None):
         # Set the layout for the graphs
         fig_p1.update_layout(
             title="Player 1 Damage Chart",
-            xaxis_title="Damage",
-            yaxis_title="Receiver",
+            xaxis_title="% HP Damage Dealt",
+            yaxis_title="Dealer",
             plot_bgcolor="black",
             paper_bgcolor="black",
             font=dict(color="white"),
         )
         fig_p2.update_layout(
             title="Player 2 Damage Chart",
-            xaxis_title="Damage",
-            yaxis_title="Receiver",
+            xaxis_title="% HP Damage Dealt",
+            yaxis_title="Dealer",
             plot_bgcolor="black",
             paper_bgcolor="black",
             font=dict(color="white"),
