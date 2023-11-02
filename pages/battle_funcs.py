@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 import dash
 from dash import html, dcc
 import plotly.graph_objects as go
@@ -34,7 +34,9 @@ def parse_and_return_battle_data(battle_id):
     return battle_data
 
 
-def generate_damages_figures(battle_data: Dict[str, pd.DataFrame]) -> dbc.Row:
+def generate_damages_figures(
+    battle_data: Dict[str, pd.DataFrame], selected_damage_types: List[str]
+) -> dbc.Row:
     damages = battle_data["damages"]
     # create a color mapping for the damage types
     damage_types = damages["Type"].unique()
@@ -47,6 +49,10 @@ def generate_damages_figures(battle_data: Dict[str, pd.DataFrame]) -> dbc.Row:
     # Filter the damages data for each player
     damages_p1 = damages[damages["Receiver_Player_Number"] == 2]
     damages_p2 = damages[damages["Receiver_Player_Number"] == 1]
+
+    if selected_damage_types:
+        damages_p1 = damages_p1[damages_p1["Type"].isin(selected_damage_types)]
+        damages_p2 = damages_p2[damages_p2["Type"].isin(selected_damage_types)]
 
     # Aggregate the data by 'Dealer' and 'Type', summing 'Damage'
     damages_p1_agg = (
@@ -105,10 +111,4 @@ def generate_damages_figures(battle_data: Dict[str, pd.DataFrame]) -> dbc.Row:
         font=dict(color="white"),
     )
 
-    damages_graphs = dbc.Row(
-        [
-            dbc.Col(dcc.Graph(figure=fig_p1, id="p1-damage-chart")),
-            dbc.Col(dcc.Graph(figure=fig_p2, id="p2-damage-chart")),
-        ]
-    )
-    return damages_graphs
+    return fig_p1, fig_p2
