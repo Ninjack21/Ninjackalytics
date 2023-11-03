@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import dash
 from dash import html, dcc
 import plotly.graph_objects as go
@@ -34,9 +34,35 @@ def parse_and_return_battle_data(battle_id):
     return battle_data
 
 
+def get_winner_pnum(battle_data: Dict[str, pd.DataFrame]) -> int:
+    battle_info = battle_data["battle_info"]
+    winner = battle_info["Winner"].iloc[0]
+    winner_pnum = 1 if winner == battle_info["P1"].iloc[0] else 2
+    return winner_pnum
+
+
+def get_winner_loser_names(battle_data: Dict[str, pd.DataFrame]) -> Tuple[str, str]:
+    battle_info = battle_data["battle_info"]
+    winner = battle_info["Winner"].iloc[0]
+    winner_name = (
+        battle_info["P1"].iloc[0]
+        if winner == battle_info["P1"].iloc[0]
+        else battle_info["P2"].iloc[0]
+    )
+    loser_name = (
+        battle_info["P2"].iloc[0]
+        if winner == battle_info["P1"].iloc[0]
+        else battle_info["P1"].iloc[0]
+    )
+    return winner_name, loser_name
+
+
 def generate_damages_figures(
     battle_data: Dict[str, pd.DataFrame], selected_damage_types: List[str]
-) -> dbc.Row:
+) -> Tuple[go.Figure, go.Figure]:
+    winner_pnum = get_winner_pnum(battle_data)
+    winner, loser = get_winner_loser_names(battle_data)
+
     damages = battle_data["damages"]
     # create a color mapping for the damage types
     damage_types = damages["Type"].unique()
@@ -47,19 +73,21 @@ def generate_damages_figures(
     damages["Color"] = damages["Type"].map(damage_type_colors)
 
     # Filter the damages data for each player
-    damages_p1 = damages[damages["Receiver_Player_Number"] == 2]
-    damages_p2 = damages[damages["Receiver_Player_Number"] == 1]
+    winner_damages = damages[damages["Receiver_Player_Number"] == winner_pnum]
+    loser_damages = damages[damages["Receiver_Player_Number"] != winner_pnum]
 
     if selected_damage_types:
-        damages_p1 = damages_p1[damages_p1["Type"].isin(selected_damage_types)]
-        damages_p2 = damages_p2[damages_p2["Type"].isin(selected_damage_types)]
+        winner_damages = winner_damages[
+            winner_damages["Type"].isin(selected_damage_types)
+        ]
+        loser_damages = loser_damages[loser_damages["Type"].isin(selected_damage_types)]
 
     # Aggregate the data by 'Dealer' and 'Type', summing 'Damage'
-    damages_p1_agg = (
-        damages_p1.groupby(["Dealer", "Type"])["Damage"].sum().reset_index()
+    winner_damages_agg = (
+        winner_damages.groupby(["Dealer", "Type"])["Damage"].sum().reset_index()
     )
-    damages_p2_agg = (
-        damages_p2.groupby(["Dealer", "Type"])["Damage"].sum().reset_index()
+    loser_damages_agg = (
+        loser_damages.groupby(["Dealer", "Type"])["Damage"].sum().reset_index()
     )
 
     # Create the bar charts
@@ -68,14 +96,16 @@ def generate_damages_figures(
 
     for damage_type in damage_types:
         # Filter the aggregated damages data for the current damage type
-        damages_p1_type = damages_p1_agg[damages_p1_agg["Type"] == damage_type]
-        damages_p2_type = damages_p2_agg[damages_p2_agg["Type"] == damage_type]
+        winner_damages_type = winner_damages_agg[
+            winner_damages_agg["Type"] == damage_type
+        ]
+        loser_damages_type = loser_damages_agg[loser_damages_agg["Type"] == damage_type]
 
         # Add a bar to the charts for the current damage type
         fig_p1.add_trace(
             go.Bar(
-                y=damages_p1_type["Dealer"],
-                x=damages_p1_type["Damage"],
+                y=winner_damages_type["Dealer"],
+                x=winner_damages_type["Damage"],
                 orientation="h",
                 marker=dict(color=damage_type_colors[damage_type]),
                 name=damage_type,  # Use the damage type as the name
@@ -84,8 +114,8 @@ def generate_damages_figures(
         )
         fig_p2.add_trace(
             go.Bar(
-                y=damages_p2_type["Dealer"],
-                x=damages_p2_type["Damage"],
+                y=loser_damages_type["Dealer"],
+                x=loser_damages_type["Damage"],
                 orientation="h",
                 marker=dict(color=damage_type_colors[damage_type]),
                 name=damage_type,  # Use the damage type as the name
@@ -95,7 +125,7 @@ def generate_damages_figures(
 
     # Set the layout for the graphs
     fig_p1.update_layout(
-        title=f"Player 1 Damage Chart | Total % HP Dealt = {damages_p1['Damage'].sum()}",
+        title=f"{winner} Damage Chart<br>Total % HP Dealt = {winner_damages['Damage'].sum()}",
         xaxis_title="% HP Damage Dealt",
         yaxis_title="Dealer",
         plot_bgcolor="black",
@@ -103,9 +133,134 @@ def generate_damages_figures(
         font=dict(color="white"),
     )
     fig_p2.update_layout(
-        title=f"Player 2 Damage Chart | Total % HP Dealt = {damages_p2['Damage'].sum()}",
+        title=f"{loser} Damage Chart<br>Total % HP Dealt = {loser_damages['Damage'].sum()}",
         xaxis_title="% HP Damage Dealt",
         yaxis_title="Dealer",
+        plot_bgcolor="black",
+        paper_bgcolor="black",
+        font=dict(color="white"),
+    )
+
+    return fig_p1, fig_p2
+
+
+def generate_hp_discrepancy_df(
+    battle_data: Dict[str, pd.DataFrame], selected_damage_types: List[str]
+):
+    battle_info = battle_data["battle_info"]
+    teams = battle_data["teams"]
+    damages = battle_data["damages"]
+    healing = battle_data["healing"]
+
+    winner_pnum = get_winner_pnum(battle_data)
+
+    # determine starting hp discrepancy (normally 0)
+    if winner_pnum == 1:
+        winner_team_id = battle_info["P1_team"].iloc[0]
+        loser_team_id = battle_info["P2_team"].iloc[0]
+    else:
+        winner_team_id = battle_info["P2_team"].iloc[0]
+        loser_team_id = battle_info["P1_team"].iloc[0]
+
+    winner_team = teams[teams["id"] == winner_team_id]
+    loser_team = teams[teams["id"] == loser_team_id]
+
+    winner_n_mons = winner_team.notnull().sum(axis=1).values[0]
+    loser_n_mons = loser_team.notnull().sum(axis=1).values[0]
+
+    starting_mons_diff = winner_n_mons - loser_n_mons
+
+    initial_hp_diff = starting_mons_diff * 100  # all begin with 100% hp
+
+    # build new df which tracks the hp discrepancy over the course of the battle
+    # we will use the turn number as the index
+
+    return None
+
+
+def generate_healing_figures(
+    battle_data: Dict[str, pd.DataFrame], selected_healing_types: List[str]
+) -> Tuple[go.Figure, go.Figure]:
+    winner_pnum = get_winner_pnum(battle_data)
+    winner, loser = get_winner_loser_names(battle_data)
+
+    healing = battle_data["healing"]
+    # create a color mapping for the healing types
+    healing_types = healing["Type"].unique()
+    healing_type_colors = {}
+    for i, healing_type in enumerate(healing_types):
+        healing_type_colors[healing_type] = px.colors.qualitative.D3[i]
+
+    healing["Color"] = healing["Type"].map(healing_type_colors)
+
+    # Filter the healing data for each player
+    winner_healing = healing[healing["Receiver_Player_Number"] == winner_pnum]
+    loser_healing = healing[healing["Receiver_Player_Number"] != winner_pnum]
+
+    if selected_healing_types:
+        winner_healing = winner_healing[
+            winner_healing["Type"].isin(selected_healing_types)
+        ]
+        loser_healing = loser_healing[
+            loser_healing["Type"].isin(selected_healing_types)
+        ]
+
+    # Aggregate the data by 'Source_Name' and 'Type', summing 'Healing'
+    winner_healing_agg = (
+        winner_healing.groupby(["Source_Name", "Type"])["Healing"].sum().reset_index()
+    )
+    loser_healing_agg = (
+        loser_healing.groupby(["Source_Name", "Type"])["Healing"].sum().reset_index()
+    )
+
+    # Create the bar charts
+    fig_p1 = go.Figure()
+    fig_p2 = go.Figure()
+
+    for healing_type in healing_types:
+        # Filter the aggregated healing data for the current healing type
+        winner_healing_type = winner_healing_agg[
+            winner_healing_agg["Type"] == healing_type
+        ]
+        loser_healing_type = loser_healing_agg[
+            loser_healing_agg["Type"] == healing_type
+        ]
+
+        # Add a bar to the charts for the current healing type
+        fig_p1.add_trace(
+            go.Bar(
+                y=winner_healing_type["Source_Name"],
+                x=winner_healing_type["Healing"],
+                orientation="h",
+                marker=dict(color=healing_type_colors[healing_type]),
+                name=healing_type,  # Use the healing type as the name
+                showlegend=True,
+            )
+        )
+        fig_p2.add_trace(
+            go.Bar(
+                y=loser_healing_type["Source_Name"],
+                x=loser_healing_type["Healing"],
+                orientation="h",
+                marker=dict(color=healing_type_colors[healing_type]),
+                name=healing_type,  # Use the healing type as the name
+                showlegend=True,
+            )
+        )
+
+    # Set the layout for the graphs
+    fig_p1.update_layout(
+        title=f"{winner} Healing Chart<br>Total % HP Healed = {winner_healing['Healing'].sum()}",
+        xaxis_title="% HP Healing",
+        yaxis_title="Source Name",
+        plot_bgcolor="black",
+        paper_bgcolor="black",
+        font=dict(color="white"),
+    )
+    fig_p2.update_layout(
+        title=f"{loser} Healing Chart<br>Total % HP Healed = {loser_healing['Healing'].sum()}",
+        xaxis_title="% HP Healing",
+        yaxis_title="Source Name",
         plot_bgcolor="black",
         paper_bgcolor="black",
         font=dict(color="white"),
