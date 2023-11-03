@@ -15,10 +15,9 @@ import os
 
 os.environ["FLASK_ENV"] = "testing"
 
-retriever = BattleDataRetriever()
-
 
 def parse_and_return_battle_data(battle_id):
+    retriever = BattleDataRetriever()
     exists = retriever.check_if_battle_exists(battle_id)
     if not exists:
         try:
@@ -145,12 +144,20 @@ def generate_damages_figures(
 
 
 def generate_hp_discrepancy_df(
-    battle_data: Dict[str, pd.DataFrame], selected_damage_types: List[str]
+    battle_data: Dict[str, pd.DataFrame],
+    selected_damage_types: List[str],
+    selected_healing_types: List[str],
 ):
     battle_info = battle_data["battle_info"]
     teams = battle_data["teams"]
     damages = battle_data["damages"]
     healing = battle_data["healing"]
+
+    # filter damages and healing for the selected types
+    if selected_damage_types:
+        damages = damages[damages["Type"].isin(selected_damage_types)]
+    if selected_healing_types:
+        healing = healing[healing["Type"].isin(selected_healing_types)]
 
     winner_pnum = get_winner_pnum(battle_data)
 
@@ -171,11 +178,86 @@ def generate_hp_discrepancy_df(
     starting_mons_diff = winner_n_mons - loser_n_mons
 
     initial_hp_diff = starting_mons_diff * 100  # all begin with 100% hp
+    cumulative_hp_discrepancy = initial_hp_diff
 
     # build new df which tracks the hp discrepancy over the course of the battle
     # we will use the turn number as the index
+    df = pd.DataFrame()
+    all_turns = pd.concat([damages["Turn"], healing["Turn"]]).unique()
+    all_turns.sort()
 
-    return None
+    for turn in all_turns:
+        # filter damages and healing for the current turn
+        damages_turn = damages[damages["Turn"] == turn]
+        healing_turn = healing[healing["Turn"] == turn]
+
+        # calculate the total hp change for each player on each action that took place
+        # will associate positive values with the winner and negative values with the loser
+        winner_dmgs = damages_turn[
+            damages_turn["Receiver_Player_Number"] != winner_pnum
+        ]
+        loser_dmgs = damages_turn[damages_turn["Receiver_Player_Number"] == winner_pnum]
+
+        winner_heals = healing_turn[
+            healing_turn["Receiver_Player_Number"] == winner_pnum
+        ]
+        loser_heals = healing_turn[
+            healing_turn["Receiver_Player_Number"] != winner_pnum
+        ]
+
+        winner_hp_change = winner_dmgs["Damage"].sum() + winner_heals["Healing"].sum()
+        loser_hp_change = loser_dmgs["Damage"].sum() + loser_heals["Healing"].sum()
+
+        net_hp_change = winner_hp_change - loser_hp_change
+
+        # add the net hp change to the initial hp discrepancy
+        cumulative_hp_discrepancy += net_hp_change
+
+        turn_df = pd.DataFrame(
+            {
+                "Turn": [turn],
+                "HP Discrepancy": [cumulative_hp_discrepancy],
+            }
+        )
+
+        # add the net hp change to the df
+        df = pd.concat([df, turn_df], ignore_index=True)
+
+    return df
+
+
+def generate_hp_discrepancy_figure(
+    battle_data: Dict[str, pd.DataFrame],
+    selected_damage_types: List[str],
+    selected_healing_types: List[str],
+) -> go.Figure:
+    hp_discrepancy_df = generate_hp_discrepancy_df(
+        battle_data, selected_damage_types, selected_healing_types
+    )
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=hp_discrepancy_df["Turn"],
+            y=hp_discrepancy_df["HP Discrepancy"],
+            mode="lines+markers",
+            line=dict(color="#FFFFFF"),
+            marker=dict(color="#FFFFFF", size=8),
+            name="% HP Discrepancy",
+        )
+    )
+    fig.update_layout(
+        title="HP Discrepancy Across Battle",
+        xaxis_title="Turn",
+        yaxis_title="% HP Discrepancy",
+        plot_bgcolor="#1E1E1E",
+        paper_bgcolor="#1E1E1E",
+        font=dict(color="#FFFFFF"),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=False),
+    )
+
+    return fig
 
 
 def generate_healing_figures(

@@ -10,6 +10,7 @@ from .battle_funcs import (
     generate_damages_figures,
     generate_healing_figures,
     get_winner_loser_names,
+    generate_hp_discrepancy_figure,
 )
 
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
@@ -25,6 +26,7 @@ def layout(battle_id=None):
             winner, loser = get_winner_loser_names(battle_data)
             fig_dmg_p1, fig_dmg_p2 = generate_damages_figures(battle_data, None)
             fig_heal_p1, fig_heal_p2 = generate_healing_figures(battle_data, None)
+            fig_hp_discrepancy = generate_hp_discrepancy_figure(battle_data, None, None)
 
     else:
         winner = "Error"
@@ -33,6 +35,7 @@ def layout(battle_id=None):
         fig_dmg_p2 = go.Figure()
         fig_heal_p1 = go.Figure()
         fig_heal_p2 = go.Figure()
+        fig_hp_discrepancy = go.Figure()
 
     return html.Div(
         [
@@ -97,6 +100,11 @@ def layout(battle_id=None):
             ),
             dbc.Row(
                 [
+                    dbc.Col(dcc.Graph(figure=fig_hp_discrepancy, id="hp-disc-chart")),
+                ]
+            ),
+            dbc.Row(
+                [
                     dbc.Col(dcc.Graph(figure=fig_dmg_p1, id="p1-damage-chart")),
                     dbc.Col(dcc.Graph(figure=fig_dmg_p2, id="p2-damage-chart")),
                 ]
@@ -112,6 +120,24 @@ def layout(battle_id=None):
     )
 
 
+# damage and heal type callback for HP Disc graph
+@callback(
+    dash.dependencies.Output("hp-disc-chart", "figure"),
+    [dash.dependencies.Input("damage-type-dropdown", "value")],
+    [dash.dependencies.Input("heal-type-dropdown", "value")],
+    [dash.dependencies.State("battle-id", "children")],
+)
+def update_output(selected_damage_types, selected_healing_types, battle_id):
+    battle_data = parse_and_return_battle_data(
+        battle_id
+    )  # You will need to provide the battle_id here
+    hp_disc_graph = generate_hp_discrepancy_figure(
+        battle_data, selected_damage_types, selected_healing_types
+    )
+    return hp_disc_graph
+
+
+# damage type callback for damages graph
 @callback(
     dash.dependencies.Output("p1-damage-chart", "figure"),
     dash.dependencies.Output("p2-damage-chart", "figure"),
@@ -126,6 +152,7 @@ def update_output(selected_damage_types, battle_id):
     return damages_graphs[0], damages_graphs[1]
 
 
+# heal type callback for heal graph
 @callback(
     dash.dependencies.Output("p1-heal-chart", "figure"),
     dash.dependencies.Output("p2-heal-chart", "figure"),
