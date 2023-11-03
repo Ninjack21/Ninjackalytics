@@ -231,6 +231,8 @@ def generate_hp_discrepancy_figure(
     selected_damage_types: List[str],
     selected_healing_types: List[str],
 ) -> go.Figure:
+    winner, loser = get_winner_loser_names(battle_data)
+
     hp_discrepancy_df = generate_hp_discrepancy_df(
         battle_data, selected_damage_types, selected_healing_types
     )
@@ -241,13 +243,19 @@ def generate_hp_discrepancy_figure(
             x=hp_discrepancy_df["Turn"],
             y=hp_discrepancy_df["HP Discrepancy"],
             mode="lines+markers",
-            line=dict(color="#FFFFFF"),
-            marker=dict(color="#FFFFFF", size=8),
+            line=dict(color="lightgray"),  # set a single color for all lines
+            marker=dict(
+                color=[
+                    "red" if x <= 0 else "green"
+                    for x in hp_discrepancy_df["HP Discrepancy"]
+                ],
+                size=8,
+            ),
             name="% HP Discrepancy",
         )
     )
     fig.update_layout(
-        title="HP Discrepancy Across Battle",
+        title=f"HP Discrepancy Across Battle<br>Positive Values = {winner} Advantage, Negative Values = {loser} Advantage",
         xaxis_title="Turn",
         yaxis_title="% HP Discrepancy",
         plot_bgcolor="#1E1E1E",
