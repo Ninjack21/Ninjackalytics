@@ -16,6 +16,11 @@ import os
 os.environ["FLASK_ENV"] = "testing"
 
 
+def get_total_number_of_turns(battle_data: Dict[str, pd.DataFrame]) -> int:
+    actions = battle_data["actions"]
+    return actions["Turn"].max()
+
+
 def parse_and_return_battle_data(battle_id):
     retriever = BattleDataRetriever()
     exists = retriever.check_if_battle_exists(battle_id)
@@ -57,7 +62,10 @@ def get_winner_loser_names(battle_data: Dict[str, pd.DataFrame]) -> Tuple[str, s
 
 
 def generate_damages_figures(
-    battle_data: Dict[str, pd.DataFrame], selected_damage_types: List[str]
+    battle_data: Dict[str, pd.DataFrame],
+    selected_dmg_dealers: List[str],
+    selected_turns: List[int],
+    selected_damage_types: List[str],
 ) -> Tuple[go.Figure, go.Figure]:
     winner_pnum = get_winner_pnum(battle_data)
     winner, loser = get_winner_loser_names(battle_data)
@@ -71,15 +79,19 @@ def generate_damages_figures(
 
     damages["Color"] = damages["Type"].map(damage_type_colors)
 
+    # apply filtering
+    if selected_damage_types:
+        damages = damages[damages["Type"].isin(selected_damage_types)]
+
+    if selected_turns:
+        damages = damages[damages["Turn"].isin(selected_turns)]
+
+    if selected_dmg_dealers:
+        damages = damages[damages["Dealer"].isin(selected_dmg_dealers)]
+
     # Filter the damages data for each player
     winner_damages = damages[damages["Receiver_Player_Number"] == winner_pnum]
     loser_damages = damages[damages["Receiver_Player_Number"] != winner_pnum]
-
-    if selected_damage_types:
-        winner_damages = winner_damages[
-            winner_damages["Type"].isin(selected_damage_types)
-        ]
-        loser_damages = loser_damages[loser_damages["Type"].isin(selected_damage_types)]
 
     # Aggregate the data by 'Dealer' and 'Type', summing 'Damage'
     winner_damages_agg = (
@@ -145,6 +157,8 @@ def generate_damages_figures(
 
 def generate_hp_discrepancy_df(
     battle_data: Dict[str, pd.DataFrame],
+    selected_dmg_dealers: List[str],
+    selected_turns: List[int],
     selected_damage_types: List[str],
     selected_healing_types: List[str],
 ):
@@ -158,6 +172,11 @@ def generate_hp_discrepancy_df(
         damages = damages[damages["Type"].isin(selected_damage_types)]
     if selected_healing_types:
         healing = healing[healing["Type"].isin(selected_healing_types)]
+    if selected_turns:
+        damages = damages[damages["Turn"].isin(selected_turns)]
+        healing = healing[healing["Turn"].isin(selected_turns)]
+    if selected_dmg_dealers:
+        damages = damages[damages["Dealer"].isin(selected_dmg_dealers)]
 
     winner_pnum = get_winner_pnum(battle_data)
 
@@ -228,13 +247,19 @@ def generate_hp_discrepancy_df(
 
 def generate_hp_discrepancy_figure(
     battle_data: Dict[str, pd.DataFrame],
+    selected_dmg_dealers: List[str],
+    selected_turns: List[int],
     selected_damage_types: List[str],
     selected_healing_types: List[str],
 ) -> go.Figure:
     winner, loser = get_winner_loser_names(battle_data)
 
     hp_discrepancy_df = generate_hp_discrepancy_df(
-        battle_data, selected_damage_types, selected_healing_types
+        battle_data=battle_data,
+        selected_dmg_dealers=selected_dmg_dealers,
+        selected_turns=selected_turns,
+        selected_damage_types=selected_damage_types,
+        selected_healing_types=selected_healing_types,
     )
 
     fig = go.Figure()
@@ -269,7 +294,9 @@ def generate_hp_discrepancy_figure(
 
 
 def generate_healing_figures(
-    battle_data: Dict[str, pd.DataFrame], selected_healing_types: List[str]
+    battle_data: Dict[str, pd.DataFrame],
+    selected_turns: List[int],
+    selected_healing_types: List[str],
 ) -> Tuple[go.Figure, go.Figure]:
     winner_pnum = get_winner_pnum(battle_data)
     winner, loser = get_winner_loser_names(battle_data)
@@ -283,17 +310,15 @@ def generate_healing_figures(
 
     healing["Color"] = healing["Type"].map(healing_type_colors)
 
+    # apply filtering
+    if selected_healing_types:
+        healing = healing[healing["Type"].isin(selected_healing_types)]
+    if selected_turns:
+        healing = healing[healing["Turn"].isin(selected_turns)]
+
     # Filter the healing data for each player
     winner_healing = healing[healing["Receiver_Player_Number"] == winner_pnum]
     loser_healing = healing[healing["Receiver_Player_Number"] != winner_pnum]
-
-    if selected_healing_types:
-        winner_healing = winner_healing[
-            winner_healing["Type"].isin(selected_healing_types)
-        ]
-        loser_healing = loser_healing[
-            loser_healing["Type"].isin(selected_healing_types)
-        ]
 
     # Aggregate the data by 'Source_Name' and 'Type', summing 'Healing'
     winner_healing_agg = (
