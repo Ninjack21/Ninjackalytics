@@ -161,6 +161,8 @@ def generate_damages_figures(
 
 def generate_hp_discrepancy_df(
     battle_data: Dict[str, pd.DataFrame],
+    selected_healing_source_names: List[str],
+    selected_healing_receivers: List[str],
     selected_dmg_source_names: List[str],
     selected_dmg_dealers: List[str],
     selected_turns: List[int],
@@ -184,6 +186,10 @@ def generate_hp_discrepancy_df(
         damages = damages[damages["Dealer"].isin(selected_dmg_dealers)]
     if selected_dmg_source_names:
         damages = damages[damages["Source_Name"].isin(selected_dmg_source_names)]
+    if selected_healing_receivers:
+        healing = healing[healing["Receiver"].isin(selected_healing_receivers)]
+    if selected_healing_source_names:
+        healing = healing[healing["Source_Name"].isin(selected_healing_source_names)]
 
     winner_pnum = get_winner_pnum(battle_data)
 
@@ -254,6 +260,8 @@ def generate_hp_discrepancy_df(
 
 def generate_hp_discrepancy_figure(
     battle_data: Dict[str, pd.DataFrame],
+    selected_healing_source_names: List[str],
+    selected_healing_receivers: List[str],
     selected_dmg_source_names: List[str],
     selected_dmg_dealers: List[str],
     selected_turns: List[int],
@@ -264,6 +272,8 @@ def generate_hp_discrepancy_figure(
 
     hp_discrepancy_df = generate_hp_discrepancy_df(
         battle_data=battle_data,
+        selected_healing_source_names=selected_healing_source_names,
+        selected_healing_receivers=selected_healing_receivers,
         selected_dmg_source_names=selected_dmg_source_names,
         selected_dmg_dealers=selected_dmg_dealers,
         selected_turns=selected_turns,
@@ -304,6 +314,8 @@ def generate_hp_discrepancy_figure(
 
 def generate_healing_figures(
     battle_data: Dict[str, pd.DataFrame],
+    selected_healing_source_names: List[str],
+    selected_healing_receivers: List[str],
     selected_turns: List[int],
     selected_healing_types: List[str],
 ) -> Tuple[go.Figure, go.Figure]:
@@ -324,6 +336,10 @@ def generate_healing_figures(
         healing = healing[healing["Type"].isin(selected_healing_types)]
     if selected_turns:
         healing = healing[healing["Turn"].isin(selected_turns)]
+    if selected_healing_receivers:
+        healing = healing[healing["Receiver"].isin(selected_healing_receivers)]
+    if selected_healing_source_names:
+        healing = healing[healing["Source_Name"].isin(selected_healing_source_names)]
 
     # Filter the healing data for each player
     winner_healing = healing[healing["Receiver_Player_Number"] == winner_pnum]
