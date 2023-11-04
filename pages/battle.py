@@ -14,6 +14,16 @@ from .battle_funcs import (
     get_total_number_of_turns,
 )
 
+# TODO
+"""
+- change layout so that filters apear over graphs they affect (not at top)
+- add the actions breakdown graphs
+- add filters for actions breadown graphs
+- add the dmg/heal / entrance graphs
+- add filters for dmg/heal / entrance graphs
+- try to figure out how to make the mon gifs show up
+"""
+
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
 dash.register_page(__name__, path_template="/battle/<battle_id>")
 

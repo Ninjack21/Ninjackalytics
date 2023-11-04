@@ -403,3 +403,15 @@ def generate_healing_figures(
     )
 
     return fig_p1, fig_p2
+
+
+def generate_action_choices_pie_chart():
+    pass
+
+
+def generate_dmg_per_entrance_figures():
+    pass
+
+
+def generate_healing_per_entrance_figures():
+    pass
