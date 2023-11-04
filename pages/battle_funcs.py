@@ -11,10 +11,6 @@ from ninjackalytics.services.database_interactors import (
 )
 from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattlePokemon
 
-import os
-
-os.environ["FLASK_ENV"] = "testing"
-
 
 def get_total_number_of_turns(battle_data: Dict[str, pd.DataFrame]) -> int:
     actions = battle_data["actions"]
