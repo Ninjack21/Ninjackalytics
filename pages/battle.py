@@ -27,6 +27,7 @@ def layout(battle_id=None):
             winner, loser = get_winner_loser_names(battle_data)
             fig_dmg_p1, fig_dmg_p2 = generate_damages_figures(
                 battle_data=battle_data,
+                selected_dmg_source_names=None,
                 selected_dmg_dealers=None,
                 selected_turns=None,
                 selected_damage_types=None,
@@ -38,6 +39,7 @@ def layout(battle_id=None):
             )
             fig_hp_discrepancy = generate_hp_discrepancy_figure(
                 battle_data=battle_data,
+                selected_dmg_source_names=None,
                 selected_dmg_dealers=None,
                 selected_turns=None,
                 selected_damage_types=None,
@@ -171,6 +173,34 @@ def layout(battle_id=None):
                 ],
                 style={"display": "inline-block", "width": "49%"},
             ),
+            # damage source
+            html.Div(
+                [
+                    html.H3(
+                        "Damage Source Names",
+                        style={
+                            "text-align": "center",
+                            "color": "white",
+                            "background-color": "#343a40",
+                            "padding": "10px",
+                        },
+                    ),
+                    dcc.Dropdown(
+                        id="dmg-source-dropdown",
+                        options=[
+                            {"label": i, "value": i}
+                            for i in (
+                                battle_data["damages"]["Source_Name"].unique()
+                                if battle_id
+                                else ["Error", "Error", "Error"]
+                            )
+                        ],
+                        value=None,
+                        multi=True,
+                    ),
+                ],
+                style={"display": "inline-block", "width": "49%"},
+            ),
             dbc.Row(
                 [
                     dbc.Col(dcc.Graph(figure=fig_hp_discrepancy, id="hp-disc-chart")),
@@ -196,13 +226,15 @@ def layout(battle_id=None):
 # hp discrepancy callback
 @callback(
     dash.dependencies.Output("hp-disc-chart", "figure"),
-    dash.dependencies.Input("turn-slider", "value"),
+    [dash.dependencies.Input("dmg-source-dropdown", "value")],
+    [dash.dependencies.Input("turn-slider", "value")],
     [dash.dependencies.Input("dmg-dealer-dropdown", "value")],
     [dash.dependencies.Input("damage-type-dropdown", "value")],
     [dash.dependencies.Input("heal-type-dropdown", "value")],
     [dash.dependencies.State("battle-id", "children")],
 )
 def update_output(
+    selected_dmg_source_names,
     selected_turns,
     selected_dmg_dealers,
     selected_damage_types,
@@ -214,6 +246,7 @@ def update_output(
     )  # You will need to provide the battle_id here
     hp_disc_graph = generate_hp_discrepancy_figure(
         battle_data=battle_data,
+        selected_dmg_source_names=selected_dmg_source_names,
         selected_dmg_dealers=selected_dmg_dealers,
         selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
         selected_damage_types=selected_damage_types,
@@ -226,19 +259,25 @@ def update_output(
 @callback(
     dash.dependencies.Output("p1-damage-chart", "figure"),
     dash.dependencies.Output("p2-damage-chart", "figure"),
-    dash.dependencies.Input("dmg-dealer-dropdown", "value"),
+    [dash.dependencies.Input("dmg-source-dropdown", "value")],
+    [dash.dependencies.Input("dmg-dealer-dropdown", "value")],
     [dash.dependencies.Input("turn-slider", "value")],
     [dash.dependencies.Input("damage-type-dropdown", "value")],
     [dash.dependencies.State("battle-id", "children")],
 )
 def update_output(
-    selected_dmg_dealers, selected_turns, selected_damage_types, battle_id
+    selected_dmg_source_names,
+    selected_dmg_dealers,
+    selected_turns,
+    selected_damage_types,
+    battle_id,
 ):
     battle_data = parse_and_return_battle_data(
         battle_id
     )  # You will need to provide the battle_id here
     damages_graphs = generate_damages_figures(
         battle_data=battle_data,
+        selected_dmg_source_names=selected_dmg_source_names,
         selected_dmg_dealers=selected_dmg_dealers,
         selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
         selected_damage_types=selected_damage_types,
