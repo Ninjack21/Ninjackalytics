@@ -24,6 +24,104 @@ from .battle_funcs import (
 - try to figure out how to make the mon gifs show up
 """
 
+# TODO - ANALYZE ME
+"""
+dbc.Row(
+    [
+        dbc.Col(
+            html.Div(
+                [
+                    html.H3(
+                        "Damage Types",
+                        style={
+                            "text-align": "center",
+                            "color": "white",
+                            "background-color": "#343a40",
+                            "padding": "10px",
+                        },
+                    ),
+                    dcc.Dropdown(
+                        id="damage-type-dropdown",
+                        options=[
+                            {"label": i, "value": i}
+                            for i in (
+                                battle_data["damages"]["Type"].unique()
+                                if battle_id
+                                else ["Error", "Error", "Error"]
+                            )
+                        ],
+                        value=None,
+                        multi=True,
+                    ),
+                ],
+                style={"display": "inline-block", "width": "100%"},
+            ),
+            width=4,
+        ),
+        dbc.Col(
+            html.Div(
+                [
+                    html.H3(
+                        "Damage Dealers",
+                        style={
+                            "text-align": "center",
+                            "color": "white",
+                            "background-color": "#343a40",
+                            "padding": "10px",
+                        },
+                    ),
+                    dcc.Dropdown(
+                        id="dmg-dealer-dropdown",
+                        options=[
+                            {"label": i, "value": i}
+                            for i in (
+                                battle_data["damages"]["Dealer"].unique()
+                                if battle_id
+                                else ["Error", "Error", "Error"]
+                            )
+                        ],
+                        value=None,
+                        multi=True,
+                    ),
+                ],
+                style={"display": "inline-block", "width": "100%"},
+            ),
+            width=4,
+        ),
+        dbc.Col(
+            html.Div(
+                [
+                    html.H3(
+                        "Damage Source Names",
+                        style={
+                            "text-align": "center",
+                            "color": "white",
+                            "background-color": "#343a40",
+                            "padding": "10px",
+                        },
+                    ),
+                    dcc.Dropdown(
+                        id="dmg-source-dropdown",
+                        options=[
+                            {"label": i, "value": i}
+                            for i in (
+                                battle_data["damages"]["Source_Name"].unique()
+                                if battle_id
+                                else ["Error", "Error", "Error"]
+                            )
+                        ],
+                        value=None,
+                        multi=True,
+                    ),
+                ],
+                style={"display": "inline-block", "width": "100%"},
+            ),
+            width=4,
+        ),
+    ]
+)
+"""
+
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
 dash.register_page(__name__, path_template="/battle/<battle_id>")
 
@@ -74,10 +172,14 @@ def layout(battle_id=None):
     return html.Div(
         [
             navbar(),
-            html.Div(
-                id="battle-id", children=battle_id, style={"display": "none"}
-            ),  # hidden div to store bid
-            # filter divs
+            # hidden div to store bid
+            html.Div(id="battle-id", children=battle_id, style={"display": "none"}),
+            # hp discrepancy chart
+            dbc.Row(
+                [
+                    dbc.Col(dcc.Graph(figure=fig_hp_discrepancy, id="hp-disc-chart")),
+                ]
+            ),
             # turn slicer
             html.Div(
                 [
@@ -121,34 +223,6 @@ def layout(battle_id=None):
                             {"label": i, "value": i}
                             for i in (
                                 battle_data["damages"]["Type"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
-            ),
-            # healing types
-            html.Div(
-                [
-                    html.H3(
-                        "Healing Types",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="heal-type-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["healing"]["Type"].unique()
                                 if battle_id
                                 else ["Error", "Error", "Error"]
                             )
@@ -215,6 +289,41 @@ def layout(battle_id=None):
                 ],
                 style={"display": "inline-block", "width": "49%"},
             ),
+            # damages chart
+            dbc.Row(
+                [
+                    dbc.Col(dcc.Graph(figure=fig_dmg_p1, id="p1-damage-chart")),
+                    dbc.Col(dcc.Graph(figure=fig_dmg_p2, id="p2-damage-chart")),
+                ]
+            ),
+            # healing types
+            html.Div(
+                [
+                    html.H3(
+                        "Healing Types",
+                        style={
+                            "text-align": "center",
+                            "color": "white",
+                            "background-color": "#343a40",
+                            "padding": "10px",
+                        },
+                    ),
+                    dcc.Dropdown(
+                        id="heal-type-dropdown",
+                        options=[
+                            {"label": i, "value": i}
+                            for i in (
+                                battle_data["healing"]["Type"].unique()
+                                if battle_id
+                                else ["Error", "Error", "Error"]
+                            )
+                        ],
+                        value=None,
+                        multi=True,
+                    ),
+                ],
+                style={"display": "inline-block", "width": "49%"},
+            ),
             # healing receiver
             html.Div(
                 [
@@ -271,17 +380,7 @@ def layout(battle_id=None):
                 ],
                 style={"display": "inline-block", "width": "49%"},
             ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(figure=fig_hp_discrepancy, id="hp-disc-chart")),
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(dcc.Graph(figure=fig_dmg_p1, id="p1-damage-chart")),
-                    dbc.Col(dcc.Graph(figure=fig_dmg_p2, id="p2-damage-chart")),
-                ]
-            ),
+            # heal chart
             dbc.Row(
                 [
                     dbc.Col(dcc.Graph(figure=fig_heal_p1, id="p1-heal-chart")),
