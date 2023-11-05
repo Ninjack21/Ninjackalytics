@@ -14,6 +14,7 @@ from .battle_funcs import (
     get_total_number_of_turns,
     generate_action_choices_pie_chart,
     get_winner_pnum,
+    generate_damage_per_entrance_figures,
 )
 
 # TODO
@@ -71,6 +72,12 @@ def layout(battle_id=None):
                 selected_turns=None,
                 selected_winner_actions=None,
                 selected_loser_actions=None,
+            )
+            (
+                fig_dmg_per_entrance_winner,
+                fig_dmg_per_entrance_loser,
+            ) = generate_damage_per_entrance_figures(
+                battle_data=battle_data,
             )
 
             total_turns = get_total_number_of_turns(battle_data)
@@ -417,6 +424,23 @@ def layout(battle_id=None):
                     ),
                 ]
             ),
+            # # dmg/entrance chart
+            # dbc.Row(
+            #     [
+            #         dbc.Col(
+            #             dcc.Graph(
+            #                 figure=fig_dmg_per_entrance_winner,
+            #                 id="winner-dmg-per-entrance-chart",
+            #             )
+            #         ),
+            #         dbc.Col(
+            #             dcc.Graph(
+            #                 figure=fig_dmg_per_entrance_loser,
+            #                 id="loser-dmg-per-entrance-chart",
+            #             )
+            #         ),
+            #     ]
+            # ),
         ],
         style={"background-color": "black"},
     )

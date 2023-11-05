@@ -516,5 +516,93 @@ def generate_action_choices_pie_chart(
     return winner_fig, loser_fig
 
 
-def generate_healing_per_entrance_figures():
-    pass
+def generate_damage_per_entrance_figures(
+    battle_data: Dict[str, pd.DataFrame]
+) -> Tuple[go.Figure, go.Figure]:
+    damages = battle_data["damages"]
+    pivots = battle_data["pivots"]
+    print(pivots.columns)
+    winner_pnum = get_winner_pnum(battle_data)
+
+    winner_pokemon = pivots["Pokemon_Enter"][
+        pivots["Player_Number"] == winner_pnum
+    ].unique()
+    loser_pokemon = pivots["Pokemon_Enter"][
+        pivots["Player_Number"] != winner_pnum
+    ].unique()
+
+    winner_dmg_per_entrance = []
+    for pokemon in winner_pokemon:
+        pokemon_dmg = (
+            damages["Damage"]
+            .loc[
+                (damages["Dealer"] == pokemon)
+                & (damages["Player_Number"] != winner_pnum)
+            ]
+            .sum()
+        )
+        pokemon_entrances = (
+            pivots["Turn"]
+            .loc[
+                (pivots["Pokemon_Enter"] == pokemon)
+                & (pivots["Player_Number"] == winner_pnum),
+            ]
+            .nunique()
+        )
+        if pokemon_entrances > 0:
+            winner_dmg_per_entrance.append(pokemon_dmg / pokemon_entrances)
+
+    loser_dmg_per_entrance = []
+    for pokemon in loser_pokemon:
+        pokemon_dmg = (
+            damages["Damage"]
+            .loc[
+                (damages["Attacker_Pokemon"] == pokemon)
+                & (damages["Player_Number"] == winner_pnum),
+            ]
+            .sum()
+        )
+        pokemon_entrances = (
+            pivots["Turn"]
+            .loc[
+                (pivots["Pokemon_Enter"] == pokemon)
+                & (pivots["Player_Number"] != winner_pnum),
+            ]
+            .nunique()
+        )
+        if pokemon_entrances > 0:
+            loser_dmg_per_entrance.append(pokemon_dmg / pokemon_entrances)
+
+    winner_fig = go.Figure(
+        data=[
+            go.Bar(
+                x=winner_dmg_per_entrance,
+                y=winner_pokemon,
+                orientation="h",
+                name="Average Damage per Entrance",
+            )
+        ]
+    )
+    winner_fig.update_layout(
+        title="Pokemon Average Damage per Entrance",
+        xaxis_title="Average Damage per Entrance",
+        yaxis_title="Pokemon",
+    )
+
+    loser_fig = go.Figure(
+        data=[
+            go.Bar(
+                x=loser_dmg_per_entrance,
+                y=loser_pokemon,
+                orientation="h",
+                name="Average Damage per Entrance",
+            )
+        ]
+    )
+    loser_fig.update_layout(
+        title="Pokemon Average Damage per Entrance",
+        xaxis_title="Average Damage per Entrance",
+        yaxis_title="Pokemon",
+    )
+
+    return winner_fig, loser_fig
