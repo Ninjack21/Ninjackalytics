@@ -12,115 +12,17 @@ from .battle_funcs import (
     get_winner_loser_names,
     generate_hp_discrepancy_figure,
     get_total_number_of_turns,
+    generate_action_choices_pie_chart,
+    get_winner_pnum,
 )
 
 # TODO
 """
-- change layout so that filters apear over graphs they affect (not at top)
-- add the actions breakdown graphs
-- add filters for actions breadown graphs
 - add the dmg/heal / entrance graphs
 - add filters for dmg/heal / entrance graphs
 - try to figure out how to make the mon gifs show up
 """
 
-# TODO - ANALYZE ME
-"""
-dbc.Row(
-    [
-        dbc.Col(
-            html.Div(
-                [
-                    html.H3(
-                        "Damage Types",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="damage-type-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Type"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "100%"},
-            ),
-            width=4,
-        ),
-        dbc.Col(
-            html.Div(
-                [
-                    html.H3(
-                        "Damage Dealers",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="dmg-dealer-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Dealer"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "100%"},
-            ),
-            width=4,
-        ),
-        dbc.Col(
-            html.Div(
-                [
-                    html.H3(
-                        "Damage Source Names",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="dmg-source-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Source_Name"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "100%"},
-            ),
-            width=4,
-        ),
-    ]
-)
-"""
 
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
 dash.register_page(__name__, path_template="/battle/<battle_id>")
@@ -132,16 +34,21 @@ def layout(battle_id=None):
         if not battle_data:
             return html.Div([navbar(), html.H1("Battle not found")])
         else:
+            winner_pnum = get_winner_pnum(battle_data)
             winner, loser = get_winner_loser_names(battle_data)
-            fig_dmg_p1, fig_dmg_p2 = generate_damages_figures(
+            fig_dmg_winner, fig_dmg_loser = generate_damages_figures(
                 battle_data=battle_data,
+                selected_winner_actions=None,
+                selected_loser_actions=None,
                 selected_dmg_source_names=None,
                 selected_dmg_dealers=None,
                 selected_turns=None,
                 selected_damage_types=None,
             )
-            fig_heal_p1, fig_heal_p2 = generate_healing_figures(
+            fig_heal_winner, fig_heal_loser = generate_healing_figures(
                 battle_data=battle_data,
+                selected_winner_actions=None,
+                selected_loser_actions=None,
                 selected_healing_source_names=None,
                 selected_healing_receivers=None,
                 selected_turns=None,
@@ -149,6 +56,8 @@ def layout(battle_id=None):
             )
             fig_hp_discrepancy = generate_hp_discrepancy_figure(
                 battle_data=battle_data,
+                selected_winner_actions=None,
+                selected_loser_actions=None,
                 selected_healing_source_names=None,
                 selected_healing_receivers=None,
                 selected_dmg_source_names=None,
@@ -157,16 +66,25 @@ def layout(battle_id=None):
                 selected_damage_types=None,
                 selected_healing_types=None,
             )
+            fig_actions_winner, fig_actions_loser = generate_action_choices_pie_chart(
+                battle_data=battle_data,
+                selected_turns=None,
+                selected_winner_actions=None,
+                selected_loser_actions=None,
+            )
+
             total_turns = get_total_number_of_turns(battle_data)
 
     else:
         winner = "Error"
         loser = "Error"
-        fig_dmg_p1 = go.Figure()
-        fig_dmg_p2 = go.Figure()
-        fig_heal_p1 = go.Figure()
-        fig_heal_p2 = go.Figure()
+        fig_dmg_winner = go.Figure()
+        fig_dmg_loser = go.Figure()
+        fig_heal_winner = go.Figure()
+        fig_heal_loser = go.Figure()
         fig_hp_discrepancy = go.Figure()
+        fig_actions_winner = go.Figure()
+        fig_actions_loser = go.Figure()
         total_turns = 1
 
     return html.Div(
@@ -205,186 +123,298 @@ def layout(battle_id=None):
                 ],
                 style={"display": "inline-block", "width": "100%"},
             ),
-            # damage types
-            html.Div(
+            # damage filters
+            dbc.Row(
                 [
-                    html.H3(
-                        "Damage Types",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Damage Types",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="damage-type-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["damages"]["Type"].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                    dcc.Dropdown(
-                        id="damage-type-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Type"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Damage Dealers",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="dmg-dealer-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["damages"]["Dealer"].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
-            ),
-            # damage dealer
-            html.Div(
-                [
-                    html.H3(
-                        "Damage Dealers",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Damage Source Names",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="dmg-source-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["damages"][
+                                                "Source_Name"
+                                            ].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                    dcc.Dropdown(
-                        id="dmg-dealer-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Dealer"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
-            ),
-            # damage source
-            html.Div(
-                [
-                    html.H3(
-                        "Damage Source Names",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="dmg-source-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["damages"]["Source_Name"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
+                ]
             ),
             # damages chart
             dbc.Row(
                 [
-                    dbc.Col(dcc.Graph(figure=fig_dmg_p1, id="p1-damage-chart")),
-                    dbc.Col(dcc.Graph(figure=fig_dmg_p2, id="p2-damage-chart")),
+                    dbc.Col(dcc.Graph(figure=fig_dmg_winner, id="winner-damage-chart")),
+                    dbc.Col(dcc.Graph(figure=fig_dmg_loser, id="loser-damage-chart")),
                 ]
             ),
-            # healing types
-            html.Div(
+            # healing filters
+            dbc.Row(
                 [
-                    html.H3(
-                        "Healing Types",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Healing Types",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="heal-type-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["healing"]["Type"].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                    dcc.Dropdown(
-                        id="heal-type-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["healing"]["Type"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Healing Receivers",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="heal-receiver-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["healing"]["Receiver"].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
-            ),
-            # healing receiver
-            html.Div(
-                [
-                    html.H3(
-                        "Healing Receivers",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    "Healing Source Names",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="heal-source-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["healing"][
+                                                "Source_Name"
+                                            ].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
                     ),
-                    dcc.Dropdown(
-                        id="heal-receiver-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["healing"]["Receiver"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
-            ),
-            # heal source
-            html.Div(
-                [
-                    html.H3(
-                        "Healing Source Names",
-                        style={
-                            "text-align": "center",
-                            "color": "white",
-                            "background-color": "#343a40",
-                            "padding": "10px",
-                        },
-                    ),
-                    dcc.Dropdown(
-                        id="heal-source-dropdown",
-                        options=[
-                            {"label": i, "value": i}
-                            for i in (
-                                battle_data["healing"]["Source_Name"].unique()
-                                if battle_id
-                                else ["Error", "Error", "Error"]
-                            )
-                        ],
-                        value=None,
-                        multi=True,
-                    ),
-                ],
-                style={"display": "inline-block", "width": "49%"},
+                ]
             ),
             # heal chart
             dbc.Row(
                 [
-                    dbc.Col(dcc.Graph(figure=fig_heal_p1, id="p1-heal-chart")),
-                    dbc.Col(dcc.Graph(figure=fig_heal_p2, id="p2-heal-chart")),
+                    dbc.Col(dcc.Graph(figure=fig_heal_winner, id="winner-heal-chart")),
+                    dbc.Col(dcc.Graph(figure=fig_heal_loser, id="loser-heal-chart")),
+                ]
+            ),
+            # actions filters
+            dbc.Row(
+                [
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    f"{winner} Actions",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="winner-action-type-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["actions"]["Action"][
+                                                battle_data["actions"]["Player_Number"]
+                                                == winner_pnum
+                                            ].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
+                    ),
+                    dbc.Col(
+                        html.Div(),
+                        width=4,
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                html.H3(
+                                    f"{loser} Actions",
+                                    style={
+                                        "text-align": "center",
+                                        "color": "white",
+                                        "background-color": "#343a40",
+                                        "padding": "10px",
+                                    },
+                                ),
+                                dcc.Dropdown(
+                                    id="loser-action-type-dropdown",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in (
+                                            battle_data["actions"]["Action"][
+                                                battle_data["actions"]["Player_Number"]
+                                                == (1 if winner_pnum == 2 else 2)
+                                            ].unique()
+                                            if battle_id
+                                            else ["Error", "Error", "Error"]
+                                        )
+                                    ],
+                                    value=None,
+                                    multi=True,
+                                ),
+                            ],
+                            style={"display": "inline-block", "width": "100%"},
+                        ),
+                        width=4,
+                    ),
+                ]
+            ),
+            # actions chart
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dcc.Graph(figure=fig_actions_winner, id="winner-actions-chart")
+                    ),
+                    dbc.Col(
+                        dcc.Graph(figure=fig_actions_loser, id="loser-actions-chart")
+                    ),
                 ]
             ),
         ],
@@ -395,6 +425,8 @@ def layout(battle_id=None):
 # hp discrepancy callback
 @callback(
     dash.dependencies.Output("hp-disc-chart", "figure"),
+    [dash.dependencies.Input("winner-action-type-dropdown", "value")],
+    [dash.dependencies.Input("loser-action-type-dropdown", "value")],
     [dash.dependencies.Input("heal-source-dropdown", "value")],
     [dash.dependencies.Input("heal-receiver-dropdown", "value")],
     [dash.dependencies.Input("dmg-source-dropdown", "value")],
@@ -405,6 +437,8 @@ def layout(battle_id=None):
     [dash.dependencies.State("battle-id", "children")],
 )
 def update_output(
+    selected_winner_actions,
+    selected_loser_actions,
     selected_healing_source_names,
     selected_healing_receivers,
     selected_dmg_source_names,
@@ -419,6 +453,8 @@ def update_output(
     )  # You will need to provide the battle_id here
     hp_disc_graph = generate_hp_discrepancy_figure(
         battle_data=battle_data,
+        selected_winner_actions=selected_winner_actions,
+        selected_loser_actions=selected_loser_actions,
         selected_healing_source_names=selected_healing_source_names,
         selected_healing_receivers=selected_healing_receivers,
         selected_dmg_source_names=selected_dmg_source_names,
@@ -432,8 +468,10 @@ def update_output(
 
 # damage graph callback
 @callback(
-    dash.dependencies.Output("p1-damage-chart", "figure"),
-    dash.dependencies.Output("p2-damage-chart", "figure"),
+    dash.dependencies.Output("winner-damage-chart", "figure"),
+    dash.dependencies.Output("loser-damage-chart", "figure"),
+    [dash.dependencies.Input("winner-action-type-dropdown", "value")],
+    [dash.dependencies.Input("loser-action-type-dropdown", "value")],
     [dash.dependencies.Input("dmg-source-dropdown", "value")],
     [dash.dependencies.Input("dmg-dealer-dropdown", "value")],
     [dash.dependencies.Input("turn-slider", "value")],
@@ -441,17 +479,24 @@ def update_output(
     [dash.dependencies.State("battle-id", "children")],
 )
 def update_output(
+    selected_winner_actions,
+    selected_loser_actions,
     selected_dmg_source_names,
     selected_dmg_dealers,
     selected_turns,
     selected_damage_types,
     battle_id,
 ):
+    # Check if the components exist yet - to get around initial layout not defined error
+    if not dash.callback_context.triggered:
+        return dash.no_update, dash.no_update
     battle_data = parse_and_return_battle_data(
         battle_id
     )  # You will need to provide the battle_id here
     damages_graphs = generate_damages_figures(
         battle_data=battle_data,
+        selected_winner_actions=selected_winner_actions,
+        selected_loser_actions=selected_loser_actions,
         selected_dmg_source_names=selected_dmg_source_names,
         selected_dmg_dealers=selected_dmg_dealers,
         selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
@@ -462,8 +507,10 @@ def update_output(
 
 # healing graph callback
 @callback(
-    dash.dependencies.Output("p1-heal-chart", "figure"),
-    dash.dependencies.Output("p2-heal-chart", "figure"),
+    dash.dependencies.Output("winner-heal-chart", "figure"),
+    dash.dependencies.Output("loser-heal-chart", "figure"),
+    [dash.dependencies.Input("winner-action-type-dropdown", "value")],
+    [dash.dependencies.Input("loser-action-type-dropdown", "value")],
     [dash.dependencies.Input("heal-source-dropdown", "value")],
     [dash.dependencies.Input("heal-receiver-dropdown", "value")],
     [dash.dependencies.Input("turn-slider", "value")],
@@ -471,20 +518,57 @@ def update_output(
     [dash.dependencies.State("battle-id", "children")],
 )
 def update_output(
+    selected_winner_actions,
+    selected_loser_actions,
     selected_healing_source_names,
     selected_healing_receivers,
     selected_turns,
     selected_healing_types,
     battle_id,
 ):
+    # Check if the components exist yet - to get around initial layout not defined error
+    if not dash.callback_context.triggered:
+        return dash.no_update, dash.no_update
     battle_data = parse_and_return_battle_data(
         battle_id
     )  # You will need to provide the battle_id here
     healing_graphs = generate_healing_figures(
         battle_data=battle_data,
+        selected_winner_actions=selected_winner_actions,
+        selected_loser_actions=selected_loser_actions,
         selected_healing_source_names=selected_healing_source_names,
         selected_healing_receivers=selected_healing_receivers,
         selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
         selected_healing_types=selected_healing_types,
     )
     return healing_graphs[0], healing_graphs[1]
+
+
+# actions graph callback
+@callback(
+    dash.dependencies.Output("winner-actions-chart", "figure"),
+    dash.dependencies.Output("loser-actions-chart", "figure"),
+    [dash.dependencies.Input("winner-action-type-dropdown", "value")],
+    [dash.dependencies.Input("loser-action-type-dropdown", "value")],
+    [dash.dependencies.Input("turn-slider", "value")],
+    [dash.dependencies.State("battle-id", "children")],
+)
+def update_output(
+    selected_winner_actions,
+    selected_loser_actions,
+    selected_turns,
+    battle_id,
+):
+    # Check if the components exist yet - to get around initial layout not defined error
+    if not dash.callback_context.triggered:
+        return dash.no_update, dash.no_update
+    battle_data = parse_and_return_battle_data(
+        battle_id
+    )  # You will need to provide the battle_id here
+    damages_graphs = generate_action_choices_pie_chart(
+        battle_data=battle_data,
+        selected_winner_actions=selected_winner_actions,
+        selected_loser_actions=selected_loser_actions,
+        selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
+    )
+    return damages_graphs[0], damages_graphs[1]
