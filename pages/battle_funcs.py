@@ -517,12 +517,15 @@ def generate_action_choices_pie_chart(
 
 
 def generate_damage_per_entrance_figures(
-    battle_data: Dict[str, pd.DataFrame]
+    battle_data: Dict[str, pd.DataFrame],
+    selected_winner_actions: List[str],
+    selected_loser_actions: List[str],
+    selected_turns: List[int],
 ) -> Tuple[go.Figure, go.Figure]:
     damages = battle_data["damages"]
     pivots = battle_data["pivots"]
-    print(pivots.columns)
     winner_pnum = get_winner_pnum(battle_data)
+    winner, loser = get_winner_loser_names(battle_data)
 
     winner_pokemon = pivots["Pokemon_Enter"][
         pivots["Player_Number"] == winner_pnum
@@ -531,13 +534,30 @@ def generate_damage_per_entrance_figures(
         pivots["Player_Number"] != winner_pnum
     ].unique()
 
+    if selected_turns:
+        damages = damages[damages["Turn"].isin(selected_turns)]
+    if selected_winner_actions:
+        action_turns = get_turns_associated_with_action_types(
+            battle_data=battle_data,
+            selected_actions=selected_winner_actions,
+            player_number=winner_pnum,
+        )
+        damages = damages[damages["Turn"].isin(action_turns)]
+    if selected_loser_actions:
+        action_turns = get_turns_associated_with_action_types(
+            battle_data=battle_data,
+            selected_actions=selected_loser_actions,
+            player_number=(1 if winner_pnum == 2 else 2),
+        )
+        damages = damages[damages["Turn"].isin(action_turns)]
+
     winner_dmg_per_entrance = []
     for pokemon in winner_pokemon:
         pokemon_dmg = (
             damages["Damage"]
             .loc[
                 (damages["Dealer"] == pokemon)
-                & (damages["Player_Number"] != winner_pnum)
+                & (damages["Receiver_Player_Number"] != winner_pnum)
             ]
             .sum()
         )
@@ -557,8 +577,8 @@ def generate_damage_per_entrance_figures(
         pokemon_dmg = (
             damages["Damage"]
             .loc[
-                (damages["Attacker_Pokemon"] == pokemon)
-                & (damages["Player_Number"] == winner_pnum),
+                (damages["Dealer"] == pokemon)
+                & (damages["Receiver_Player_Number"] == winner_pnum),
             ]
             .sum()
         )
@@ -584,8 +604,8 @@ def generate_damage_per_entrance_figures(
         ]
     )
     winner_fig.update_layout(
-        title="Pokemon Average Damage per Entrance",
-        xaxis_title="Average Damage per Entrance",
+        title=f"{winner} Team's Average Damage per Entrance",
+        xaxis_title="Average Damage (% hp) per Entrance",
         yaxis_title="Pokemon",
     )
 
@@ -600,8 +620,8 @@ def generate_damage_per_entrance_figures(
         ]
     )
     loser_fig.update_layout(
-        title="Pokemon Average Damage per Entrance",
-        xaxis_title="Average Damage per Entrance",
+        title=f"{loser} Team's Average Damage per Entrance",
+        xaxis_title="Average Damage (% hp) per Entrance",
         yaxis_title="Pokemon",
     )
 

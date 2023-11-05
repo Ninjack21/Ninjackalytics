@@ -78,6 +78,9 @@ def layout(battle_id=None):
                 fig_dmg_per_entrance_loser,
             ) = generate_damage_per_entrance_figures(
                 battle_data=battle_data,
+                selected_winner_actions=None,
+                selected_loser_actions=None,
+                selected_turns=None,
             )
 
             total_turns = get_total_number_of_turns(battle_data)
@@ -424,23 +427,23 @@ def layout(battle_id=None):
                     ),
                 ]
             ),
-            # # dmg/entrance chart
-            # dbc.Row(
-            #     [
-            #         dbc.Col(
-            #             dcc.Graph(
-            #                 figure=fig_dmg_per_entrance_winner,
-            #                 id="winner-dmg-per-entrance-chart",
-            #             )
-            #         ),
-            #         dbc.Col(
-            #             dcc.Graph(
-            #                 figure=fig_dmg_per_entrance_loser,
-            #                 id="loser-dmg-per-entrance-chart",
-            #             )
-            #         ),
-            #     ]
-            # ),
+            # dmg/entrance chart
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dcc.Graph(
+                            figure=fig_dmg_per_entrance_winner,
+                            id="winner-dmg-per-entrance-chart",
+                        )
+                    ),
+                    dbc.Col(
+                        dcc.Graph(
+                            figure=fig_dmg_per_entrance_loser,
+                            id="loser-dmg-per-entrance-chart",
+                        )
+                    ),
+                ]
+            ),
         ],
         style={"background-color": "black"},
     )
@@ -596,3 +599,33 @@ def update_output(
         selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
     )
     return damages_graphs[0], damages_graphs[1]
+
+
+# dmg/entrance graph callback
+@callback(
+    dash.dependencies.Output("winner-dmg-per-entrance-chart", "figure"),
+    dash.dependencies.Output("loser-dmg-per-entrance-chart", "figure"),
+    [dash.dependencies.Input("winner-action-type-dropdown", "value")],
+    [dash.dependencies.Input("loser-action-type-dropdown", "value")],
+    [dash.dependencies.Input("turn-slider", "value")],
+    [dash.dependencies.State("battle-id", "children")],
+)
+def update_output(
+    selected_winner_actions,
+    selected_loser_actions,
+    selected_turns,
+    battle_id,
+):
+    # Check if the components exist yet - to get around initial layout not defined error
+    if not dash.callback_context.triggered:
+        return dash.no_update, dash.no_update
+    battle_data = parse_and_return_battle_data(
+        battle_id
+    )  # You will need to provide the battle_id here
+    dmg_per_entrance_graphs = generate_damage_per_entrance_figures(
+        battle_data=battle_data,
+        selected_winner_actions=selected_winner_actions,
+        selected_loser_actions=selected_loser_actions,
+        selected_turns=[t for t in range(selected_turns[0], selected_turns[1] + 1)],
+    )
+    return dmg_per_entrance_graphs[0], dmg_per_entrance_graphs[1]
