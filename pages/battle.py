@@ -21,13 +21,9 @@ from .battle_funcs import (
 )
 
 
-# TODO
-"""
-- try to figure out how to make the mon gifs show up
-"""
-
-
+# e.x. battle used to build display
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
+
 dash.register_page(__name__, path_template="/battle/<battle_id>")
 
 sprite_h_px = "100px"
@@ -166,6 +162,40 @@ def layout(battle_id=None):
                 ],
                 style={"display": "inline-block", "width": "100%"},
             ),
+            # team headers
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Div(
+                                html.H3(f"{winner}'s Team"),
+                                style={
+                                    "text-align": "center",
+                                    "color": "white",
+                                    "padding": "10px",
+                                },
+                            ),
+                        ],
+                        width=6,
+                        style={"background-color": "#343a40", "padding": "10px"},
+                    ),
+                    dbc.Col(
+                        [
+                            html.Div(
+                                html.H3(f"{loser}'s Team"),
+                                style={
+                                    "text-align": "center",
+                                    "color": "white",
+                                    "padding": "10px",
+                                },
+                            ),
+                        ],
+                        width=6,
+                        style={"background-color": "#343a40", "padding": "10px"},
+                    ),
+                ],
+                style={"background-color": "#212529"},
+            ),
             # team sprites
             dbc.Row(
                 [
@@ -215,7 +245,7 @@ def layout(battle_id=None):
                     ),
                 ]
             ),
-            # team sprites names
+            # team pokemon names
             dbc.Row(
                 [
                     dbc.Col(
