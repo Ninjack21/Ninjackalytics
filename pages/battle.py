@@ -185,7 +185,7 @@ def layout(battle_id=None):
                                 ],
                                 style={
                                     "display": "flex",
-                                    "justify-content": "flex-start",
+                                    "justify-content": "space-between",
                                 },
                             )
                         ],
@@ -207,7 +207,7 @@ def layout(battle_id=None):
                                 ],
                                 style={
                                     "display": "flex",
-                                    "justify-content": "flex-end",
+                                    "justify-content": "space-between",
                                 },
                             )
                         ],
@@ -227,7 +227,7 @@ def layout(battle_id=None):
                                 ],
                                 style={
                                     "display": "flex",
-                                    "justify-content": "flex-start",
+                                    "justify-content": "space-between",
                                 },
                             )
                         ],
@@ -242,7 +242,7 @@ def layout(battle_id=None):
                                 ],
                                 style={
                                     "display": "flex",
-                                    "justify-content": "flex-end",
+                                    "justify-content": "space-between",
                                 },
                             )
                         ],
