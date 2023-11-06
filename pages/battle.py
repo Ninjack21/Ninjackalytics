@@ -215,6 +215,41 @@ def layout(battle_id=None):
                     ),
                 ]
             ),
+            # team sprites names
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Div(
+                                [
+                                    html.P(name, style={"margin": "5px"})
+                                    for name, sprite in winner_team_sprites.items()
+                                ],
+                                style={
+                                    "display": "flex",
+                                    "justify-content": "flex-start",
+                                },
+                            )
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Div(
+                                [
+                                    html.P(name, style={"margin": "5px"})
+                                    for name, sprite in loser_team_sprites.items()
+                                ],
+                                style={
+                                    "display": "flex",
+                                    "justify-content": "flex-end",
+                                },
+                            )
+                        ],
+                        width=6,
+                    ),
+                ]
+            ),
             # dmg taken chart
             dbc.Row(
                 [
