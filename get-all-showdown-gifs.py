@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 
 # Define the URLs of the pages containing the .gif files
 urls = [
-    "https://play.pokemonshowdown.com/sprites/ani/",
+    # "https://play.pokemonshowdown.com/sprites/ani/",
     "https://play.pokemonshowdown.com/sprites/dex/",
 ]
 
@@ -22,7 +22,9 @@ for url in urls:
     soup = BeautifulSoup(content, "html.parser")
 
     # Find all the a tags that contain .gif in their href attribute
-    gif_links = soup.find_all("a", href=lambda href: href and href.endswith(".gif"))
+    gif_links = soup.find_all(
+        "a", href=lambda href: href and href.endswith(".gif") or href.endswith(".png")
+    )
 
     # For each a tag, extract the href attribute value and download the file using requests
     for link in gif_links:

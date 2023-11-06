@@ -30,8 +30,8 @@ from .battle_funcs import (
 # https://replay.pokemonshowdown.com/smogtours-gen9ou-725192
 dash.register_page(__name__, path_template="/battle/<battle_id>")
 
-sprite_height_px = "75px"
-sprite_width_px = "50px"
+sprite_h_px = "100px"
+sprite_w_px = "75px"
 
 
 def layout(battle_id=None):
@@ -174,30 +174,20 @@ def layout(battle_id=None):
                             html.Div(
                                 [
                                     html.Img(
-                                        src=winner_team_sprites[pokemon_name],
+                                        src=sprite,
                                         style={
-                                            "height": sprite_height_px,
-                                            "width": sprite_width_px,
+                                            "height": sprite_h_px,
+                                            "width": sprite_w_px,
                                             "margin": "5px",
                                         },
-                                    ),
-                                    html.P(
-                                        pokemon_name,
-                                        style={
-                                            "text-align": "center",
-                                            "margin": "0px",
-                                            "font-size": "12px",
-                                        },
-                                    ),
+                                    )
+                                    for name, sprite in winner_team_sprites.items()
                                 ],
                                 style={
                                     "display": "flex",
-                                    "flex-direction": "row",
-                                    "align-items": "center",
                                     "justify-content": "flex-start",
                                 },
                             )
-                            for pokemon_name in winner_team_sprites.keys()
                         ],
                         width=6,
                     ),
@@ -206,36 +196,24 @@ def layout(battle_id=None):
                             html.Div(
                                 [
                                     html.Img(
-                                        src=loser_team_sprites[pokemon_name],
+                                        src=sprite,
                                         style={
-                                            "height": sprite_height_px,
-                                            "width": sprite_width_px,
+                                            "height": sprite_h_px,
+                                            "width": sprite_w_px,
                                             "margin": "5px",
                                         },
-                                    ),
-                                    html.P(
-                                        pokemon_name,
-                                        style={
-                                            "text-align": "center",
-                                            "margin": "0px",
-                                            "font-size": "12px",
-                                        },
-                                    ),
+                                    )
+                                    for name, sprite in loser_team_sprites.items()
                                 ],
                                 style={
                                     "display": "flex",
-                                    "flex-direction": "row",
-                                    "align-items": "center",
-                                    "justify-content": "flex-start",
+                                    "justify-content": "flex-end",
                                 },
                             )
-                            for pokemon_name in loser_team_sprites.keys()
                         ],
                         width=6,
-                        className="justify-content-end",
                     ),
-                ],
-                style={"display": "flex", "flex-direction": "row"},
+                ]
             ),
             # dmg taken chart
             dbc.Row(
