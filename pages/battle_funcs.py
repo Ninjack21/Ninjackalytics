@@ -25,8 +25,8 @@ def get_team_sprites(battle_data: Dict[str, pd.DataFrame]):
     winner_team = teams[teams["id"] == winner_team_id]
     loser_team = teams[teams["id"] == loser_team_id]
 
-    winner_sprites = []
-    loser_sprites = []
+    winner_sprites = {}
+    loser_sprites = {}
 
     for i in range(1, 7):
         winner_pokemon = winner_team[f"Pok{i}"].iloc[0]
@@ -35,8 +35,8 @@ def get_team_sprites(battle_data: Dict[str, pd.DataFrame]):
         winner_sprite = find_closest_sprite(winner_pokemon)
         loser_sprite = find_closest_sprite(loser_pokemon)
 
-        winner_sprites.append(winner_sprite)
-        loser_sprites.append(loser_sprite)
+        winner_sprites[winner_pokemon] = winner_sprite
+        loser_sprites[loser_pokemon] = loser_sprite
 
     return winner_sprites, loser_sprites
 
