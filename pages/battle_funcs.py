@@ -307,6 +307,88 @@ def generate_damages_figures(
     return fig_p1, fig_p2
 
 
+def generate_hp_taken_figures(
+    battle_data: Dict[str, pd.DataFrame],
+    selected_winner_actions: List[str],
+    selected_loser_actions: List[str],
+    selected_dmg_source_names: List[str],
+    selected_dmg_dealers: List[str],
+    selected_turns: List[int],
+    selected_dmg_types: List[str],
+) -> Tuple[go.Figure, go.Figure]:
+    winner_pnum = get_winner_pnum(battle_data)
+    winner, loser = get_winner_loser_names(battle_data)
+
+    damages = battle_data["damages"]
+
+    # apply filtering
+    if selected_dmg_types:
+        damages = damages[damages["Type"].isin(selected_dmg_types)]
+
+    if selected_turns:
+        damages = damages[damages["Turn"].isin(selected_turns)]
+
+    if selected_dmg_dealers:
+        damages = damages[damages["Dealer"].isin(selected_dmg_dealers)]
+
+    if selected_dmg_source_names:
+        damages = damages[damages["Source_Name"].isin(selected_dmg_source_names)]
+
+    if selected_winner_actions:
+        action_turns = get_turns_associated_with_action_types(
+            battle_data=battle_data,
+            selected_actions=selected_winner_actions,
+            player_number=winner_pnum,
+        )
+        damages = damages[damages["Turn"].isin(action_turns)]
+
+    if selected_loser_actions:
+        action_turns = get_turns_associated_with_action_types(
+            battle_data=battle_data,
+            selected_actions=selected_loser_actions,
+            player_number=(1 if winner_pnum == 2 else 2),
+        )
+        damages = damages[damages["Turn"].isin(action_turns)]
+
+    # Filter the damages data for each player
+    winner_dmgs_taken = damages[damages["Receiver_Player_Number"] == winner_pnum]
+    loser_dmgs_taken = damages[damages["Receiver_Player_Number"] != winner_pnum]
+
+    # Create the bar charts
+    fig_p1 = go.Figure()
+    fig_p2 = go.Figure()
+
+    # Add a bar to the charts for the current damage type
+    fig_p1.add_trace(
+        go.Bar(
+            y=winner_dmgs_taken["Receiver"],
+            x=winner_dmgs_taken["Damage"],
+            orientation="h",
+        )
+    )
+    fig_p2.add_trace(
+        go.Bar(
+            y=loser_dmgs_taken["Receiver"],
+            x=loser_dmgs_taken["Damage"],
+            orientation="h",
+        )
+    )
+
+    # Set the layout for the graphs
+    fig_p1.update_layout(
+        title=f"{winner} Damage Taken Chart<br>Total % HP Taken = {winner_dmgs_taken['Damage'].sum()}",
+        xaxis_title="% HP Damage Taken",
+        yaxis_title="Receiver",
+    )
+    fig_p2.update_layout(
+        title=f"{loser} Damage Taken Chart<br>Total % HP Taken = {loser_dmgs_taken['Damage'].sum()}",
+        xaxis_title="% HP Damage Taken",
+        yaxis_title="Receiver",
+    )
+
+    return fig_p1, fig_p2
+
+
 def generate_hp_discrepancy_figure(
     battle_data: Dict[str, pd.DataFrame],
     selected_winner_actions: List[str],
@@ -518,9 +600,9 @@ def generate_action_choices_pie_chart(
 
 def generate_damage_per_entrance_figures(
     battle_data: Dict[str, pd.DataFrame],
-    selected_winner_actions: List[str],
-    selected_loser_actions: List[str],
-    selected_turns: List[int],
+    selected_dmg_source_names: List[str],
+    selected_dmg_dealers: List[str],
+    selected_dmg_types: List[str],
 ) -> Tuple[go.Figure, go.Figure]:
     damages = battle_data["damages"]
     pivots = battle_data["pivots"]
@@ -534,22 +616,12 @@ def generate_damage_per_entrance_figures(
         pivots["Player_Number"] != winner_pnum
     ].unique()
 
-    if selected_turns:
-        damages = damages[damages["Turn"].isin(selected_turns)]
-    if selected_winner_actions:
-        action_turns = get_turns_associated_with_action_types(
-            battle_data=battle_data,
-            selected_actions=selected_winner_actions,
-            player_number=winner_pnum,
-        )
-        damages = damages[damages["Turn"].isin(action_turns)]
-    if selected_loser_actions:
-        action_turns = get_turns_associated_with_action_types(
-            battle_data=battle_data,
-            selected_actions=selected_loser_actions,
-            player_number=(1 if winner_pnum == 2 else 2),
-        )
-        damages = damages[damages["Turn"].isin(action_turns)]
+    if selected_dmg_dealers:
+        damages = damages[damages["Dealer"].isin(selected_dmg_dealers)]
+    if selected_dmg_source_names:
+        damages = damages[damages["Source_Name"].isin(selected_dmg_source_names)]
+    if selected_dmg_types:
+        damages = damages[damages["Type"].isin(selected_dmg_types)]
 
     winner_dmg_per_entrance = []
     for pokemon in winner_pokemon:
@@ -622,6 +694,108 @@ def generate_damage_per_entrance_figures(
     loser_fig.update_layout(
         title=f"{loser} Team's Average Damage per Entrance",
         xaxis_title="Average Damage (% hp) per Entrance",
+        yaxis_title="Pokemon",
+    )
+
+    return winner_fig, loser_fig
+
+
+def generate_heal_per_entrance_figures(
+    battle_data: Dict[str, pd.DataFrame],
+    selected_heal_source_names: List[str],
+    selected_heal_receivers: List[str],
+    selected_heal_types: List[str],
+) -> Tuple[go.Figure, go.Figure]:
+    healing = battle_data["healing"]
+    pivots = battle_data["pivots"]
+    winner_pnum = get_winner_pnum(battle_data)
+    winner, loser = get_winner_loser_names(battle_data)
+
+    winner_pokemon = pivots["Pokemon_Enter"][
+        pivots["Player_Number"] == winner_pnum
+    ].unique()
+    loser_pokemon = pivots["Pokemon_Enter"][
+        pivots["Player_Number"] != winner_pnum
+    ].unique()
+
+    if selected_heal_receivers:
+        healing = healing[healing["Receiver"].isin(selected_heal_receivers)]
+    if selected_heal_source_names:
+        healing = healing[healing["Source_Name"].isin(selected_heal_source_names)]
+    if selected_heal_types:
+        healing = healing[healing["Type"].isin(selected_heal_types)]
+
+    winner_healing_per_entrance = []
+    for pokemon in winner_pokemon:
+        pokemon_healing = (
+            healing["Healing"]
+            .loc[
+                (healing["Receiver"] == pokemon)
+                & (healing["Receiver_Player_Number"] == winner_pnum)
+            ]
+            .sum()
+        )
+        pokemon_entrances = (
+            pivots["Turn"]
+            .loc[
+                (pivots["Pokemon_Enter"] == pokemon)
+                & (pivots["Player_Number"] == winner_pnum),
+            ]
+            .nunique()
+        )
+        if pokemon_entrances > 0:
+            winner_healing_per_entrance.append(pokemon_healing / pokemon_entrances)
+
+    loser_healing_per_entrance = []
+    for pokemon in loser_pokemon:
+        pokemon_healing = (
+            healing["Healing"]
+            .loc[
+                (healing["Receiver"] == pokemon)
+                & (healing["Receiver_Player_Number"] != winner_pnum),
+            ]
+            .sum()
+        )
+        pokemon_entrances = (
+            pivots["Turn"]
+            .loc[
+                (pivots["Pokemon_Enter"] == pokemon)
+                & (pivots["Player_Number"] != winner_pnum),
+            ]
+            .nunique()
+        )
+        if pokemon_entrances > 0:
+            loser_healing_per_entrance.append(pokemon_healing / pokemon_entrances)
+
+    winner_fig = go.Figure(
+        data=[
+            go.Bar(
+                x=winner_healing_per_entrance,
+                y=winner_pokemon,
+                orientation="h",
+                name="Average Healing per Entrance",
+            )
+        ]
+    )
+    winner_fig.update_layout(
+        title=f"{winner} Team's Average Healing per Entrance",
+        xaxis_title="Average Healing (% hp) per Entrance",
+        yaxis_title="Pokemon",
+    )
+
+    loser_fig = go.Figure(
+        data=[
+            go.Bar(
+                x=loser_healing_per_entrance,
+                y=loser_pokemon,
+                orientation="h",
+                name="Average Healing per Entrance",
+            )
+        ]
+    )
+    loser_fig.update_layout(
+        title=f"{loser} Team's Average Healing per Entrance",
+        xaxis_title="Average Healing (% hp) per Entrance",
         yaxis_title="Pokemon",
     )
 
