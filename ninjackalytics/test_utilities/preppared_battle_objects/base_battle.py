@@ -1,6 +1,5 @@
 from typing import Optional
 
-# https://replay.pokemonshowdown.com/smogtours-gen8ou-724225
 
 """
 This file is to provide a Response and Battle object for testing purposes. As such we mimic the interface

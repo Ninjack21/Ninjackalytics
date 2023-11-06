@@ -10,6 +10,10 @@ from ninjackalytics.database import Base, engine, SessionLocal
 from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
 )
+from ninjackalytics.services.battle_parsing import BattleParser
+from ninjackalytics.services.battle_parsing.battle_data.battle_pokemon import (
+    BattlePokemon,
+)
 from ninjackalytics.database.models.battles import (
     teams,
     battle_info,
@@ -18,6 +22,10 @@ from ninjackalytics.database.models.battles import (
     healing,
     pivots,
     errors,
+)
+
+from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
+    TestBattle,
 )
 
 
@@ -29,59 +37,12 @@ class TestBattleDataUploader(unittest.TestCase):
         # create all tables in the test database
         Base.metadata.create_all(bind=engine)
 
-        teams = [{"Pok1": "Pikachu"}, {"Pok1": "Charizard"}]
-        general_info = {
-            "Format": "gen8randombattle",
-            "Date_Submitted": datetime(year=2023, month=1, day=1),
-            "P1": "Player1",
-            "P2": "Player2",
-            "Winner": "Player1",
-            "Rank": 1500,
-        }
-        actions = [
-            {"Turn": 1, "Action": "switch", "Player_Number": 1},
-            {"Turn": 1, "Action": "switch", "Player_Number": 2},
-        ]
-        damages = [
-            {
-                "Damage": 10,
-                "Dealer": "Pikachu",
-                "Dealer_Player_Number": 1,
-                "Source_Name": "Thunderbolt",
-                "Receiver": "Charizard",
-                "Receiver_Player_Number": 2,
-                "Turn": 1,
-                "Type": "move",
-            },
-        ]
-        healing = [
-            {
-                "Healing": 10,
-                "Receiver": "Pikachu",
-                "Receiver_Player_Number": 1,
-                "Source_Name": "Recover",
-                "Turn": 1,
-                "Type": "move",
-            }
-        ]
+        battle = TestBattle()
+        battle_pokemon = BattlePokemon(battle)
+        battle_parser = BattleParser(battle, battle_pokemon)
+        battle_parser.analyze_battle()
 
-        pivots = [
-            {
-                "Pokemon_Enter": "Pikachu",
-                "Player_Number": 1,
-                "Turn": 1,
-                "Source_Name": "action",
-            }
-        ]
-
-        MockParser = Mock()
-        MockParser.teams = teams
-        MockParser.general_info = general_info
-        MockParser.actions = actions
-        MockParser.damages = damages
-        MockParser.healing = healing
-        MockParser.pivots = pivots
-        self.mock_parser = MockParser
+        self.mock_parser = battle_parser
 
     def tearDown(self):
         # drop all tables in the test database
@@ -91,132 +52,155 @@ class TestBattleDataUploader(unittest.TestCase):
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         # check that the teams were uploaded correctly
-        team1 = (self.session.query(teams).filter(teams.Pok1 == "Pikachu")).first()
-        self.assertEqual(team1.Pok1, "Pikachu")
-        team2 = self.session.query(teams).filter(teams.Pok1 == "Charizard").first()
-        self.assertEqual(team2.Pok1, "Charizard")
+        team1 = (self.session.query(teams).filter(teams.Pok1 == "Azumarill")).first()
+        self.assertEqual(team1.Pok1, "Azumarill")
+        team2 = self.session.query(teams).filter(teams.Pok1 == "Corviknight").first()
+        self.assertEqual(team2.Pok1, "Corviknight")
 
     def test_teams_alphabetizes(self):
-        # the first team should end up re-ordered such that Abra appears in Pok1
-        self.mock_parser.teams = [
-            {"Pok1": "Charizard", "Pok2": "Abra"},
-            {"Pok1": "Pikachu"},
-        ]
+        """
+        |poke|p1|Azumarill, M|
+        |poke|p1|Great Tusk|
+        |poke|p1|Iron Valiant|
+        |poke|p1|Sneasler, M|
+        |poke|p1|Garganacl, M|
+        |poke|p1|Ogerpon-Wellspring, F|
+        |poke|p2|Gliscor, M|
+        |poke|p2|Corviknight, M|
+        |poke|p2|Kingambit, F|
+        |poke|p2|Iron Valiant|
+        |poke|p2|Slowking-Galar, F|
+        |poke|p2|Great Tusk|
+        """
+
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
-        # check that Abra appears as Pok1 and then Charizard as Pok2
+        # check that the above were appropriately alphabetized into the db
         team1 = (self.session.query(teams).filter(teams.id == 1)).first()
-        self.assertEqual(team1.Pok1, "Abra")
-        self.assertEqual(team1.Pok2, "Charizard")
+        self.assertEqual(team1.Pok1, "Azumarill")
+        self.assertEqual(team1.Pok2, "Garganacl")
+        self.assertEqual(team1.Pok3, "Great Tusk")
+        self.assertEqual(team1.Pok4, "Iron Valiant")
+        self.assertEqual(team1.Pok5, "Ogerpon-Wellspring")
+        self.assertEqual(team1.Pok6, "Sneasler")
 
-    def test_teams_already_exists(self):
-        # add a team to the database
-        team = teams(Pok1="Pikachu")
-        self.session.add(team)
-        self.session.commit()
-
-        # check that the team is in the database
-        team = (self.session.query(teams).filter(teams.Pok1 == "Pikachu")).first()
-        self.assertEqual(team.Pok1, "Pikachu")
-        expected_id = team.id
-
-        # upload a battle with a team that already exists
-        self.battle_data_uploader.upload_battle(self.mock_parser)
-
-        # check that the team is still in the database
-        team = (self.session.query(teams).filter(teams.Pok1 == "Pikachu")).first()
-        self.assertEqual(team.Pok1, "Pikachu")
-        self.assertEqual(team.id, expected_id)
+        team2 = (self.session.query(teams).filter(teams.id == 2)).first()
+        self.assertEqual(team2.Pok1, "Corviknight")
+        self.assertEqual(team2.Pok2, "Gliscor")
+        self.assertEqual(team2.Pok3, "Great Tusk")
+        self.assertEqual(team2.Pok4, "Iron Valiant")
+        self.assertEqual(team2.Pok5, "Kingambit")
+        self.assertEqual(team2.Pok6, "Slowking-Galar")
 
     def test_general_info_uploaded(self):
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         battle = (
             self.session.query(battle_info)
-            .filter(battle_info.P1 == "Player1")
-            .filter(battle_info.P2 == "Player2")
+            .filter(battle_info.P1 == "massivesket")
+            .filter(battle_info.P2 == "Buzzma")
             .first()
         )
-        self.assertEqual(battle.P1, "Player1")
-        self.assertEqual(battle.P2, "Player2")
-        self.assertEqual(battle.Winner, "Player1")
+        self.assertEqual(battle.P1, "massivesket")
+        self.assertEqual(battle.P2, "Buzzma")
+        self.assertEqual(battle.Winner, "massivesket")
         self.assertEqual(battle.P1_team, 1)
         self.assertEqual(battle.P2_team, 2)
-        self.assertEqual(battle.Rank, 1500)
+        self.assertEqual(battle.Rank, 1337)
 
     def test_actions_uploaded(self):
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         action1 = (
             self.session.query(actions)
-            .filter(actions.Turn == 1)
-            .filter(actions.Action == "switch")
+            .filter(actions.Turn == 0)
             .filter(actions.Player_Number == 1)
             .first()
         )
-        self.assertEqual(action1.Turn, 1)
+        self.assertEqual(action1.Turn, 0)
         self.assertEqual(action1.Action, "switch")
         self.assertEqual(action1.Player_Number, 1)
         action2 = (
             self.session.query(actions)
-            .filter(actions.Turn == 1)
-            .filter(actions.Action == "switch")
+            .filter(actions.Turn == 0)
             .filter(actions.Player_Number == 2)
             .first()
         )
-        self.assertEqual(action2.Turn, 1)
+        self.assertEqual(action2.Turn, 0)
         self.assertEqual(action2.Action, "switch")
         self.assertEqual(action2.Player_Number, 2)
 
     def test_damages_uploaded(self):
+        """
+        |t:|1697406815
+        |start
+        |switch|p1a: Femboy IX|Azumarill, M, shiny|100/100
+        |switch|p2a: Great Tusk|Great Tusk|100/100
+        |turn|1
+        |
+        |t:|1697406823
+        |-end|p2a: Great Tusk|Protosynthesis|[silent]
+        |switch|p2a: Slowking|Slowking-Galar, F|100/100
+        |move|p1a: Femboy IX|Belly Drum|p1a: Femboy IX
+        |-damage|p1a: Femboy IX|50/100
+        |-setboost|p1a: Femboy IX|atk|6|[from] move: Belly Drum
+        |-enditem|p1a: Femboy IX|Sitrus Berry|[eat]
+        |-heal|p1a: Femboy IX|75/100|[from] item: Sitrus Berry
+        |
+        """
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         query_damages = (self.session.query(damages)).all()
 
-        self.assertEqual(len(query_damages), 1)
-        self.assertEqual(query_damages[0].Damage, 10)
-        self.assertEqual(query_damages[0].Dealer, "Pikachu")
+        self.assertEqual(query_damages[0].Damage, 50)
+        self.assertEqual(query_damages[0].Dealer, "Azumarill")
         self.assertEqual(query_damages[0].Dealer_Player_Number, 1)
-        self.assertEqual(query_damages[0].Source_Name, "Thunderbolt")
-        self.assertEqual(query_damages[0].Receiver, "Charizard")
-        self.assertEqual(query_damages[0].Receiver_Player_Number, 2)
+        self.assertEqual(query_damages[0].Source_Name, "Belly Drum")
+        self.assertEqual(query_damages[0].Receiver, "Azumarill")
+        self.assertEqual(query_damages[0].Receiver_Player_Number, 1)
         self.assertEqual(query_damages[0].Turn, 1)
-        self.assertEqual(query_damages[0].Type, "move")
+        self.assertEqual(query_damages[0].Type, "Move")
 
     def test_healing_uploaded(self):
+        """
+        |turn|1
+        ...
+        |-damage|p1a: Femboy IX|50/100
+        |-setboost|p1a: Femboy IX|atk|6|[from] move: Belly Drum
+        |-enditem|p1a: Femboy IX|Sitrus Berry|[eat]
+        |-heal|p1a: Femboy IX|75/100|[from] item: Sitrus Berry
+        """
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         query_healing = (self.session.query(healing)).all()
 
-        self.assertEqual(len(query_healing), 1)
-        self.assertEqual(query_healing[0].Healing, 10)
-        self.assertEqual(query_healing[0].Receiver, "Pikachu")
+        self.assertEqual(query_healing[0].Healing, 25)
+        self.assertEqual(query_healing[0].Receiver, "Azumarill")
         self.assertEqual(query_healing[0].Receiver_Player_Number, 1)
-        self.assertEqual(query_healing[0].Source_Name, "Recover")
+        self.assertEqual(query_healing[0].Source_Name, "Sitrus Berry")
         self.assertEqual(query_healing[0].Turn, 1)
-        self.assertEqual(query_healing[0].Type, "move")
+        self.assertEqual(query_healing[0].Type, "Item")
 
     def test_pivots_uploaded(self):
+        """
+        |start
+        |switch|p1a: Femboy IX|Azumarill, M, shiny|100/100
+        |switch|p2a: Great Tusk|Great Tusk|100/100
+        """
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         query_pivots = (self.session.query(pivots)).all()
 
-        self.assertEqual(len(query_pivots), 1)
-        self.assertEqual(query_pivots[0].Pokemon_Enter, "Pikachu")
+        self.assertEqual(query_pivots[0].Pokemon_Enter, "Azumarill")
         self.assertEqual(query_pivots[0].Player_Number, 1)
-        self.assertEqual(query_pivots[0].Turn, 1)
+        self.assertEqual(query_pivots[0].Turn, 0)
         self.assertEqual(query_pivots[0].Source_Name, "action")
 
     def test_battle_id_already_exists(self):
         self.battle_data_uploader.upload_battle(self.mock_parser)
 
         # check that the battle is in the database
-        battle = (
-            self.session.query(battle_info)
-            .filter(battle_info.P1 == "Player1")
-            .filter(battle_info.P2 == "Player2")
-            .first()
-        )
+        battle = self.session.query(battle_info).first()
         expected_id = battle.id
 
         # upload the same battle again
@@ -225,8 +209,8 @@ class TestBattleDataUploader(unittest.TestCase):
         # check that the battle is still in the database
         battle = (
             self.session.query(battle_info)
-            .filter(battle_info.P1 == "Player1")
-            .filter(battle_info.P2 == "Player2")
+            .filter(battle_info.P1 == "massivesket")
+            .filter(battle_info.P2 == "Buzzma")
             .first()
         )
         self.assertEqual(battle.id, expected_id)

@@ -41,10 +41,10 @@ class TestBattlePokemon(unittest.TestCase):
         bp = BattlePokemon(self.mock_battle)
 
         # Test getting a valid Pokemon object
-        mon = bp.get_mon_obj("p1a: Pincurchin")
+        mon = bp.get_mon_obj("p1a: Femboy IX")
         self.assertIsInstance(mon, Pokemon)
-        self.assertEqual(mon.real_name, "Pincurchin")
-        self.assertEqual(mon.nickname, "Pincurchin")
+        self.assertEqual(mon.real_name, "Azumarill")
+        self.assertEqual(mon.nickname, "Femboy IX")
         self.assertEqual(mon.player_num, 1)
 
         # Test getting a non-existent Pokemon object
@@ -53,33 +53,33 @@ class TestBattlePokemon(unittest.TestCase):
 
     def test_update_hp_for_pokemon(self):
         bp = BattlePokemon(self.mock_battle)
-        bp.update_hp_for_pokemon("p1a: Pincurchin", 75.0)
+        bp.update_hp_for_pokemon("p1a: Femboy IX", 75.0)
 
-        self.assertEqual(bp.get_pokemon_current_hp("p1a: Pincurchin"), 75.0)
+        self.assertEqual(bp.get_pokemon_current_hp("p1a: Femboy IX"), 75.0)
 
     def test_get_pokemon_hp_change(self):
         bp = BattlePokemon(self.mock_battle)
-        bp.update_hp_for_pokemon("p1a: Pincurchin", 75.0)
+        bp.update_hp_for_pokemon("p1a: Femboy IX", 75.0)
 
-        self.assertEqual(bp.get_pokemon_hp_change("p1a: Pincurchin"), -25)
+        self.assertEqual(bp.get_pokemon_hp_change("p1a: Femboy IX"), -25)
 
     def test_get_pokemon_current_hp(self):
         bp = BattlePokemon(self.mock_battle)
 
-        self.assertEqual(bp.get_pokemon_current_hp("p1a: Pincurchin"), 100)
+        self.assertEqual(bp.get_pokemon_current_hp("p1a: Femboy IX"), 100)
 
-        bp.update_hp_for_pokemon("p1a: Pincurchin", 75.0)
+        bp.update_hp_for_pokemon("p1a: Femboy IX", 75.0)
 
-        self.assertEqual(bp.get_pokemon_current_hp("p1a: Pincurchin"), 75.0)
+        self.assertEqual(bp.get_pokemon_current_hp("p1a: Femboy IX"), 75.0)
 
     def test_get_pnum_and_name(self):
         bp = BattlePokemon(self.mock_battle)
 
-        raw_name = "p1a: Pincurchin"
+        raw_name = "p1a: Femboy IX"
         pnum, name = bp.get_pnum_and_name(raw_name)
 
         expected_pnum = 1
-        expected_name = "Pincurchin"
+        expected_name = "Azumarill"
 
         self.assertEqual(pnum, expected_pnum)
         self.assertEqual(name, expected_name)

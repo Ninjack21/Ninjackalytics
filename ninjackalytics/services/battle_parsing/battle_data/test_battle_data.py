@@ -3,13 +3,6 @@ from datetime import datetime
 
 from . import BattleData
 
-# ===bring in base test utilities objects===
-import os
-import sys
-
-file_path = os.path.dirname(os.path.realpath(__file__))
-app_path = file_path.split("ninjackalytics")[0]
-sys.path.insert(1, app_path)
 from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
     TestBattle,
 )
@@ -34,7 +27,7 @@ class TestBattleData(unittest.TestCase):
         db_info = self.battle_data.get_db_info()
         self.assertIsInstance(db_info, dict)
         self.assertIn("Battle_ID", db_info)
-        self.assertEqual(db_info["Battle_ID"], "gen9ou-1954574413")
+        self.assertEqual(db_info["Battle_ID"], "gen9ou-1968330098")
         self.assertIn("Format", db_info)
         self.assertEqual(db_info["Format"], "gen9ou")
         self.assertIn("P1", db_info)
@@ -48,7 +41,7 @@ class TestBattleData(unittest.TestCase):
         general_info = self.battle_data._return_general_info()
         self.assertIsInstance(general_info, dict)
         self.assertIn("Battle_ID", general_info)
-        self.assertEqual(general_info["Battle_ID"], "gen9ou-1954574413")
+        self.assertEqual(general_info["Battle_ID"], "gen9ou-1968330098")
         self.assertIn("Format", general_info)
         self.assertEqual(general_info["Format"], "gen9ou")
         self.assertIn("Date_Submitted", general_info)
@@ -58,29 +51,29 @@ class TestBattleData(unittest.TestCase):
         player_names = self.battle_data._parse_player_names()
         self.assertIsInstance(player_names, dict)
         self.assertIn("P1", player_names)
-        self.assertEqual(player_names["P1"], "shamasha")
+        self.assertEqual(player_names["P1"], "massivesket")
 
         self.assertIn("P2", player_names)
-        self.assertEqual(player_names["P2"], "Xmzx")
+        self.assertEqual(player_names["P2"], "Buzzma")
 
     def test_parse_rank(self):
         rank = self.battle_data._parse_rank()
         self.assertIsInstance(rank, dict)
         self.assertIn("Rank", rank)
-        self.assertEqual(rank["Rank"], 1307)
+        self.assertEqual(rank["Rank"], 1337)
 
     def test_parse_winner(self):
         winner = self.battle_data._parse_winner()
         self.assertIsInstance(winner, dict)
         self.assertIn("Winner", winner)
-        self.assertEqual(winner["Winner"], "Xmzx")
+        self.assertEqual(winner["Winner"], "massivesket")
 
     def test_findall_regex(self):
         pattern = r"[0-9]+ \&rarr"
         matches = self.battle_data._findall_regex(pattern)
         self.assertIsInstance(matches, list)
         self.assertEqual(len(matches), 2)
-        self.assertEqual(matches[0], "1338 &rarr")
+        self.assertEqual(matches[0], "1370 &rarr")
 
 
 if __name__ == "__main__":
