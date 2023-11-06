@@ -3,24 +3,34 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-# Define the URL of the page containing the .gif files
-url = "https://play.pokemonshowdown.com/sprites/ani/"
+# Define the URLs of the pages containing the .gif files
+urls = [
+    "https://play.pokemonshowdown.com/sprites/ani/",
+    "https://play.pokemonshowdown.com/sprites/dex/",
+]
 
-# Send a GET request to the URL and get the page content
-response = requests.get(url)
-content = response.content
+# Define a list to keep track of the downloaded files
+downloaded_files = []
 
-# Parse the page content using beautifulsoup4
-soup = BeautifulSoup(content, "html.parser")
+# Loop through each URL
+for url in urls:
+    # Send a GET request to the URL and get the page content
+    response = requests.get(url)
+    content = response.content
 
-# Find all the a tags that contain .gif in their href attribute
-gif_links = soup.find_all("a", href=lambda href: href and href.endswith(".gif"))
+    # Parse the page content using beautifulsoup4
+    soup = BeautifulSoup(content, "html.parser")
 
-# For each a tag, extract the href attribute value and download the file using requests
-for link in gif_links:
-    href = link["href"]
-    full_url = urljoin(url, href)
-    file_name = href.split("/")[-1]
-    file_path = os.path.join(os.getcwd(), "assets", "showdown_sprites", file_name)
-    with open(file_path, "wb") as f:
-        f.write(requests.get(full_url).content)
+    # Find all the a tags that contain .gif in their href attribute
+    gif_links = soup.find_all("a", href=lambda href: href and href.endswith(".gif"))
+
+    # For each a tag, extract the href attribute value and download the file using requests
+    for link in gif_links:
+        href = link["href"]
+        full_url = urljoin(url, href)
+        file_name = href.split("/")[-1]
+        file_path = os.path.join(os.getcwd(), "assets", "showdown_sprites", file_name)
+        if file_name not in downloaded_files:
+            with open(file_path, "wb") as f:
+                f.write(requests.get(full_url).content)
+            downloaded_files.append(file_name)

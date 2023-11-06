@@ -11,11 +11,51 @@ from ninjackalytics.services.database_interactors import (
     BattleDataUploader,
 )
 from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattlePokemon
+from .general_utility import find_closest_sprite
 
 # make all graphs plotly_dark by default
 pio.templates.default = "plotly_dark"
 
+
+# ========= SPRITE FUNCTIONS =========
+def get_team_sprites(battle_data: Dict[str, pd.DataFrame]):
+    teams = battle_data["teams"]
+    winner_team_id, loser_team_id = get_winner_loser_team_ids(battle_data)
+
+    winner_team = teams[teams["id"] == winner_team_id]
+    loser_team = teams[teams["id"] == loser_team_id]
+
+    winner_sprites = []
+    loser_sprites = []
+
+    for i in range(1, 7):
+        winner_pokemon = winner_team[f"Pok{i}"].iloc[0]
+        loser_pokemon = loser_team[f"Pok{i}"].iloc[0]
+
+        winner_sprite = find_closest_sprite(winner_pokemon)
+        loser_sprite = find_closest_sprite(loser_pokemon)
+
+        winner_sprites.append(winner_sprite)
+        loser_sprites.append(loser_sprite)
+
+    return winner_sprites, loser_sprites
+
+
 # ========= UTILITY FUNCTIONS =========
+def get_winner_loser_team_ids(battle_data: Dict[str, pd.DataFrame]) -> Tuple[int, int]:
+    battle_info = battle_data["battle_info"]
+    winner = battle_info["Winner"].iloc[0]
+    winner_team_id = (
+        battle_info["P1_team"].iloc[0]
+        if winner == battle_info["P1"].iloc[0]
+        else battle_info["P2_team"].iloc[0]
+    )
+    loser_team_id = (
+        battle_info["P2_team"].iloc[0]
+        if winner == battle_info["P1"].iloc[0]
+        else battle_info["P1_team"].iloc[0]
+    )
+    return winner_team_id, loser_team_id
 
 
 def get_total_number_of_turns(battle_data: Dict[str, pd.DataFrame]) -> int:

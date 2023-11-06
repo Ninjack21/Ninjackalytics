@@ -3,6 +3,7 @@ from dash import html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import random
 from .navbar import navbar
+from .general_utility import get_random_sprite
 
 dash.register_page(__name__, path="/")
 
@@ -64,9 +65,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,
@@ -86,9 +85,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,
@@ -108,9 +105,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,
@@ -130,9 +125,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,
@@ -152,9 +145,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,
@@ -174,9 +165,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Img(
-                                        src=os.path.join(
-                                            sprite_dir, random.choice(sprites)
-                                        ).split("Ninjackalytics")[-1],
+                                        src=get_random_sprite(),
                                         style={
                                             "height": sprite_height,
                                             "width": sprite_width,

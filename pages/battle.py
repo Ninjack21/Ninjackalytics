@@ -17,7 +17,9 @@ from .battle_funcs import (
     generate_damage_per_entrance_figures,
     generate_heal_per_entrance_figures,
     generate_hp_taken_figures,
+    get_team_sprites,
 )
+
 
 # TODO
 """
@@ -103,6 +105,7 @@ def layout(battle_id=None):
                 selected_turns=None,
                 selected_dmg_types=None,
             )
+            winner_team_sprites, loser_team_sprites = get_team_sprites(battle_data)
 
             total_turns = get_total_number_of_turns(battle_data)
 
@@ -159,6 +162,55 @@ def layout(battle_id=None):
                     ),
                 ],
                 style={"display": "inline-block", "width": "100%"},
+            ),
+            # team sprites
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            html.Div(
+                                [
+                                    html.Img(
+                                        src=winner_team_sprites[i],
+                                        style={
+                                            "height": "100px",
+                                            "width": "75px",
+                                            "margin": "5px",
+                                        },
+                                    )
+                                    for i in range(len(winner_team_sprites))
+                                ],
+                                style={
+                                    "display": "flex",
+                                    "justify-content": "flex-start",
+                                },
+                            )
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.Div(
+                                [
+                                    html.Img(
+                                        src=loser_team_sprites[i],
+                                        style={
+                                            "height": "100px",
+                                            "width": "75px",
+                                            "margin": "5px",
+                                        },
+                                    )
+                                    for i in range(len(loser_team_sprites) - 1, -1, -1)
+                                ],
+                                style={
+                                    "display": "flex",
+                                    "justify-content": "flex-end",
+                                },
+                            )
+                        ],
+                        width=6,
+                    ),
+                ]
             ),
             # dmg taken chart
             dbc.Row(
