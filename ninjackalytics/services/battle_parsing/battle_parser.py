@@ -51,9 +51,9 @@ class BattleParser:
             self.heals_info = heals_info
         except Exception as e:
             tb = traceback.format_exc()
-            error = errors(
-                Battle_URL=self.battle.url,
-                Error_Message=str(e),
-                Traceback=tb,
-            )
+            error = {
+                "Battle_URL": self.battle.url,
+                "Error_Message": str(e),
+                "Traceback": tb,
+            }
             self.error = error

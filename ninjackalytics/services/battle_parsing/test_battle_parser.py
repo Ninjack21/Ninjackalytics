@@ -23,6 +23,7 @@ from . import BattleParser
 class TestBattleParser(unittest.TestCase):
     def setUp(self):
         self.mock_battle = TestBattle()
+        self.mock_battle.url = "https://replay.pokemonshowdown.com/123-test"
         self.test_battle_pokemon = BattlePokemon(self.mock_battle)
 
         self.battle_parser = BattleParser(self.mock_battle, self.test_battle_pokemon)
@@ -33,6 +34,22 @@ class TestBattleParser(unittest.TestCase):
 
         # if we get here then it was succesful
         self.assertTrue(True)
+
+    def test_analyze_battle_error_handling(self):
+        # Mock the get_db_info method to raise an exception
+        self.battle_parser.battle_data.get_db_info = MagicMock(
+            side_effect=Exception("Test exception")
+        )
+
+        # Call the analyze_battle method
+        self.battle_parser.analyze_battle()
+
+        # Check that self.error is not None
+        self.assertIsNotNone(self.battle_parser.error)
+
+        # Check that the error message and traceback are correct
+        self.assertEqual(self.battle_parser.error["Error_Message"], "Test exception")
+        self.assertIn("Traceback", self.battle_parser.error)
 
 
 if __name__ == "__main__":
