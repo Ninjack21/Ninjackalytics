@@ -11,6 +11,7 @@ from ninjackalytics.database.models.battles import (
     damages,
     healing,
     pivots,
+    errors,
 )
 
 
@@ -274,9 +275,19 @@ class BattleDataUploader:
         """
         exists = self._check_if_battle_exists(parser.general_info)
         if not exists:
-            self._upload_teams(parser.teams)
-            self._upload_general_info(parser.general_info)
-            self._upload_actions(parser.action_info)
-            self._upload_damages(parser.damages_info)
-            self._upload_healing(parser.heals_info)
-            self._upload_pivots(parser.pivot_info)
+            # first check to see if the error attribute is not None
+            if parser.error is None:
+                self._upload_teams(parser.teams)
+                self._upload_general_info(parser.general_info)
+                self._upload_actions(parser.action_info)
+                self._upload_damages(parser.damages_info)
+                self._upload_healing(parser.heals_info)
+                self._upload_pivots(parser.pivot_info)
+            else:
+                with session_scope() as session:
+                    error_db = errors(**parser.error)
+                    session.add(error_db)
+                    session.commit()
+                raise Exception(
+                    "Something went wrong while parsing the battle.\nThis has been logged in the database. We apologize for the inconvenience."
+                )

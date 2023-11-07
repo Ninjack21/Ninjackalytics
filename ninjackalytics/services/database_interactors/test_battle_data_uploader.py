@@ -9,6 +9,7 @@ from ninjackalytics.database.config import TestingConfig
 from ninjackalytics.database import Base, engine, SessionLocal
 from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
+    session_scope,
 )
 from ninjackalytics.services.battle_parsing import BattleParser
 from ninjackalytics.services.battle_parsing.battle_data.battle_pokemon import (
@@ -214,6 +215,30 @@ class TestBattleDataUploader(unittest.TestCase):
             .first()
         )
         self.assertEqual(battle.id, expected_id)
+
+    def test_upload_battle_error_handling(self):
+        # Set the error attribute of the mock parser
+        self.mock_parser.error = {
+            "Battle_URL": "test_url",
+            "Error_Message": "Test exception",
+            "Traceback": "Test traceback",
+        }
+
+        # Call the upload_battle method and expect an exception
+        with self.assertRaises(Exception) as context:
+            self.battle_data_uploader.upload_battle(self.mock_parser)
+
+        # Check that the error message is correct
+        self.assertIn(
+            "Something went wrong while parsing the battle", str(context.exception)
+        )
+
+        # Check that the error was uploaded to the database
+        with session_scope() as session:
+            error_db = session.query(errors).filter_by(Battle_URL="test_url").first()
+            self.assertIsNotNone(error_db)
+            self.assertEqual(error_db.Error_Message, "Test exception")
+            self.assertEqual(error_db.Traceback, "Test traceback")
 
 
 if __name__ == "__main__":
