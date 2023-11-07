@@ -43,7 +43,6 @@ class testBattleDataRetriever(unittest.TestCase):
         uploader = BattleDataUploader()
         uploader.upload_battle(self.battle_parser)
         self.uploader = uploader
-        uploader.close_session()
 
         self.retriever = BattleDataRetriever()
 

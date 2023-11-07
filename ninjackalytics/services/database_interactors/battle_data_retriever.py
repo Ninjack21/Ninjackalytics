@@ -66,7 +66,7 @@ class BattleDataRetriever:
         """
         Constructs all the necessary attributes for the BattleDataRetriever object.
         """
-        self.session = SessionLocal()
+        pass
 
     def get_battle_info(self, battle_id: str) -> pd.DataFrame:
         """
