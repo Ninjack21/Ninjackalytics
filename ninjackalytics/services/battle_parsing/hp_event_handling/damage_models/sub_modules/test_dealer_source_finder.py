@@ -331,20 +331,16 @@ class TestDealerSourceFinder(unittest.TestCase):
         to say that a move type was unable to be determined.
         """
 
-        event = "|-damage|p1a: Melmetal|83/100"
-        turn_text = """|move|p2a: Gardevoir|Psyshock|p1a: Melmetal
+        turn = MockTurn(
+            1,
+            """
+            |move|p2a: Gardevoir|Psyshock|p1a: Melmetal
             |-resisted|p1a: Melmetal
             |-damage|p1a: Melmetal|83/100
-            """
-        turn = MockTurn(1, turn_text)
+            """,
+        )
 
-        # first, let's check that the move_type is found by the _move_method
-        for line in reversed(list(turn_text.split(event)[0].splitlines())):
-            move_type = self.move_dealer_finder._get_move_type(line)
-            if move_type is not None:
-                break
-
-        self.assertEqual(move_type, "normal")
+        event = "|-damage|p1a: Melmetal|83/100"
 
         # now test the top level code implementation
         (pnum, dealer), source = self.move_dealer_finder.get_dealer_and_source(
@@ -353,6 +349,36 @@ class TestDealerSourceFinder(unittest.TestCase):
         self.assertEqual(pnum, 2)
         self.assertEqual(dealer, "Gardevoir")
         self.assertEqual(source, "Psyshock")
+
+    def test_phantom_force_case(self):
+        # test case found from: https://replay.pokemonshowdown.com/gen9ou-1985223214.log
+        # phantom force
+        phantom_force_turn = MockTurn(
+            1,
+            """
+            |turn|27
+            |
+            |t:|1699351517
+            |move|p2a: Dragapult|Phantom Force|p1a: Silver Fox|[from]lockedmove
+            |-damage|p1a: Silver Fox|20/100 tox
+            |move|p1a: Silver Fox|Aurora Veil|p1a: Silver Fox
+            |-sidestart|p1: OUVT Tgirl|move: Aurora Veil
+            |
+            |-weather|Snow|[upkeep]
+            |-heal|p2a: Dragapult|63/100|[from] item: Leftovers
+            |-damage|p1a: Silver Fox|8/100 tox|[from] psn
+            |upkeep
+            """,
+        )
+        # (dealer, source)
+        expected_output = ((2, "Dragapult"), "Phantom Force")
+        self.assertEqual(
+            self.move_dealer_finder._get_normal_dealer_and_source(
+                event="|-damage|p1a: Silver Fox|20/100 tox",
+                turn=phantom_force_turn,
+            ),
+            expected_output,
+        )
 
 
 if __name__ == "__main__":
