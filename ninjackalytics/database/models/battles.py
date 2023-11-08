@@ -93,7 +93,7 @@ class pivots(BattleDbBase):
 
 class errors(BattleDbBase):
     __tablename__ = "errors"
-    Battle_URL = Column(Text, nullable=False)
+    Battle_URL = Column(Text, nullable=False, unique=True)
     Date_Submitted = Column(DateTime, default=datetime.utcnow)
     Error_Message = Column(Text, nullable=True)
     Traceback = Column(Text, nullable=True)

@@ -285,6 +285,12 @@ class BattleDataUploader:
                 self._upload_pivots(parser.pivot_info)
         else:
             with session_scope() as session:
+                # need to first test if the error already exists in the database
+                existing_error = (
+                    session.query(errors)
+                    .filter(errors.Battle_URL == parser.error["Battle_URL"])
+                    .first()
+                )
                 error_db = errors(**parser.error)
                 session.add(error_db)
                 session.commit()
