@@ -2,17 +2,22 @@ from typing import Dict, Tuple, List, Protocol
 import re
 
 # =================== IMPORT PROTOCOLS ===================
-from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (Battle, BattlePokemon, Turn)
+from ninjackalytics.protocols.battle_parsing.battle_initialization.protocols import (
+    Battle,
+    BattlePokemon,
+    Turn,
+)
 
 
 # =================== DEFINE MODEL ===================
+
 
 class DealerSourceFinder:
     def __init__(self, battle_pokemon: BattlePokemon):
         self.battle_pokemon = battle_pokemon
         self.move_patterns = {
             "normal": re.compile(
-                r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
+                r"\|move\|(?P<dealer>[^|]*)\|(?P<source>[^|]*)\|(?P<receiver>[^\|\n]*)"
             ),
             "delayed": re.compile(
                 r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
@@ -78,6 +83,7 @@ class DealerSourceFinder:
             list(re.finditer(self.move_patterns["normal"], pre_event_text))
         )
         receiver_raw = self._get_receiver_raw_from_event(event)
+
         match = self._get_match(matches, receiver_raw)
         if match:
             dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))

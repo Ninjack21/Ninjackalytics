@@ -34,7 +34,14 @@ def layout(battle_id=None):
     if battle_id:
         battle_data = parse_and_return_battle_data(battle_id)
         if not battle_data:
-            return html.Div([navbar(), html.H1("Battle not found")])
+            return html.Div(
+                [
+                    navbar(),
+                    html.H1(
+                        "Something went wrong while parsing the battle. It's been logged in the database. We apologize for the inconvenience!"
+                    ),
+                ]
+            )
         else:
             winner_pnum = get_winner_pnum(battle_data)
             winner, loser = get_winner_loser_names(battle_data)

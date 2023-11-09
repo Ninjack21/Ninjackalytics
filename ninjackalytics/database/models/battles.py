@@ -93,12 +93,11 @@ class pivots(BattleDbBase):
 
 class errors(BattleDbBase):
     __tablename__ = "errors"
-    Battle_URL = Column(Text, nullable=False)
+    Battle_URL = Column(Text, nullable=False, unique=True)
     Date_Submitted = Column(DateTime, default=datetime.utcnow)
-    Function_Name = Column(Text, nullable=False)
     Error_Message = Column(Text, nullable=True)
-    Turn = Column(Integer, nullable=False)
-    Line = Column(Text, nullable=False)
+    Traceback = Column(Text, nullable=True)
+    Function = Column(Text, nullable=True)
 
     def __repr__(self):
         return "<Error: %r>" % self.Error_Message

@@ -42,6 +42,25 @@ def get_team_sprites(battle_data: Dict[str, pd.DataFrame]):
 
 
 # ========= UTILITY FUNCTIONS =========
+
+
+def parse_and_return_battle_data(battle_id):
+    retriever = BattleDataRetriever()
+    exists = retriever.check_if_battle_exists(battle_id)
+    if not exists:
+        try:
+            battle = Battle(f"https://replay.pokemonshowdown.com/{battle_id}")
+            pokemon = BattlePokemon(battle)
+            parser = BattleParser(battle, pokemon)
+            parser.analyze_battle()
+            uploader = BattleDataUploader()
+            uploader.upload_battle(parser)
+        except Exception as e:
+            return None
+    battle_data = retriever.get_battle_data(battle_id)
+    return battle_data
+
+
 def get_winner_loser_team_ids(battle_data: Dict[str, pd.DataFrame]) -> Tuple[int, int]:
     battle_info = battle_data["battle_info"]
     winner = battle_info["Winner"].iloc[0]
@@ -61,23 +80,6 @@ def get_winner_loser_team_ids(battle_data: Dict[str, pd.DataFrame]) -> Tuple[int
 def get_total_number_of_turns(battle_data: Dict[str, pd.DataFrame]) -> int:
     actions = battle_data["actions"]
     return actions["Turn"].max()
-
-
-def parse_and_return_battle_data(battle_id):
-    retriever = BattleDataRetriever()
-    exists = retriever.check_if_battle_exists(battle_id)
-    if not exists:
-        try:
-            battle = Battle(f"https://replay.pokemonshowdown.com/{battle_id}")
-            pokemon = BattlePokemon(battle)
-            parser = BattleParser(battle, pokemon)
-            parser.analyze_battle()
-            uploader = BattleDataUploader()
-            uploader.upload_battle(parser)
-        except Exception as e:
-            return None
-    battle_data = retriever.get_battle_data(battle_id)
-    return battle_data
 
 
 def get_winner_pnum(battle_data: Dict[str, pd.DataFrame]) -> int:

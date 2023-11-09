@@ -1,5 +1,6 @@
 from typing import Dict, List
-
+from contextlib import contextmanager
+import re
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
 from ninjackalytics.database import SessionLocal
@@ -10,7 +11,22 @@ from ninjackalytics.database.models.battles import (
     damages,
     healing,
     pivots,
+    errors,
 )
+
+
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 class BattleDataUploader:
@@ -97,16 +113,9 @@ class BattleDataUploader:
         """
         Constructs all the necessary attributes for the BattleDataUploader object.
         """
-        self.session = SessionLocal()
         self.p1_team_id = None
         self.p2_team_id = None
         self.battle_id = None
-
-    def close_session(self) -> None:
-        """
-        Closes the SQLAlchemy session
-        """
-        self.session.close()
 
     def _upload_teams(self, teams_list: List[List[object]]) -> int:
         """
@@ -122,23 +131,24 @@ class BattleDataUploader:
         int
             The id of player 2's team in the database
         """
-        for pnum, team in enumerate(teams_list):
-            mon_names = [mon.real_name for mon in team.pokemon]
-            mon_names.sort()
-            # create the team dictionary
-            team_dict = {}
-            for i, mon in enumerate(mon_names):
-                team_dict[f"Pok{i+1}"] = mon
+        with session_scope() as session:
+            for pnum, team in enumerate(teams_list):
+                mon_names = [mon.real_name for mon in team.pokemon]
+                mon_names.sort()
+                # create the team dictionary
+                team_dict = {}
+                for i, mon in enumerate(mon_names):
+                    team_dict[f"Pok{i+1}"] = mon
 
-            team_db = teams(**team_dict)
-            self.session.add(team_db)
-            self.session.commit()
-            self.session.refresh(team_db)
-            if pnum == 0:
-                self.p1_team_id = team_db.id
-            else:
-                self.p2_team_id = team_db.id
-        return self.p2_team_id
+                team_db = teams(**team_dict)
+                session.add(team_db)
+                session.commit()
+                session.refresh(team_db)
+                if pnum == 0:
+                    self.p1_team_id = team_db.id
+                else:
+                    self.p2_team_id = team_db.id
+            return self.p2_team_id
 
     def _check_if_battle_exists(self, general_info: Dict[str, str]) -> bool:
         """
@@ -154,16 +164,17 @@ class BattleDataUploader:
         bool
             True if the battle exists, False otherwise
         """
-        existing_battle = (
-            self.session.query(battle_info)
-            .filter(battle_info.Battle_ID == general_info["Battle_ID"])
-            .first()
-        )
-        if existing_battle:
-            # set the battle_id
-            self.battle_id = existing_battle.Battle_ID
-            return True
-        return False
+        with session_scope() as session:
+            existing_battle = (
+                session.query(battle_info)
+                .filter(battle_info.Battle_ID == general_info["Battle_ID"])
+                .first()
+            )
+            if existing_battle:
+                # set the battle_id
+                self.battle_id = existing_battle.Battle_ID
+                return True
+            return False
 
     def _upload_general_info(self, general_info: Dict[str, str]) -> int:
         """
@@ -179,15 +190,15 @@ class BattleDataUploader:
         int
             The id of the battle in the database
         """
-
-        general_info["P1_team"] = self.p1_team_id
-        general_info["P2_team"] = self.p2_team_id
-        battle_info_db = battle_info(**general_info)
-        self.session.add(battle_info_db)
-        self.session.commit()
-        self.session.refresh(battle_info_db)
-        self.battle_id = battle_info_db.id
-        return self.battle_id
+        with session_scope() as session:
+            general_info["P1_team"] = self.p1_team_id
+            general_info["P2_team"] = self.p2_team_id
+            battle_info_db = battle_info(**general_info)
+            session.add(battle_info_db)
+            session.commit()
+            session.refresh(battle_info_db)
+            self.battle_id = battle_info_db.id
+            return self.battle_id
 
     def _upload_actions(self, actions_list: List[Dict[str, str]]) -> None:
         """
@@ -198,11 +209,12 @@ class BattleDataUploader:
         actions_list : List[Dict[str, str]]
             A list of dictionaries containing the action information
         """
-        for action in actions_list:
-            action["Battle_ID"] = self.battle_id
-            action_db = actions(**action)
-            self.session.add(action_db)
-        self.session.commit()
+        with session_scope() as session:
+            for action in actions_list:
+                action["Battle_ID"] = self.battle_id
+                action_db = actions(**action)
+                session.add(action_db)
+            session.commit()
 
     def _upload_damages(self, damages_list: List[Dict[str, str]]) -> None:
         """
@@ -213,11 +225,12 @@ class BattleDataUploader:
         damages_list : List[Dict[str, str]]
             A list of dictionaries containing the damage information
         """
-        for damage in damages_list:
-            damage["Battle_ID"] = self.battle_id
-            damage_db = damages(**damage)
-            self.session.add(damage_db)
-        self.session.commit()
+        with session_scope() as session:
+            for damage in damages_list:
+                damage["Battle_ID"] = self.battle_id
+                damage_db = damages(**damage)
+                session.add(damage_db)
+            session.commit()
 
     def _upload_healing(self, healing_list: List[Dict[str, str]]) -> None:
         """
@@ -228,11 +241,12 @@ class BattleDataUploader:
         healing_list : List[Dict[str, str]]
             A list of dictionaries containing the healing information
         """
-        for heal in healing_list:
-            heal["Battle_ID"] = self.battle_id
-            heal_db = healing(**heal)
-            self.session.add(heal_db)
-        self.session.commit()
+        with session_scope() as session:
+            for heal in healing_list:
+                heal["Battle_ID"] = self.battle_id
+                heal_db = healing(**heal)
+                session.add(heal_db)
+            session.commit()
 
     def _upload_pivots(self, pivots_list: List[Dict[str, str]]) -> None:
         """
@@ -243,11 +257,12 @@ class BattleDataUploader:
         pivots_list : List[Dict[str, str]]
             A list of dictionaries containing the pivot information
         """
-        for pivot in pivots_list:
-            pivot["Battle_ID"] = self.battle_id
-            pivot_db = pivots(**pivot)
-            self.session.add(pivot_db)
-        self.session.commit()
+        with session_scope() as session:
+            for pivot in pivots_list:
+                pivot["Battle_ID"] = self.battle_id
+                pivot_db = pivots(**pivot)
+                session.add(pivot_db)
+            session.commit()
 
     def upload_battle(self, parser: BattleParser) -> None:
         """
@@ -258,11 +273,28 @@ class BattleDataUploader:
         parser : BattleParser
             An instance of the BattleParser class containing the battle data
         """
-        exists = self._check_if_battle_exists(parser.general_info)
-        if not exists:
-            self._upload_teams(parser.teams)
-            self._upload_general_info(parser.general_info)
-            self._upload_actions(parser.action_info)
-            self._upload_damages(parser.damages_info)
-            self._upload_healing(parser.heals_info)
-            self._upload_pivots(parser.pivot_info)
+        # first check to see if the error attribute is not None
+        if parser.error is None:
+            exists = self._check_if_battle_exists(parser.general_info)
+            if not exists:
+                self._upload_teams(parser.teams)
+                self._upload_general_info(parser.general_info)
+                self._upload_actions(parser.action_info)
+                self._upload_damages(parser.damages_info)
+                self._upload_healing(parser.heals_info)
+                self._upload_pivots(parser.pivot_info)
+        else:
+            with session_scope() as session:
+                # need to first test if the error already exists in the database
+                existing_error = (
+                    session.query(errors)
+                    .filter(errors.Battle_URL == parser.error["Battle_URL"])
+                    .first()
+                )
+                if not existing_error:
+                    error_db = errors(**parser.error)
+                    session.add(error_db)
+                    session.commit()
+            raise Exception(
+                "Something went wrong while parsing the battle.\nThis has been logged in the database. We apologize for the inconvenience."
+            )
