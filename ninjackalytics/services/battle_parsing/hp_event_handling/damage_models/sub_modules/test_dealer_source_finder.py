@@ -380,6 +380,39 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_ghost_type_curse_dmg(self):
+        turn = MockTurn(
+            1,
+            """
+            |turn|7
+            |
+            |t:|1699522673
+            |move|p1a: Dragapult|Curse|p2a: Ursaluna
+            |-start|p2a: Ursaluna|Curse|[of] p1a: Dragapult
+            |-damage|p1a: Dragapult|0 fnt
+            |faint|p1a: Dragapult
+            |move|p2a: Ursaluna|Earthquake|p1: Dragapult|[notarget]
+            |-fail|p2a: Ursaluna
+            |
+            |-damage|p2a: Ursaluna|22/100|[from] Curse
+            |upkeep
+            |
+            |t:|1699522682
+            |switch|p1a: Moltres|Moltres-Galar|100/100
+            """,
+        )
+
+        # (dealer, source)
+        expected_output = ((1, "Dragapult"), "Curse")
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event="|-damage|p1a: Dragapult|0 fnt",
+                turn=turn,
+                battle=MockBattle(),
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

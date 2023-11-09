@@ -28,12 +28,16 @@ class DealerSourceFinder:
             "anim": re.compile(
                 r"\|-anim\|(\|move\||)(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
             ),
+            "curse": re.compile(
+                r"\|move\|(?P<self_dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
+            ),
         }
         self.move_type_methods = {
             "normal": self._get_normal_dealer_and_source,
             "delayed": self._get_delayed_dealer_and_source,
             "spread": self._get_spread_dealer_and_source,
             "anim": self._get_animated_dealer_and_source,
+            "curse": self._get_ghost_curse_dealer_and_source,
         }
 
     def get_dealer_and_source(
@@ -56,6 +60,7 @@ class DealerSourceFinder:
         return self.move_type_methods[move_type](event, turn, battle)
 
     def _get_move_type(self, line: str) -> str:
+        print(f"\n\nLINE\n\n{line}\n\n")
         if line.startswith("|move|") and "[spread]" in line:
             return "spread"
         elif line.startswith("|move|"):
@@ -64,6 +69,9 @@ class DealerSourceFinder:
             return "anim"
         elif line.startswith("|-end|"):
             return "delayed"
+        # using a custom solution for a single move until find more examples to generalize from
+        elif "Curse" in line:
+            return "curse"
 
     def _get_normal_dealer_and_source(
         self, event: str, turn: Turn, battle: Battle = None
@@ -200,6 +208,47 @@ class DealerSourceFinder:
 
         if match:
             dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
+            source = match.group("source")
+            return dealer, source
+        raise ValueError(f"Could not find dealer for event: {event}")
+
+    def _get_ghost_curse_dealer_and_source(
+        self, event: str, turn: Turn, battle: Battle = None
+    ) -> Tuple[Tuple[int, str], str]:
+        """
+        Example Event:
+        --------------
+        |-damage|p1a: Dragapult|0 fnt
+
+        Example Turn:
+        --------------
+        |turn|7
+        |
+        |t:|1699522673
+        |move|p1a: Dragapult|Curse|p2a: Ursaluna
+        |-start|p2a: Ursaluna|Curse|[of] p1a: Dragapult
+        |-damage|p1a: Dragapult|0 fnt
+        """
+        pre_event_text = turn.text.split(event)[0]
+        matches = reversed(
+            list(re.finditer(self.move_patterns["curse"], pre_event_text))
+        )
+        receiver_raw = self._get_receiver_raw_from_event(event)
+        # ghost curse is tricky as the receiver may be the dealer depending on how the damage is line is formed
+        match = next(
+            (
+                m
+                for m in matches
+                if m.group("self_dealer")
+                == receiver_raw  # if event was inflicted by self
+                or m.group("receiver")
+                == receiver_raw  # if event was inflicted by another
+            ),
+            None,
+        )
+
+        if match:
+            dealer = self.battle_pokemon.get_pnum_and_name(match.group("self_dealer"))
             source = match.group("source")
             return dealer, source
         raise ValueError(f"Could not find dealer for event: {event}")
