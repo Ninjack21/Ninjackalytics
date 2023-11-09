@@ -60,7 +60,6 @@ class DealerSourceFinder:
         return self.move_type_methods[move_type](event, turn, battle)
 
     def _get_move_type(self, line: str) -> str:
-        print(f"\n\nLINE\n\n{line}\n\n")
         if line.startswith("|move|") and "[spread]" in line:
             return "spread"
         elif line.startswith("|move|"):
