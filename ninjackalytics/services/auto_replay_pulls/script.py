@@ -1,7 +1,7 @@
 import requests
 
 
-def get_replay_urls(battle_format: str):
+def get_replay_urls(battle_format: str, pages: int = 24):
     # Define the base URL for the replay search API
     base_url = "https://replay.pokemonshowdown.com/search.json"
 
@@ -18,7 +18,7 @@ def get_replay_urls(battle_format: str):
     ]
 
     # Repeat steps 3-5 for each page of results until there are no more results or until the max pages are hit
-    while len(replays) == 51 and params["page"] <= 24:
+    while len(replays) == 51 and params["page"] <= pages:
         params["page"] += 1
         response = requests.get(base_url, params=params)
         replays = response.json()

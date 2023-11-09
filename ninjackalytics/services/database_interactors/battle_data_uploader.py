@@ -1,6 +1,6 @@
 from typing import Dict, List
 from contextlib import contextmanager
-
+import re
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
 from ninjackalytics.database import SessionLocal
@@ -291,9 +291,10 @@ class BattleDataUploader:
                     .filter(errors.Battle_URL == parser.error["Battle_URL"])
                     .first()
                 )
-                error_db = errors(**parser.error)
-                session.add(error_db)
-                session.commit()
+                if not existing_error:
+                    error_db = errors(**parser.error)
+                    session.add(error_db)
+                    session.commit()
             raise Exception(
                 "Something went wrong while parsing the battle.\nThis has been logged in the database. We apologize for the inconvenience."
             )

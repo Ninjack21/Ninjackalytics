@@ -97,6 +97,7 @@ class errors(BattleDbBase):
     Date_Submitted = Column(DateTime, default=datetime.utcnow)
     Error_Message = Column(Text, nullable=True)
     Traceback = Column(Text, nullable=True)
+    Function = Column(Text, nullable=True)
 
     def __repr__(self):
         return "<Error: %r>" % self.Error_Message
