@@ -499,6 +499,44 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_metronome_curse(self):
+        """
+        Need to figure out why this failed but at first glance, it seems to be a weird combination of metronome
+        into Curse so that may be causing issues. May not be worth solving just because of how rare this probably
+        is.
+        """
+
+        turn = MockTurn(
+            1,
+            """
+            |turn|13
+            |
+            |t:|1698967337
+            |move|p2a: Milk Roll|Metronome|p2a: Milk Roll
+            |move|p2a: Milk Roll|Trick-or-Treat|p1a: Egg-Coat|[from]move: Metronome
+            |-start|p1a: Egg-Coat|typeadd|Ghost|[from] move: Trick-or-Treat
+            |move|p1a: Egg-Coat|Metronome|p1a: Egg-Coat
+            |move|p1a: Egg-Coat|Curse|p2a: Milk Roll|[from]move: Metronome
+            |-start|p2a: Milk Roll|Curse|[of] p1a: Egg-Coat
+            |-damage|p1a: Egg-Coat|2/100
+            |-activate|p2b: Egg|confusion
+            |move|p2b: Egg|Metronome|p2b: Egg
+            |move|p2b: Egg|Ice Shard|p1a: Egg-Coat|[from]move: Metronome
+            |-damage|p1a: Egg-Coat|0 fnt
+            |faint|p1a: Egg-Coat
+            """,
+        )
+        event = "|-damage|p1a: Egg-Coat|2/100"
+        # (dealer, source)
+        expected_output = ((1, "Egg-Coat"), "Curse")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

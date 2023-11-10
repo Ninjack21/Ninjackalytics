@@ -28,8 +28,9 @@ class DealerSourceFinder:
             "anim": re.compile(
                 r"\|-anim\|(\|move\||)(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
             ),
+            # this regex obtained from copilot... shewwww lol
             "curse": re.compile(
-                r"\|move\|(?P<self_dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
+                r"\|move\|(?P<self_dealer>[^|]*)\|(?P<source>[^|]*)\|(?P<receiver>[^|\n]*)(\|\[from\](?P<from>[^|\n]*))?(?:\|\[of\](?P<of>[^|\n]*))?"
             ),
         }
         self.move_type_methods = {
