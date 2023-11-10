@@ -86,7 +86,6 @@ class DealerSourceFinder:
         |-damage|p1a: Cuss-Tran|67/100
         """
         pre_event_text = self._get_pre_event_text(event=event, turn=turn)
-        print(f"\n\npre_event_text: {pre_event_text}\n")
         matches = reversed(
             list(re.finditer(self.move_patterns["normal"], pre_event_text))
         )
@@ -94,7 +93,6 @@ class DealerSourceFinder:
 
         match = self._get_match(matches, receiver_raw)
         if match:
-            print("match found!")
             dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
             source = match.group("source")
             return dealer, source
