@@ -453,6 +453,52 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_event_text_duplicated_within_same_turn(self):
+        # https://replay.pokemonshowdown.com/gen8doublesou-1978226780
+        """
+        due to Mimikyu's disguise the line: |-damage|p2a: Mimikyu|91/100 shows up in two places! This causes the
+        pre-event test to be incorrect as it is using the first instance, which in this case, is the one furthest
+        away and at the beginning of the battle.
+        """
+        turn = MockTurn(
+            1,
+            """
+            |turn|9
+            |
+            |t:|1698514849
+            |move|p2a: Mimikyu|Play Rough|p1a: Incineroar
+            |-damage|p1a: Incineroar|1/100
+            |-damage|p2a: Mimikyu|91/100|[from] item: Life Orb
+            |move|p2b: Alcremie|Decorate|p2a: Mimikyu
+            |-boost|p2a: Mimikyu|atk|2
+            |-boost|p2a: Mimikyu|spa|2
+            |move|p1a: Incineroar|Knock Off|p2a: Mimikyu
+            |-activate|p2a: Mimikyu|ability: Disguise
+            |-damage|p2a: Mimikyu|91/100
+            |-enditem|p2a: Mimikyu|Life Orb|[from] move: Knock Off|[of] p1a: Incineroar
+            |detailschange|p2a: Mimikyu|Mimikyu-Busted, F
+            |-damage|p2a: Mimikyu|78/100|[from] pokemon: Mimikyu-Busted
+            |move|p1b: Perrserker|Iron Head|p2a: Mimikyu
+            |-supereffective|p2a: Mimikyu
+            |-damage|p2a: Mimikyu|0 fnt
+            |faint|p2a: Mimikyu
+            |
+            |-weather|none
+            |upkeep
+            """,
+        )
+
+        # (dealer, source)
+        expected_output = ((1, "Incineroar"), "Knock Off")
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event="|-damage|p2a: Mimikyu|91/100",
+                turn=turn,
+                battle=MockBattle(),
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

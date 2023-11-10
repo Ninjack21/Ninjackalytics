@@ -85,7 +85,8 @@ class DealerSourceFinder:
         |move|p2a: Blissey|Seismic Toss|p1a: Cuss-Tran
         |-damage|p1a: Cuss-Tran|67/100
         """
-        pre_event_text = turn.text.split(event)[0]
+        pre_event_text = self._get_pre_event_text(event=event, turn=turn)
+        print(f"\n\npre_event_text: {pre_event_text}\n")
         matches = reversed(
             list(re.finditer(self.move_patterns["normal"], pre_event_text))
         )
@@ -93,6 +94,7 @@ class DealerSourceFinder:
 
         match = self._get_match(matches, receiver_raw)
         if match:
+            print("match found!")
             dealer = self.battle_pokemon.get_pnum_and_name(match.group("dealer"))
             source = match.group("source")
             return dealer, source
@@ -166,7 +168,7 @@ class DealerSourceFinder:
         |-anim|p1b: Dragapult|Dragon Darts|p2b: Incineroar
         |-damage|p2b: Incineroar|31/100
         """
-        pre_event_text = turn.text.split(event)[0]
+        pre_event_text = self._get_pre_event_text(event=event, turn=turn)
         matches = reversed(
             list(re.finditer(self.move_patterns["anim"], pre_event_text))
         )
@@ -198,7 +200,7 @@ class DealerSourceFinder:
         *we assume that by this point the move must be a spread move and that move must be the source of
         the current damage event*
         """
-        pre_event_text = turn.text.split(event)[0]
+        pre_event_text = self._get_pre_event_text(event=event, turn=turn)
         matches = reversed(
             list(re.finditer(self.move_patterns["spread"], pre_event_text))
         )
@@ -228,7 +230,7 @@ class DealerSourceFinder:
         |-start|p2a: Ursaluna|Curse|[of] p1a: Dragapult
         |-damage|p1a: Dragapult|0 fnt
         """
-        pre_event_text = turn.text.split(event)[0]
+        pre_event_text = self._get_pre_event_text(event=event, turn=turn)
         matches = reversed(
             list(re.finditer(self.move_patterns["curse"], pre_event_text))
         )
@@ -260,3 +262,38 @@ class DealerSourceFinder:
 
     def _get_receiver_raw_from_event(self, event: str) -> str:
         return event.split("|")[2]
+
+    def _get_pre_event_text(self, event: str, turn: Turn) -> str:
+        """
+        because it is possible for the same turn to see the same event string multiple times we need to find a way
+        to try to ensure the pre_event_text shows the correct set of information. The example that revealed this
+        is below:
+
+        |turn|9
+        |...
+        |-damage|p2a: Mimikyu|91/100|[from] item: Life Orb
+        ...
+        |move|p1a: Incineroar|Knock Off|p2a: Mimikyu
+        |-activate|p2a: Mimikyu|ability: Disguise
+        |-damage|p2a: Mimikyu|91/100
+        ...
+
+        Parameters
+        ----------
+        event : str
+            the event string we want to try to exactly match within pre_event_text
+        turn : Turn
+            the turn string we are going to look through for the exact event
+
+        Returns
+        -------
+        pre_event_text : str
+            the text that came before the event string was found in the turn text
+        """
+
+        pre_event_text = ""
+        for line in turn.text.splitlines():
+            if line == event:
+                break
+            pre_event_text += line + "\n"
+        return pre_event_text
