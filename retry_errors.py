@@ -9,6 +9,7 @@ from ninjackalytics.database import SessionLocal
 from ninjackalytics.database.models.battles import errors
 from tqdm import tqdm
 import traceback
+import re
 
 
 def retry_errors():
