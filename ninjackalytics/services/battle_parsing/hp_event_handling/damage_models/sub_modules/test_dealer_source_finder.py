@@ -413,6 +413,46 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_fine_tune_ghost_type_curse_logic(self):
+        # https://replay.pokemonshowdown.com/gen9ou-1986255297.log
+        # we need to be more specific because abilities like Cursed Body exist, which currently trigger the
+        # ghost type curse logic, which we do not want
+
+        turn = MockTurn(
+            1,
+            """
+            |turn|5
+            |
+            |t:|1699463859
+            |move|p2a: Gliscor|Scale Shot|p1a: Dragapult
+            |-supereffective|p1a: Dragapult
+            |-damage|p1a: Dragapult|29/100
+            |-start|p2a: Gliscor|Disable|Scale Shot|[from] ability: Cursed Body|[of] p1a: Dragapult
+            |-supereffective|p1a: Dragapult
+            |-damage|p1a: Dragapult|0 fnt
+            |faint|p1a: Dragapult
+            |-hitcount|p1: Dragapult|2
+            |-unboost|p2a: Gliscor|def|1
+            |-boost|p2a: Gliscor|spe|1
+            |
+            |upkeep
+            |
+            |t:|1699463862
+            |switch|p1a: Enamorus|Enamorus, F|100/100
+            """,
+        )
+
+        # (dealer, source)
+        expected_output = ((2, "Gliscor"), "Scale Shot")
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event="|-damage|p1a: Dragapult|0 fnt",
+                turn=turn,
+                battle=MockBattle(),
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

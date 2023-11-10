@@ -62,15 +62,15 @@ class DealerSourceFinder:
     def _get_move_type(self, line: str) -> str:
         if line.startswith("|move|") and "[spread]" in line:
             return "spread"
+        # using a custom solution for a single move until find more examples to generalize from
+        elif line.startswith("|move|") and line.split("|")[3] == "Curse":
+            return "curse"
         elif line.startswith("|move|"):
             return "normal"
         elif line.startswith("|-anim|"):
             return "anim"
         elif line.startswith("|-end|"):
             return "delayed"
-        # using a custom solution for a single move until find more examples to generalize from
-        elif "Curse" in line:
-            return "curse"
 
     def _get_normal_dealer_and_source(
         self, event: str, turn: Turn, battle: Battle = None
