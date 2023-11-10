@@ -499,6 +499,40 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+        # error retriggered on https://replay.pokemonshowdown.com/gen8ou-1968758153
+
+        turn = MockTurn(
+            1,
+            """
+            |turn|46
+            |inactive|Takenamecat has 240 seconds left.
+            |
+            |t:|1697462946
+            |move|p1a: Mimikyu|Play Rough|p2a: Drapion
+            |-damage|p2a: Drapion|50/100
+            |-damage|p1a: Mimikyu|56/100|[from] item: Life Orb
+            |move|p2a: Drapion|Knock Off|p1a: Mimikyu
+            |-activate|p1a: Mimikyu|ability: Disguise
+            |-damage|p1a: Mimikyu|56/100
+            |-enditem|p1a: Mimikyu|Life Orb|[from] move: Knock Off|[of] p2a: Drapion
+            |detailschange|p1a: Mimikyu|Mimikyu-Busted, F
+            |-damage|p1a: Mimikyu|44/100|[from] pokemon: Mimikyu-Busted
+            |
+            |-heal|p2a: Drapion|56/100|[from] item: Black Sludge
+            |upkeep
+            """,
+        )
+
+        # (dealer, source)
+        expected_output = ((2, "Drapion"), "Knock Off")
+        event = "|-damage|p1a: Mimikyu|56/100"
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
     def test_metronome_curse(self):
         """
         Need to figure out why this failed but at first glance, it seems to be a weird combination of metronome
