@@ -22,14 +22,12 @@ def retry_errors():
             battle_parser = BattleParser(battle, battle_pokemon)
             battle_parser.analyze_battle()
             uploader.upload_battle(battle_parser)
-            print(f"battle {url} was uploaded successfully this time!")
             # Delete row from error database if upload was successful
             session = SessionLocal()
             error = session.query(errors).filter_by(Battle_URL=url).first()
             session.delete(error)
             session.commit()
             session.close()
-            print(f"battle {url} was deleted from error database successfully!")
             errors_removed += 1
         except Exception as e:
             continue
