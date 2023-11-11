@@ -260,6 +260,47 @@ class TestPokemonFinder(unittest.TestCase):
         found_names = [p.real_name for p in found]
         self.assertTrue(desired_name in found_names)
 
+        # test case where zoroark has nickname
+        log = """
+            |gen|9
+            |tier|[Gen 9] OU
+            |rated|
+            |rule|Sleep Clause Mod: Limit one foe put to sleep
+            |rule|Species Clause: Limit one of each Pokémon
+            |rule|OHKO Clause: OHKO moves are banned
+            |rule|Evasion Items Clause: Evasion items are banned
+            |rule|Evasion Moves Clause: Evasion moves are banned
+            |rule|Endless Battle Clause: Forcing endless battles is banned
+            |rule|HP Percentage Mod: HP is shown in percentages
+            |clearpoke
+            |poke|p1|Sneasler, F|
+            |poke|p1|Zoroark-Hisui, M|
+            |poke|p1|Gliscor, M|
+            |poke|p1|Talonflame, F|
+            |poke|p1|Grimmsnarl, M|
+            |poke|p1|Greninja-*, M|
+            |poke|p2|Slowking-Galar, F|
+            |poke|p2|Hatterene, F|
+            |poke|p2|Corviknight, M|
+            |poke|p2|Manaphy|
+            |poke|p2|Glimmora, M|
+            |poke|p2|Landorus-Therian, M|
+            |teampreview
+            |inactive|Battle timer is ON: inactive players will automatically lose when time's up. (requested by Yellow rat Hunter)
+            |
+            |t:|1699719912
+            |start
+            |
+            |replace|p1a: ScizorHands|Zoroark-Hisui, M
+            |-end|p1a: ScizorHands|Illusion
+            """
+        nickname = "ScizorHands"
+        finder = PokemonFinder(log)
+        found = finder.get_pokemon()
+        found_names = [p.real_name for p in found]
+        self.assertTrue(nickname not in found_names)
+        self.assertTrue(nickname in [p.nickname for p in found])
+
 
 if __name__ == "__main__":
     unittest.main()

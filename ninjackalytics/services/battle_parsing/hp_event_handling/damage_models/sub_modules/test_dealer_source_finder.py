@@ -819,6 +819,38 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_ensure_return_dealer_and_source(self):
+        # https://replay.pokemonshowdown.com/gen9ou-1988323885
+        turn = MockTurn(
+            2,
+            """
+            |turn|2
+            |
+            |t:|1699708613
+            |move|p2a: Skeledirge|Dark Pulse|p1a: Zoroark
+            |-supereffective|p1a: Zoroark
+            |-damage|p1a: Zoroark|0 fnt
+            |faint|p1a: Zoroark
+            |-damage|p2a: Skeledirge|81/100|[from] item: Life Orb
+            |
+            |upkeep
+            |
+            |t:|1699708618
+            |switch|p1a: Toxapex|Toxapex, M|100/100
+            """,
+        )
+        event = "|-damage|p1a: Zoroark|0 fnt"
+
+        # (dealer, source)
+        expected_output = ((2, "Skeledirge"), "Dark Pulse")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

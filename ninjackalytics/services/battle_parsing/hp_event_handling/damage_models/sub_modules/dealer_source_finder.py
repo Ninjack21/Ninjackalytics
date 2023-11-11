@@ -361,9 +361,28 @@ class DealerSourceFinder:
                 # now we need to find the dealer and source of the damage to the pretend receiver
                 # we will use the same method as for any other damage event but provide the pretend dmg
                 # event instead
+                print(f"\npretend_receiver = {pretend_receiver_event}\n")
                 return self.get_dealer_and_source(
                     event=pretend_receiver_event, turn=turn, battle=battle
                 )
+
+        # if no end illusion, would continue as if normal
+        else:
+            # look for the most recent move type indicator in the turn lines right before the event
+            previous_turn_lines = reversed(list(turn.text.split(event)[0].splitlines()))
+            move_type = next(
+                (
+                    move_type
+                    for line in previous_turn_lines
+                    if (move_type := self._get_move_type(line)) is not None
+                ),
+                None,
+            )
+
+            if move_type not in self.move_type_methods:
+                raise ValueError(f"Unable to determine move type for event: {event}")
+
+            return self.move_type_methods[move_type](event, turn, battle)
 
     # if no end illusion was found then we don't return anything, thus letting the code continue running as normal
     # whereas if the end illusion indicator shows up the code will cause a return using the pretend_receiver_event

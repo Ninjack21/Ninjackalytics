@@ -31,6 +31,7 @@ class PokemonFinder:
         for mon in preview_mons:
             if "Zoroark" in mon["real_name"]:
                 mon["real_name"] = "Zoroark"
+                self._deal_with_zoroark(mon)
         entrance_mons = self._extract_entrances(self.log)
         pokemon_parameters = self._create_pokemon_parameters(
             preview_mons + entrance_mons
@@ -191,3 +192,38 @@ class PokemonFinder:
                 unique_mons.append(mon)
 
         return unique_mons
+
+    def _deal_with_zoroark(self, mon: Pokemon) -> list:
+        """
+        Handle Zoroark.
+
+        Parameters
+        ----------
+        mon : Pokemon
+            the pokemon object for zoroark
+
+        Returns
+        -------
+        list
+            A list of Pokemon objects with Zoroark's forms removed.
+
+        Example
+        -------
+        |replace|p1a: ScizorHands|Zoroark-Hisui, M
+        |-end|p1a: ScizorHands|Illusion
+        """
+        zoroark = mon
+
+        # now need to see if a nickname existed for it. look for the nickname in the unique
+        # zoroark entrances
+        pattern = (
+            r"\|replace\|p[1-4][a-d]: (?P<nickname>[^\|]*)\|(?P<real_name>[^\|]*)\n"
+        )
+        matches = re.findall(pattern, self.log)
+        # use the first match since this will show up the earliest. I'm not sure if it always follows the above pattern
+        # or not
+        if len(matches) > 0:
+            match1 = matches[0]
+            nickname = match1[0]
+            # update mon object nickname
+            zoroark["nickname"] = nickname
