@@ -71,7 +71,8 @@ class DealerSourceFinder:
             return "normal"
         elif line.startswith("|-anim|"):
             return "anim"
-        elif line.startswith("|-end|"):
+        # need to verify move is in the 3rd group, otherwise probably -end refers to substitute ending
+        elif line.startswith("|-end|") and "move" in line.split("|")[3]:
             return "delayed"
 
     def _get_normal_dealer_and_source(

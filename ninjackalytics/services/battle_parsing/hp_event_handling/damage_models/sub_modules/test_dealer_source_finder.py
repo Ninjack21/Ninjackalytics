@@ -619,6 +619,50 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_end_substitute_doesnt_trigger_delayed_move_type(self):
+        # https://replay.pokemonshowdown.com/gen8doublesou-1970583028
+
+        turn = MockTurn(
+            1,
+            """
+            |turn|19
+            |inactive|edgypunishment has 120 seconds left.
+            |
+            |t:|1697650709
+            |move|p1a: Bisharp|Sucker Punch|p2a: Genesect
+            |-damage|p2a: Genesect|0 fnt
+            |faint|p2a: Genesect
+            |move|p1b: Drapion|Earthquake|p2b: Diancie|[spread] p1a,p2b
+            |-supereffective|p2b: Diancie
+            |-end|p2b: Diancie|Substitute
+            |-supereffective|p1a: Bisharp
+            |-damage|p1a: Bisharp|53/100
+            |move|p2b: Diancie|Draining Kiss|p1b: Drapion
+            |-damage|p1b: Drapion|51/100
+            |-heal|p2b: Diancie|90/100 tox|[from] drain|[of] p1b: Drapion
+            |-enditem|p1b: Drapion|Air Balloon
+            |
+            |-heal|p2b: Diancie|96/100 tox|[from] item: Leftovers
+            |-damage|p2b: Diancie|66/100 tox|[from] psn
+            |upkeep
+            |
+            |t:|1697650720
+            |switch|p2a: Gastrodon|Gastrodon, F|100/100
+            """,
+        )
+
+        event = "|-damage|p1a: Bisharp|53/100"
+
+        # (dealer, source)
+        expected_output = ((1, "Drapion"), "Earthquake")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
