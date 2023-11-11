@@ -5,7 +5,6 @@ from . import PokemonFinder, Pokemon
 
 class TestPokemonFinder(unittest.TestCase):
     def setUp(self):
-        self.log = "example log"
         self.preview_log = """
         |gen|9
         |poke|p1|Baxcalibur, F|
@@ -56,10 +55,6 @@ class TestPokemonFinder(unittest.TestCase):
         |turn|1
         """
 
-    def test_init(self):
-        pf = PokemonFinder(self.log)
-        self.assertEqual(pf.log, self.log)
-
     def test_extract_previews(self):
         pf = PokemonFinder(self.preview_log)
         expected_output = [
@@ -91,7 +86,7 @@ class TestPokemonFinder(unittest.TestCase):
         self.assertEqual(pf._extract_entrances(self.entrance_log), expected_output)
 
     def test_create_pokemon_parameters(self):
-        pf = PokemonFinder(self.log)
+        pf = PokemonFinder(self.full_log)
         pokemon_found = [
             {"player_num": "1", "real_name": "charizard"},
             {"player_num": "2", "nickname": "pikachu", "real_name": "PIKACHU"},
@@ -103,7 +98,7 @@ class TestPokemonFinder(unittest.TestCase):
         self.assertEqual(pf._create_pokemon_parameters(pokemon_found), expected_output)
 
     def test_create_pokemon_objects(self):
-        pf = PokemonFinder(self.log)
+        pf = PokemonFinder(self.full_log)
         pokemon_params = [
             {"player_num": "1", "nickname": "charizard", "real_name": "charizard"},
             {"player_num": "2", "nickname": "pikachu", "real_name": "PIKACHU"},
@@ -127,7 +122,7 @@ class TestPokemonFinder(unittest.TestCase):
         self.assertEqual(pf._create_pokemon_objects(pokemon_params), expected_output)
 
     def test_remove_duplicates(self):
-        pf = PokemonFinder(self.log)
+        pf = PokemonFinder(self.full_log)
         mons = [
             Pokemon(
                 real_name="charizard",
@@ -300,6 +295,115 @@ class TestPokemonFinder(unittest.TestCase):
         found_names = [p.real_name for p in found]
         self.assertTrue(nickname not in found_names)
         self.assertTrue(nickname in [p.nickname for p in found])
+
+    def test_handling_of_showteam_to_ignore_it(self):
+        # https://replay.pokemonshowdown.com/gen9vgc2023regulationd-1977737796
+        log = """
+        |gen|9
+        |tier|[Gen 9] VGC 2023 Regulation D
+        |rule|Species Clause: Limit one of each Pokémon
+        |rule|Item Clause: Limit one of each item
+        |clearpoke
+        |poke|p1|Amoonguss, L50, F|
+        |poke|p1|Indeedee-F, L50, F|
+        |poke|p1|Armarouge, L50, M|
+        |poke|p1|Ursaluna, L50, F|
+        |poke|p1|Klefki, L50, F|
+        |poke|p1|Decidueye, L50, M|
+        |poke|p2|Iron Jugulis, L50|
+        |poke|p2|Toxtricity, L50, F|
+        |poke|p2|Chi-Yu, L50|
+        |poke|p2|Meowscarada, L50, M|
+        |poke|p2|Dondozo, L50, F|
+        |poke|p2|Tatsugiri, L50, F|
+        |teampreview|4
+        passint0theiris has agreed to open team sheets.
+        Craisans has agreed to open team sheets.
+        |showteam|p1|Amoonguss||AguavBerry|Regenerator|ClearSmog,Spore,RagePowder,StompingTantrum|||F|||50|,,,,,Fairy]Indeedee-F||PsychicSeed|PsychicSurge|TrickRoom,FollowMe,DazzlingGleam,Psychic|||F|||50|,,,,,Fairy]Armarouge||LifeOrb|FlashFire|AuraSphere,TrickRoom,HeatWave,ExpandingForce|||M|||50|,,,,,Fire]Ursaluna||FlameOrb|Guts|Protect,HeadlongRush,Facade,RockSlide|||F|||50|,,,,,Ghost]Klefki||LightClay|Prankster|TrickRoom,Reflect,LightScreen,DazzlingGleam|||F|||50|,,,,,Water]Decidueye||FocusSash|Overgrow|LeafBlade,BraveBird,Protect,KnockOff|||M|||50|,,,,,Flying
+        |showteam|p2|Iron Jugulis||BoosterEnergy|QuarkDrive|Tailwind,AirSlash,EarthPower,Taunt||||||50|,,,,,Ghost]Toxtricity||ThroatSpray|PunkRock|Boomburst,Protect,TeraBlast,Taunt|||F|||50|,,,,,Dark]Chi-Yu||ChoiceSpecs|BeadsofRuin|HeatWave,DarkPulse,Psychic,Snarl||||||50|,,,,,Ghost]Meowscarada||FocusSash|Protean|FlowerTrick,Uturn,Taunt,PlayRough|||M|||50|,,,,,Fairy]Dondozo||Leftovers|Unaware|OrderUp,WaveCrash,Protect,TeraBlast|||F|||50|,,,,,Grass]Tatsugiri||ToxicOrb|Commander|DracoMeteor,Endure,Protect,MuddyWater|||F|||50|,,,,,Grass
+        |c|☆Craisans|glhf!
+        |
+        |t:|1698443913
+        |start
+        |turn|1
+        |
+        |t:|1698443972
+        |-terastallize|p2a: Rockstar Made|Dark
+        |move|p1a: Andromeda|Follow Me|p1a: Andromeda
+        |-singleturn|p1a: Andromeda|move: Follow Me
+        |move|p2b: What the Grouper?|Dark Pulse|p1a: Andromeda
+        |-supereffective|p1a: Andromeda
+        |-damage|p1a: Andromeda|0 fnt
+        |faint|p1a: Andromeda
+        |move|p2a: Rockstar Made|Tera Blast|p1b: Orion|[anim] Tera Blast Dark
+        |-supereffective|p1b: Orion
+        |-damage|p1b: Orion|0 fnt
+        |faint|p1b: Orion
+        |
+        |upkeep
+        |
+        |t:|1698443986
+        |switch|p1a: The Big Dipper|Amoonguss, L50, F|100/100
+        |switch|p1b: Ursa Major|Ursaluna, L50, F|100/100
+        """
+        finder = PokemonFinder(log)
+        found = finder.get_pokemon()
+        found_names = [p.real_name for p in found]
+        # now confirm that for Amoonguss the nickname The Big Dipper is found
+        amoonguss = [p for p in found if "Amoonguss" in p.real_name][0]
+        self.assertEqual(amoonguss.nickname, "The Big Dipper")
+
+    def test_remove_showteam(self):
+        log = """
+        |gen|9
+        |tier|[Gen 9] VGC 2023 Regulation D
+        |rule|Species Clause: Limit one of each Pokémon
+        |rule|Item Clause: Limit one of each item
+        |clearpoke
+        |poke|p1|Amoonguss, L50, F|
+        |poke|p1|Indeedee-F, L50, F|
+        |poke|p1|Armarouge, L50, M|
+        |poke|p1|Ursaluna, L50, F|
+        |poke|p1|Klefki, L50, F|
+        |poke|p1|Decidueye, L50, M|
+        |poke|p2|Iron Jugulis, L50|
+        |poke|p2|Toxtricity, L50, F|
+        |poke|p2|Chi-Yu, L50|
+        |poke|p2|Meowscarada, L50, M|
+        |poke|p2|Dondozo, L50, F|
+        |poke|p2|Tatsugiri, L50, F|
+        |teampreview|4
+        passint0theiris has agreed to open team sheets.
+        Craisans has agreed to open team sheets.
+        |showteam|p1|Amoonguss||AguavBerry|Regenerator|ClearSmog,Spore,RagePowder,StompingTantrum|||F|||50|,,,,,Fairy]Indeedee-F||PsychicSeed|PsychicSurge|TrickRoom,FollowMe,DazzlingGleam,Psychic|||F|||50|,,,,,Fairy]Armarouge||LifeOrb|FlashFire|AuraSphere,TrickRoom,HeatWave,ExpandingForce|||M|||50|,,,,,Fire]Ursaluna||FlameOrb|Guts|Protect,HeadlongRush,Facade,RockSlide|||F|||50|,,,,,Ghost]Klefki||LightClay|Prankster|TrickRoom,Reflect,LightScreen,DazzlingGleam|||F|||50|,,,,,Water]Decidueye||FocusSash|Overgrow|LeafBlade,BraveBird,Protect,KnockOff|||M|||50|,,,,,Flying
+        |showteam|p2|Iron Jugulis||BoosterEnergy|QuarkDrive|Tailwind,AirSlash,EarthPower,Taunt||||||50|,,,,,Ghost]Toxtricity||ThroatSpray|PunkRock|Boomburst,Protect,TeraBlast,Taunt|||F|||50|,,,,,Dark]Chi-Yu||ChoiceSpecs|BeadsofRuin|HeatWave,DarkPulse,Psychic,Snarl||||||50|,,,,,Ghost]Meowscarada||FocusSash|Protean|FlowerTrick,Uturn,Taunt,PlayRough|||M|||50|,,,,,Fairy]Dondozo||Leftovers|Unaware|OrderUp,WaveCrash,Protect,TeraBlast|||F|||50|,,,,,Grass]Tatsugiri||ToxicOrb|Commander|DracoMeteor,Endure,Protect,MuddyWater|||F|||50|,,,,,Grass
+        |c|☆Craisans|glhf!
+        |
+        |t:|1698443913
+        |start
+        |turn|1
+        |
+        |t:|1698443972
+        |-terastallize|p2a: Rockstar Made|Dark
+        |move|p1a: Andromeda|Follow Me|p1a: Andromeda
+        |-singleturn|p1a: Andromeda|move: Follow Me
+        |move|p2b: What the Grouper?|Dark Pulse|p1a: Andromeda
+        |-supereffective|p1a: Andromeda
+        |-damage|p1a: Andromeda|0 fnt
+        |faint|p1a: Andromeda
+        |move|p2a: Rockstar Made|Tera Blast|p1b: Orion|[anim] Tera Blast Dark
+        |-supereffective|p1b: Orion
+        |-damage|p1b: Orion|0 fnt
+        |faint|p1b: Orion
+        |
+        |upkeep
+        |
+        |t:|1698443986
+        |switch|p1a: The Big Dipper|Amoonguss, L50, F|100/100
+        |switch|p1b: Ursa Major|Ursaluna, L50, F|100/100
+        """
+        new_log = PokemonFinder(log)._remove_showteam(log)
+        self.assertTrue("showteam" not in new_log)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ class PokemonFinder:
         log : str
             The battle log string to extract Pokemon data from.
         """
-        self.log = log
+        self.log = self._remove_showteam(log)
 
     def get_pokemon(self) -> list:
         """
@@ -227,3 +227,23 @@ class PokemonFinder:
             nickname = match1[0]
             # update mon object nickname
             zoroark["nickname"] = nickname
+
+    def _remove_showteam(self, log: str) -> str:
+        """
+        Remove the showteam portion of the log.
+
+        Parameters
+        ----------
+        log : str
+            The battle log string to extract Pokemon data from.
+
+        Returns
+        -------
+        str
+            The battle log string with the showteam portion removed.
+        """
+        preview = log.split("|teampreview")[0]
+        battle = log.split("|start")[1]
+        battle = "|start" + battle
+        new_log = preview + "\n" + battle
+        return new_log
