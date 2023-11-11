@@ -361,7 +361,6 @@ class DealerSourceFinder:
                 # now we need to find the dealer and source of the damage to the pretend receiver
                 # we will use the same method as for any other damage event but provide the pretend dmg
                 # event instead
-                print(f"\npretend_receiver = {pretend_receiver_event}\n")
                 return self.get_dealer_and_source(
                     event=pretend_receiver_event, turn=turn, battle=battle
                 )
