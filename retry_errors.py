@@ -40,11 +40,22 @@ def retry_errors():
             error = session.query(errors).filter_by(Battle_URL=url).first()
 
             if not error.Error_Message == str(e):
-                # if the error is different, update the error in the database
-                error.Error_Message = str(e)
+                # if the error is different, delete the error and re-run everything to update it
+                session.delete(error)
                 session.commit()
                 session.close()
-                errors_changed += 1
+                # now re-run everything
+                try:
+                    battle = Battle(url)
+                    battle_pokemon = BattlePokemon(battle)
+                    battle_parser = BattleParser(battle, battle_pokemon)
+                    battle_parser.analyze_battle()
+                    # will fail here, but updates db with new error
+                    uploader.upload_battle(battle_parser)
+                    errors_changed += 1
+                except:
+                    # continue
+                    pass
 
     print(f"Errors removed: {errors_removed}")
     print(f"Errors changed: {errors_changed}")

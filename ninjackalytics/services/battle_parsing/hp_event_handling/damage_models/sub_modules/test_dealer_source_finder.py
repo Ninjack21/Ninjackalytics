@@ -571,6 +571,54 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_get_spread_dealer_and_source_dealer_name_fine_tuning(self):
+        # https://replay.pokemonshowdown.com/gen8doublesou-1985108364
+
+        turn = MockTurn(
+            1,
+            """
+        |turn|4
+        |
+        |t:|1699332082
+        |switch|p1b: Teacup|Polteageist|100/100
+        |move|p1a: Aqua-Punch|Metronome|p1a: Aqua-Punch
+        |move|p1a: Aqua-Punch|Air Cutter|p2a: Wade|[from]move: Metronome|[spread] p2a,p2b
+        |-damage|p2a: Wade|34/100
+        |-damage|p2b: Leaps|49/100
+        |move|p2a: Wade|Metronome|p2a: Wade
+        |move|p2a: Wade|Smokescreen|p1a: Aqua-Punch|[from]move: Metronome
+        |-unboost|p1a: Aqua-Punch|accuracy|1
+        |-activate|p2b: Leaps|confusion
+        |move|p2b: Leaps|Metronome|p2b: Leaps
+        |move|p2b: Leaps|Psycho Cut|p1a: Aqua-Punch|[from]move: Metronome
+        |-supereffective|p1a: Aqua-Punch
+        |-damage|p1a: Aqua-Punch|20/100
+        |
+        |-heal|p1a: Aqua-Punch|27/100|[from] Aqua Ring
+        |upkeep
+        """,
+        )
+
+        # (dealer, source)
+        expected_output = ((1, "Aqua-Punch"), "Air Cutter")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event="|-damage|p2a: Wade|34/100",
+                turn=turn,
+                battle=MockBattle(),
+            ),
+            expected_output,
+        )
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event="|-damage|p2b: Leaps|49/100",
+                turn=turn,
+                battle=MockBattle(),
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

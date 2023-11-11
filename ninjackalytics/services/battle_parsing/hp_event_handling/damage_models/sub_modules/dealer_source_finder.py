@@ -22,8 +22,9 @@ class DealerSourceFinder:
             "delayed": re.compile(
                 r"\|move\|(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)\n\|-start"
             ),
+            # well now I'm starting to build these crazy regexes lol...
             "spread": re.compile(
-                r"\|move\|(?P<dealer>[p][1-2][a-d]: .*)\|(?P<source>.*)\|(?P<primary_receiver>.*)\|\[spread\]"
+                r"\|move\|(?P<dealer>[^|]*)\|(?P<source>[^|]*)\|(?P<primary_receiver>[^|\n]*)(\|\[from\](?P<from>[^|\n]*))?(?:\|\[of\](?P<of>[^|\n]*))?(?P<end>[^\n]*)"
             ),
             "anim": re.compile(
                 r"\|-anim\|(\|move\||)(?P<dealer>.*)\|(?P<source>.*)\|(?P<receiver>.*)"
