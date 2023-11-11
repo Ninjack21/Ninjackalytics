@@ -663,6 +663,58 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test_handle_zoroark_end_illusion_case(self):
+        # https://replay.pokemonshowdown.com/gen9doublesou-1986368662
+        """
+        The issue we are running into is when |-end|p1a: Zoroark|Illusion shows up this means that the receiver
+        of the original damage will not be the same as the one who took damage - thus the code doesn't think any
+        of the identified events belong to this case. This will probably be a hyper specific, goofy fix since
+        this mon alone does these shenanigans.
+        """
+        turn = MockTurn(
+            1,
+            """
+            |turn|6
+            |
+            |t:|1699473213
+            |move|p1b: Braviary|Bitter Malice|p2b: Wendell
+            |-damage|p2b: Wendell|9/100 tox
+            |-unboost|p2b: Wendell|atk|1
+            |move|p1a: Braviary|Iron Head|p2a: Nikki
+            |-damage|p2a: Nikki|41/100
+            |move|p2b: Wendell|Dual Wingbeat|p1b: Braviary
+            |-damage|p1b: Braviary|87/100
+            |replace|p1b: Zoroark|Zoroark-Hisui, M, shiny
+            |-end|p1b: Zoroark|Illusion
+            |-damage|p1b: Zoroark|71/100
+            |-hitcount|p1b: Zoroark|2
+            |move|p2a: Nikki|Coil|p2a: Nikki
+            |-boost|p2a: Nikki|atk|1
+            |-boost|p2a: Nikki|def|1
+            |-boost|p2a: Nikki|accuracy|1
+            |
+            |-weather|Sandstorm|[upkeep]
+            |-damage|p1b: Zoroark|65/100|[from] Sandstorm
+            |-damage|p1a: Braviary|51/100 tox|[from] Sandstorm
+            |-heal|p1b: Zoroark|71/100|[from] item: Leftovers
+            |-damage|p1a: Braviary|33/100 tox|[from] psn
+            |-heal|p2b: Wendell|22/100 tox|[from] ability: Poison Heal
+            |upkeep
+            """,
+        )
+
+        event = "|-damage|p1b: Zoroark|71/100"
+
+        # (dealer, source)
+        expected_output = ((2, "Wendell"), "Dual Wingbeat")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

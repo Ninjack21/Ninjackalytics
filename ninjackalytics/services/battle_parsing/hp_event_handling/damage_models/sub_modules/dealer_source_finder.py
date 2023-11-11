@@ -45,6 +45,11 @@ class DealerSourceFinder:
     def get_dealer_and_source(
         self, event: str, turn: Turn, battle: Battle
     ) -> Tuple[Tuple[int, str], str]:
+        # deal with Zoroark 'edge case' first before continuing
+        if "Zoroark" in event:
+            return self._handle_identifying_damages_to_zoroark(
+                event=event, turn=turn, battle=battle
+            )
         # look for the most recent move type indicator in the turn lines right before the event
         previous_turn_lines = reversed(list(turn.text.split(event)[0].splitlines()))
         move_type = next(
@@ -62,18 +67,29 @@ class DealerSourceFinder:
         return self.move_type_methods[move_type](event, turn, battle)
 
     def _get_move_type(self, line: str) -> str:
-        if line.startswith("|move|") and "[spread]" in line:
-            return "spread"
-        # using a custom solution for a single move until find more examples to generalize from
-        elif line.startswith("|move|") and line.split("|")[3] == "Curse":
-            return "curse"
-        elif line.startswith("|move|"):
-            return "normal"
-        elif line.startswith("|-anim|"):
-            return "anim"
-        # need to verify move is in the 3rd group, otherwise probably -end refers to substitute ending
-        elif line.startswith("|-end|") and "move" in line.split("|")[3]:
-            return "delayed"
+        split_line = line.split("|")
+        # if the split_line is less than 4 then this narrows down some of the things it could be
+        if len(split_line) < 4:
+            if line.startswith("|move|") and "[spread]" in line:
+                return "spread"
+            elif line.startswith("|move|"):
+                return "normal"
+            elif line.startswith("|-anim|"):
+                return "anim"
+        # if we do have at least 4 in split_line then there are some more options
+        else:
+            if line.startswith("|move|") and "[spread]" in line:
+                return "spread"
+            # using a custom solution for a single move until find more examples to generalize from
+            elif line.startswith("|move|") and line.split("|")[3] == "Curse":
+                return "curse"
+            elif line.startswith("|move|"):
+                return "normal"
+            elif line.startswith("|-anim|"):
+                return "anim"
+            # need to verify move is in the 3rd group, otherwise probably -end refers to substitute ending
+            elif line.startswith("|-end|") and "move" in line.split("|")[3]:
+                return "delayed"
 
     def _get_normal_dealer_and_source(
         self, event: str, turn: Turn, battle: Battle = None
@@ -298,3 +314,57 @@ class DealerSourceFinder:
                 break
             pre_event_text += line + "\n"
         return pre_event_text
+
+    def _handle_identifying_damages_to_zoroark(
+        self, event: str, turn: Turn, battle: Battle
+    ):
+        """
+        In order to identify the dealer and source of a damage event to Zoroark we need to find a specific
+        log pattern which indicates the end of an Illusion and thus look to see who the most recent receiver
+        of damage was right before the replace. then, trun the dealer, source as if for that receiver while using
+        zoroark as the hp receiver... this will be unfun I suspect
+
+        Parameters
+        ----------
+        event : str
+            the string of the damage event that we are looking for
+        turn : Turn
+            the turn object containing the entire turn's text
+
+        Example Event:
+        |-damage|p1b: Braviary|87/100
+        |replace|p1b: Zoroark|Zoroark-Hisui, M, shiny
+        |-end|p1b: Zoroark|Illusion
+        |-damage|p1b: Zoroark|71/100
+        """
+        # first check to see if an Illusion ended:
+        if "|-end|" in turn.text and "Illusion" in turn.text:
+            pre_event_text = self._get_pre_event_text(event=event, turn=turn)
+            # get the most recent |-damage| event before the |-end|...Zoroark|Illusion
+            illusion_end_text = re.findall(r"\|-end\|.*\|Illusion", pre_event_text)[0]
+            pre_illusion_end_text = pre_event_text.split(illusion_end_text)[0]
+
+            damage_regex = r"\|-damage\|[^|]+\|[^|]+"
+            damage_matches = re.findall(damage_regex, pre_illusion_end_text)
+            pretend_receiver_event = None
+            for match in reversed(damage_matches):
+                # we want to find the receiver that Zoroark was pretending to be
+                if "Zoroark" in match:
+                    continue
+                pretend_receiver_event = match
+                break
+            if pretend_receiver_event is None:
+                raise ValueError(
+                    f"Zoroark End Illusion was seen but no pretend_receiver_event was found for event {event}"
+                )
+            else:
+                # now we need to find the dealer and source of the damage to the pretend receiver
+                # we will use the same method as for any other damage event but provide the pretend dmg
+                # event instead
+                return self.get_dealer_and_source(
+                    event=pretend_receiver_event, turn=turn, battle=battle
+                )
+
+    # if no end illusion was found then we don't return anything, thus letting the code continue running as normal
+    # whereas if the end illusion indicator shows up the code will cause a return using the pretend_receiver_event
+    # which will yield the correct damage dealer and source

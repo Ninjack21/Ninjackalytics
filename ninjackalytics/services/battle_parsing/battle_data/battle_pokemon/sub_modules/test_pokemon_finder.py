@@ -217,6 +217,49 @@ class TestPokemonFinder(unittest.TestCase):
         self.assertEqual(mon.real_name, expected_mon_real_name)
         self.assertEqual(mon.player_num, expected_pnum)
 
+    def test_handle_zoroark(self):
+        # https://replay.pokemonshowdown.com/gen9ou-1988000398
+        """
+        Need to handle Zoroark which won't have a typical entrance log and contains unique names in the team preview
+        due to there being multiple forms (where the form is dropped once you're in the battle). Due to the weirdness
+        of this 'mon and the ability disguise I'm just going to do a custom solution for now
+        """
+        preview = """
+        |gen|9
+        |tier|[Gen 9] OU
+        |rated|
+        |rule|Sleep Clause Mod: Limit one foe put to sleep
+        |rule|Species Clause: Limit one of each Pokémon
+        |rule|OHKO Clause: OHKO moves are banned
+        |rule|Evasion Items Clause: Evasion items are banned
+        |rule|Evasion Moves Clause: Evasion moves are banned
+        |rule|Endless Battle Clause: Forcing endless battles is banned
+        |rule|HP Percentage Mod: HP is shown in percentages
+        |clearpoke
+        |poke|p1|Samurott-Hisui, F|
+        |poke|p1|Sandy Shocks|
+        |poke|p1|Toedscruel, F|
+        |poke|p1|Ogerpon-Cornerstone, F|
+        |poke|p1|Corviknight, F|
+        |poke|p1|Zoroark-Hisui, M|
+        |poke|p2|Garganacl, F|
+        |poke|p2|Infernape, F|
+        |poke|p2|Cresselia, F|
+        |poke|p2|Landorus-Therian, M|
+        |poke|p2|Ambipom, M|
+        |poke|p2|Slowbro, F|
+        |teampreview
+        |inactive|Battle timer is ON: inactive players will automatically lose when time's up. (requested by nikfang)
+        |
+        |t:|1699657703
+        |start
+        """
+        desired_name = "Zoroark"
+        finder = PokemonFinder(preview)
+        found = finder.get_pokemon()
+        found_names = [p.real_name for p in found]
+        self.assertTrue(desired_name in found_names)
+
 
 if __name__ == "__main__":
     unittest.main()

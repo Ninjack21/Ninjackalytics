@@ -25,6 +25,12 @@ class PokemonFinder:
             A list of Pokemon objects
         """
         preview_mons = self._extract_previews(self.log)
+        # look to see if Zoroark is in the real name of any of the preview mons and if so, update the real name
+        # to be only 'Zoroark' (thus stripping any forms associated) since it will only say Zoroark in battle.
+        # handling custom here because of weirdness of this mon
+        for mon in preview_mons:
+            if "Zoroark" in mon["real_name"]:
+                mon["real_name"] = "Zoroark"
         entrance_mons = self._extract_entrances(self.log)
         pokemon_parameters = self._create_pokemon_parameters(
             preview_mons + entrance_mons
@@ -52,10 +58,12 @@ class PokemonFinder:
             team_preview_pattern = (
                 r"p(?P<player_num>[1-4]+)" + r"\|(?P<real_name>[A-z| |-]+[^,|\-*|\n])"
             )
+
             return [
                 match.groupdict()
                 for match in re.finditer(team_preview_pattern, preview)
             ]
+
         except IndexError:
             return []
 
