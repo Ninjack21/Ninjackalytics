@@ -81,6 +81,20 @@ class TestBattleParser(unittest.TestCase):
         actual_output = self.battle_parser._find_function_with_error_from_traceback(tb)
         self.assertEqual(expected_output, actual_output)
 
+    def test_case_where_battle_pokemon_has_error(self):
+        # Mock the BattlePokemon object to have an error
+        mock_battle_pokemon = Mock()
+        mock_battle_pokemon.error = {"Error_Message": "Test error"}
+        with self.assertRaises(Exception):
+            parser = BattleParser(self.mock_battle, mock_battle_pokemon)
+
+            # Check that parser.error is not None
+            self.assertIsNotNone(parser.error)
+
+            # Check that the error message and traceback are correct
+            self.assertEqual(parser.error["Error_Message"], "Test error")
+            self.assertIn("Traceback", parser.error)
+
 
 if __name__ == "__main__":
     unittest.main()

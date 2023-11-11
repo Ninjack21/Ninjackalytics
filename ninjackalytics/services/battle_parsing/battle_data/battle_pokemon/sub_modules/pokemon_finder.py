@@ -13,7 +13,7 @@ class PokemonFinder:
         log : str
             The battle log string to extract Pokemon data from.
         """
-        self.log = log
+        self.log = self._remove_showteam(log)
 
     def get_pokemon(self) -> list:
         """
@@ -25,6 +25,16 @@ class PokemonFinder:
             A list of Pokemon objects
         """
         preview_mons = self._extract_previews(self.log)
+        # look to see if Zoroark is in the real name of any of the preview mons and if so, update the real name
+        # to be only 'Zoroark' (thus stripping any forms associated) since it will only say Zoroark in battle.
+        # handling custom here because of weirdness of this mon
+        for mon in preview_mons:
+            if "Zoroark" in mon["real_name"]:
+                mon["real_name"] = "Zoroark"
+                self._deal_with_zoroark_family(mon)
+            elif "Zorua" in mon["real_name"]:
+                mon["real_name"] = "Zorua"
+                self._deal_with_zoroark_family(mon)
         entrance_mons = self._extract_entrances(self.log)
         pokemon_parameters = self._create_pokemon_parameters(
             preview_mons + entrance_mons
@@ -52,10 +62,12 @@ class PokemonFinder:
             team_preview_pattern = (
                 r"p(?P<player_num>[1-4]+)" + r"\|(?P<real_name>[A-z| |-]+[^,|\-*|\n])"
             )
+
             return [
                 match.groupdict()
                 for match in re.finditer(team_preview_pattern, preview)
             ]
+
         except IndexError:
             return []
 
@@ -183,3 +195,56 @@ class PokemonFinder:
                 unique_mons.append(mon)
 
         return unique_mons
+
+    def _deal_with_zoroark_family(self, mon: Pokemon) -> list:
+        """
+        Handle Zoroark.
+
+        Parameters
+        ----------
+        mon : Pokemon
+            the pokemon object for zoroark/zorua
+
+        Returns
+        -------
+        list
+            A list of Pokemon objects with Zoroark's forms removed.
+
+        Example
+        -------
+        |replace|p1a: ScizorHands|Zoroark-Hisui, M
+        |-end|p1a: ScizorHands|Illusion
+        """
+        # now need to see if a nickname existed for it. look for the nickname in the unique
+        # zoroark entrances
+        pattern = (
+            r"\|replace\|p[1-4][a-d]: (?P<nickname>[^\|]*)\|(?P<real_name>[^\|]*)\n"
+        )
+        matches = re.findall(pattern, self.log)
+        # use the first match since this will show up the earliest. I'm not sure if it always follows the above pattern
+        # or not
+        if len(matches) > 0:
+            match1 = matches[0]
+            nickname = match1[0]
+            # update mon object nickname
+            mon["nickname"] = nickname
+
+    def _remove_showteam(self, log: str) -> str:
+        """
+        Remove the showteam portion of the log.
+
+        Parameters
+        ----------
+        log : str
+            The battle log string to extract Pokemon data from.
+
+        Returns
+        -------
+        str
+            The battle log string with the showteam portion removed.
+        """
+        preview = log.split("|teampreview")[0]
+        battle = log.split("|start")[1]
+        battle = "|start" + battle
+        new_log = preview + "\n" + battle
+        return new_log
