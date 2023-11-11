@@ -19,7 +19,7 @@ class teams(BattleDbBase):
     Pok6 = Column(Text)
 
     def __repr__(self):
-        return "<Team: %r>" % self.id
+        return "<Team: %r>" % [getattr(self, f"Pok{i}") for i in range(1, 7)]
 
 
 class battle_info(BattleDbBase):
