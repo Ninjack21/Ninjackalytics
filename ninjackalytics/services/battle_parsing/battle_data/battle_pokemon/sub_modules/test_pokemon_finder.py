@@ -405,6 +405,36 @@ class TestPokemonFinder(unittest.TestCase):
         new_log = PokemonFinder(log)._remove_showteam(log)
         self.assertTrue("showteam" not in new_log)
 
+    def test_nicknames_with_apostraphes(self):
+        # https://replay.pokemonshowdown.com/gen9vgc2023regulationd-1967383170
+        log = """
+        |gen|9
+        |tier|[Gen 9] VGC 2023 Regulation D
+        |rule|Species Clause: Limit one of each Pokémon
+        |rule|Item Clause: Limit one of each item
+        |clearpoke
+        |poke|p1|Murkrow, L50, M|
+        |poke|p1|Landorus-Therian, L50, M|
+        |poke|p1|Sneasler, L50, M|
+        |poke|p1|Orthworm, L50, M|
+        |poke|p1|Zorua-Hisui, L50, M|
+        |poke|p1|Skeledirge, L50, F|
+        |poke|p2|Iron Moth, L50|
+        |poke|p2|Florges-Yellow, L50, F|
+        |poke|p2|Roaring Moon, L50|
+        |poke|p2|Jumpluff, L50, F|
+        |poke|p2|Gholdengo, L50|
+        |poke|p2|Rotom-Frost, L50|
+        |teampreview|4
+        |start
+        |replace|p1a: NowUDon't|Zorua-Hisui, L50, M
+        |-end|p1a: NowUDon't|Illusion
+        """
+        finder = PokemonFinder(log)
+        found = finder.get_pokemon()
+        zorua = [p for p in found if "Zorua" in p.real_name][0]
+        self.assertEqual(zorua.nickname, "NowUDon't")
+
 
 if __name__ == "__main__":
     unittest.main()

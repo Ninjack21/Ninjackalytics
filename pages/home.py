@@ -213,6 +213,7 @@ def layout():
                         placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
                         type="text",
                         value="",
+                        style={"width": "100%"},
                     ),
                     html.Div(id="output-div"),
                 ],
