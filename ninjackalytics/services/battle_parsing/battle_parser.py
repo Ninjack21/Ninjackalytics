@@ -31,6 +31,13 @@ class BattleParser:
         self.heals_info = []
         self.error = None
 
+        # ------ check if battle_pokemon already has error -----
+        if self.battle_pokemon.error:
+            self.error = self.battle_pokemon.error
+            raise Exception(
+                f"BattlePokemon object has error: {self.battle_pokemon.error}"
+            )
+
     def analyze_battle(self) -> None:
         """
         Directs all of the parsing models to analyze their portions of the battle and then stores the data

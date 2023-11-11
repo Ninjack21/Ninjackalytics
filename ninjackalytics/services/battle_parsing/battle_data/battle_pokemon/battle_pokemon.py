@@ -7,8 +7,20 @@ from .sub_modules import Pokemon, PokemonFinder, Team
 class BattlePokemon:
     def __init__(self, battle: object):
         self.log = battle.get_log()
-        self.pokemon = PokemonFinder(self.log).get_pokemon()
-        self.teams = self._create_teams()
+        try:
+            self.pokemon = PokemonFinder(self.log).get_pokemon()
+            self.teams = self._create_teams()
+            self.error = None
+        except Exception as e:
+            tb = traceback.format_exc()
+            function_with_error = self._find_function_with_error_from_traceback(tb)
+            error = {
+                "Battle_URL": self.battle.url,
+                "Error_Message": str(e),
+                "Traceback": tb,
+                "Function": function_with_error,
+            }
+            self.error = error
 
     def _create_teams(self) -> List:
         """
@@ -128,3 +140,23 @@ class BattlePokemon:
         """
         mon = self.get_mon_obj(raw_name)
         return mon.get_hp
+
+    def _find_function_with_error_from_traceback(self, tb: str) -> str:
+        # Regex pattern to match the function name
+        pattern = r"\b(?P<function>\w+)\("
+
+        # Find all matches in the traceback
+        matches = re.findall(pattern, tb)
+
+        # Regex pattern to match the function name
+        pattern = r"\b(?P<function>\w+)\("
+
+        # Find all matches in the traceback
+        matches = re.findall(pattern, tb)
+
+        # The function name is the last match that does not contain "Error"
+        for match in reversed(matches):
+            if "Error" not in match:
+                return match
+
+        return None
