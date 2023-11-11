@@ -715,6 +715,105 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
+    def test(self):
+        # https://replay.pokemonshowdown.com/gen8doublesou-1981280494
+
+        battle = MockBattle()
+
+        turn3 = MockTurn(
+            3,
+            """
+            |turn|3
+            |
+            |t:|1698879365
+            |move|p1a: Wrecker|Metronome|p1a: Wrecker
+            |move|p1a: Wrecker|Baton Pass|p1a: Wrecker|[from]move: Metronome
+            |
+            |t:|1698879371
+            |switch|p1a: Fisterman|Hitmonchan, M|100/100|[from] Baton Pass
+            |move|p1b: Red-Ghast|Metronome|p1b: Red-Ghast
+            |move|p1b: Red-Ghast|Shell Smash|p1b: Red-Ghast|[from]move: Metronome
+            |-unboost|p1b: Red-Ghast|def|1
+            |-unboost|p1b: Red-Ghast|spd|1
+            |-boost|p1b: Red-Ghast|atk|2
+            |-boost|p1b: Red-Ghast|spa|2
+            |-boost|p1b: Red-Ghast|spe|2
+            |move|p2a: Red Muff|Metronome|p2a: Red Muff
+            |move|p2a: Red Muff|Tearful Look|p1b: Red-Ghast|[from]move: Metronome
+            |-unboost|p1b: Red-Ghast|atk|1
+            |-unboost|p1b: Red-Ghast|spa|1
+            |move|p2b: Crunchz|Metronome|p2b: Crunchz
+            |move|p2b: Crunchz|Doom Desire|p1b: Red-Ghast|[from]move: Metronome
+            |-start|p2b: Crunchz|Doom Desire
+            |
+            |upkeep
+            """,
+        )
+
+        turn4 = MockTurn(
+            4,
+            """
+            |turn|4
+            |
+            |t:|1698879397
+            |move|p1b: Red-Ghast|Metronome|p1b: Red-Ghast
+            |move|p1b: Red-Ghast|Sweet Kiss|p2a: Red Muff|[from]move: Metronome
+            |-start|p2a: Red Muff|confusion
+            |move|p1a: Fisterman|Metronome|p1a: Fisterman
+            |move|p1a: Fisterman|Block||[from]move: Metronome|[still]
+            |-fail|p1a: Fisterman
+            |-activate|p2a: Red Muff|confusion
+            |move|p2a: Red Muff|Metronome|p2a: Red Muff
+            |move|p2a: Red Muff|Iron Defense|p2a: Red Muff|[from]move: Metronome
+            |-boost|p2a: Red Muff|def|2
+            |move|p2b: Crunchz|Metronome|p2b: Crunchz
+            |move|p2b: Crunchz|Retaliate|p1a: Fisterman|[from]move: Metronome
+            |-damage|p1a: Fisterman|74/100
+            |
+            |upkeep
+            """,
+        )
+
+        turn5 = MockTurn(
+            5,
+            """
+            |turn|5
+            |
+            |t:|1698879416
+            |move|p1b: Red-Ghast|Metronome|p1b: Red-Ghast
+            |move|p1b: Red-Ghast|Fairy Wind|p2b: Crunchz|[from]move: Metronome
+            |-damage|p2b: Crunchz|77/100
+            |move|p1a: Fisterman|Metronome|p1a: Fisterman
+            |move|p1a: Fisterman|Water Spout|p2b: Crunchz|[from]move: Metronome|[spread] p2a,p2b
+            |-damage|p2a: Red Muff|77/100
+            |-damage|p2b: Crunchz|68/100
+            |-activate|p2a: Red Muff|confusion
+            |move|p2a: Red Muff|Metronome|p2a: Red Muff
+            |move|p2a: Red Muff|Scratch|p1a: Fisterman|[from]move: Metronome
+            |-damage|p1a: Fisterman|65/100
+            |move|p2b: Crunchz|Metronome|p2b: Crunchz
+            |move|p2b: Crunchz|Slack Off|p2b: Crunchz|[from]move: Metronome
+            |-heal|p2b: Crunchz|100/100
+            |
+            |-end|p1b: Red-Ghast|move: Doom Desire
+            |-damage|p1b: Red-Ghast|65/100
+            |upkeep
+            """,
+        )
+
+        battle.turns = [turn3, turn4, turn5]
+        event = "|-damage|p1b: Red-Ghast|65/100"
+
+        # (dealer, source)
+        expected_output = ((2, "Crunchz"), "Doom Desire")
+
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn5, battle=battle
+            ),
+            expected_output,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
