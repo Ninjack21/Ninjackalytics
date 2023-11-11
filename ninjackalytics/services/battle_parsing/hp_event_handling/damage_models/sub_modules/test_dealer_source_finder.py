@@ -715,8 +715,13 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
-    def test(self):
+    def test_delayed_move_where_delayed_move_comes_from_metronome(self):
         # https://replay.pokemonshowdown.com/gen8doublesou-1981280494
+        """
+        The issue here was that the regex wasn't specific enough and if a delayed move was triggered by metronome
+        it would group the dealer and source name together. I'm starting to notice that including optional groups
+        for the from's, of's, etc, are becoming a more common pattern for all of the regexes...
+        """
 
         battle = MockBattle()
 
