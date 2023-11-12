@@ -26,11 +26,17 @@ def contains_mon(row, mon):
     return row.str.contains(mon).any()
 
 
+def get_rank_limit_based_on_quantile(battle_info: pd.DataFrame):
+    quantile = 0.7
+    rank_limit = battle_info["Rank"].quantile(quantile, interpolation="nearest")
+    return round(rank_limit)
+
+
 def recalc_metadata_table_info():
     ta = TableAccessor()
     battle_info = ta.get_battle_info()
     recent_battle_info = battle_info[
-        battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14))
+        (battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14)))
     ]
     teams = ta.get_teams()
     formats = [f for f in battle_info["Format"].unique() if f != "gen9ou"]
@@ -41,6 +47,9 @@ def recalc_metadata_table_info():
         with session_scope() as session:
             print(f"=================Starting format {f}===================")
             f_info = recent_battle_info[recent_battle_info["Format"] == f]
+            rank_limit = get_rank_limit_based_on_quantile(f_info)
+            f_info = f_info[f_info["Rank"] >= rank_limit]
+            print(rank_limit)
             total_battles = len(f_info)
             team_ids = pd.concat([f_info["P1_team"], f_info["P2_team"]]).unique()
             # now get all of the pokemon in each team
