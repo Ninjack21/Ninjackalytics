@@ -53,6 +53,6 @@ class TableAccessor:
         with session_scope() as session:
             return pd.read_sql(session.query(errors).statement, session.bind)
 
-    def get_metadata(self):
+    def get_pokemonmetadata(self):
         with session_scope() as session:
-            return pd.read_sql(session.query(metadata).statement, session.bind)
+            return pd.read_sql(session.query(pokemonmetadata).statement, session.bind)

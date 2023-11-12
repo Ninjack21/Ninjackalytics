@@ -69,6 +69,7 @@ def recalc_metadata_table_info():
 
                 winrate = mon_wins / mon_battles * 100
                 pokemon_meta_data_kwargs["Winrate"] = winrate
+                pokemon_meta_data_kwargs["SampleSize"] = mon_battles
                 # now I can update the pokemon metadata table
                 pokemon_meta_data = pokemonmetadata(**pokemon_meta_data_kwargs)
                 session.merge(pokemon_meta_data)
