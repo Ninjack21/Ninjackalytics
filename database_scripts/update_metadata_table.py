@@ -33,8 +33,9 @@ def recalc_metadata_table_info():
             battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14))
         ]
         teams = ta.get_teams()
+        formats = [f for f in battle_info["Format"].unique() if f != "gen9ou"]
 
-        for f in battle_info["Format"].unique():
+        for f in formats:
             print(f"=================Starting format {f}===================")
             f_info = recent_battle_info[recent_battle_info["Format"] == f]
             team_ids = pd.concat([f_info["P1_team"], f_info["P2_team"]]).unique()
@@ -43,6 +44,7 @@ def recalc_metadata_table_info():
             all_mons = pd.concat(
                 [format_teams[f"Pok{i}"] for i in range(1, 7)]
             ).unique()
+            all_mons = [mon for mon in all_mons if mon != None]
             for mon in tqdm(all_mons):
                 # the repr of a team is a list of the mon names so we can use that to get which teams contain each mon
                 mon_teams_idx = teams.apply(lambda row: contains_mon(row, mon), axis=1)
