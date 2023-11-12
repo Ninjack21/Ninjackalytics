@@ -1,16 +1,21 @@
 import pandas as pd
+from ninjackalytics.database import SessionLocal
+from ninjackalytics.database.models import *
 from contextlib import contextmanager
 
-from ninjackalytics.database import SessionLocal
-from ninjackalytics.database.models.battles import (
-    teams,
-    battle_info,
-    actions,
-    damages,
-    healing,
-    pivots,
-    errors,
-)
+
+@contextmanager
+def session_scope():
+    """Provide a transactional scope around a series of operations."""
+    session = SessionLocal()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 class TableAccessor:
@@ -21,22 +26,33 @@ class TableAccessor:
         self.session.close()
 
     def get_teams(self):
-        return pd.read_sql(self.session.query(teams).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(teams).statement, session.bind)
 
     def get_battle_info(self):
-        return pd.read_sql(self.session.query(battle_info).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(battle_info).statement, session.bind)
 
     def get_actions(self):
-        return pd.read_sql(self.session.query(actions).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(actions).statement, session.bind)
 
     def get_damages(self):
-        return pd.read_sql(self.session.query(damages).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(damages).statement, session.bind)
 
     def get_healing(self):
-        return pd.read_sql(self.session.query(healing).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(healing).statement, session.bind)
 
     def get_pivots(self):
-        return pd.read_sql(self.session.query(pivots).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(pivots).statement, session.bind)
 
     def get_errors(self):
-        return pd.read_sql(self.session.query(errors).statement, self.session.bind)
+        with session_scope() as session:
+            return pd.read_sql(session.query(errors).statement, session.bind)
+
+    def get_metadata(self):
+        with session_scope() as session:
+            return pd.read_sql(session.query(metadata).statement, session.bind)
