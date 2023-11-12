@@ -3,6 +3,8 @@ import pandas as pd
 from typing import List, Tuple
 from datetime import datetime, timedelta
 from tqdm import tqdm
+import cProfile
+import pstats
 
 
 # ------------ do sql queries once with these functions --------------------
@@ -159,11 +161,8 @@ def restrict_available_mons_based_on_creativity(
 
     take a percentage of the overall spread. if a spread is very large and creativity is large then this means the
     """
-    min_popularity, max_popularity = get_min_max_target_popularity(top30=top30)
-    # use creativity percent to move [creativity %] of the way down from max to min popularity to get target avg
-    creativity_percent = creativity / 100
-    target_avg_popularity = max_popularity - creativity_percent * (
-        max_popularity - min_popularity
+    target_avg_popularity = get_target_avg_popularity(
+        top30=top30, creativity=creativity / 100
     )
     print(f"target_avg_popularity: {target_avg_popularity}")
 
@@ -265,6 +264,14 @@ def get_min_popularity_of_pokemon_with_samplesize(
     return min_popularity
 
 
+def get_target_avg_popularity(top30: pd.DataFrame, creativity: int) -> float:
+    min_popularity, max_popularity = get_min_max_target_popularity(top30=top30)
+    target_avg_popularity = max_popularity - creativity_percent * (
+        max_popularity - min_popularity
+    )
+    return target_avg_popularity
+
+
 # ----------- now solve for the team ----------------
 
 
@@ -347,6 +354,9 @@ def solve_for_remainder_of_team(
         winrates=current_winrates,
         top30=top30,
     )
+    target_avg_popularity = get_target_avg_popularity(
+        top30=top30, creativity=creativity / 100
+    )
     solved_team_data = {
         "team": current_team,
         "avg_popularity": current_avg_popularity,
@@ -355,3 +365,24 @@ def solve_for_remainder_of_team(
         "top30_winrates": current_winrates,
     }
     return solved_team_data
+
+
+def profile_func(func):
+    def wrapper(*args, **kwargs):
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+        result = func(*args, **kwargs)
+
+        profiler.disable()
+        stats = pstats.Stats(profiler).sort_stats("tottime")
+        stats.print_stats()
+
+        return result
+
+    return wrapper
+
+
+@profile_func
+def profiled_solve_for_remainder_of_team(*args, **kwargs):
+    return solve_for_remainder_of_team(*args, **kwargs)
