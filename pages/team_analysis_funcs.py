@@ -162,7 +162,7 @@ def restrict_available_mons_based_on_creativity(
     take a percentage of the overall spread. if a spread is very large and creativity is large then this means the
     """
     target_avg_popularity = get_target_avg_popularity(
-        top30=top30, creativity=creativity / 100
+        top30=top30, creativity=creativity
     )
     print(f"target_avg_popularity: {target_avg_popularity}")
 
@@ -266,7 +266,7 @@ def get_min_popularity_of_pokemon_with_samplesize(
 
 def get_target_avg_popularity(top30: pd.DataFrame, creativity: int) -> float:
     min_popularity, max_popularity = get_min_max_target_popularity(top30=top30)
-    target_avg_popularity = max_popularity - creativity_percent * (
+    target_avg_popularity = max_popularity - (creativity / 100) * (
         max_popularity - min_popularity
     )
     return target_avg_popularity
@@ -355,7 +355,7 @@ def solve_for_remainder_of_team(
         top30=top30,
     )
     target_avg_popularity = get_target_avg_popularity(
-        top30=top30, creativity=creativity / 100
+        top30=top30, creativity=creativity
     )
     solved_team_data = {
         "team": current_team,
