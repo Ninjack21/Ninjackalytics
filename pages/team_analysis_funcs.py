@@ -2,6 +2,7 @@ from ninjackalytics.services.database_interactors.table_accessor import TableAcc
 import pandas as pd
 from typing import List, Tuple
 from datetime import datetime, timedelta
+from tqdm import tqdm
 
 
 def contains_mon(row, mon):
@@ -81,9 +82,23 @@ def get_top_30_winrates_against_team(
 def get_format_available_pokemon(battle_format: str) -> List[str]:
     ta = TableAccessor()
     teams = ta.get_teams()
-    format_teams = teams[teams["Format"] == battle_format]
+    battle_info = ta.get_battle_info()
+    metadata = ta.get_pokemonmetadata()
+    format_metadata = metadata[metadata["Format"] == battle_format]
+    format_info = battle_info[battle_info["Format"] == battle_format]
+    team_ids = pd.concat([format_info["P1_team"], format_info["P2_team"]]).unique()
+    format_teams = teams[teams["id"].isin(team_ids)]
     all_mons = pd.concat([format_teams[f"Pok{i}"] for i in range(1, 7)]).unique()
     all_mons = [mon for mon in all_mons if mon != None]
+    # restrict mons to only those seen within the format_metadata
+    all_mons = [mon for mon in all_mons if mon in format_metadata["Pokemon"].tolist()]
+    # now handle sample size of 20
+    all_mons = [
+        mon
+        for mon in all_mons
+        if format_metadata[format_metadata["Pokemon"] == mon]["SampleSize"].values[0]
+        >= 20
+    ]
     return all_mons
 
 
@@ -117,10 +132,9 @@ def get_team_popularity(team: List[str], format_metadata: pd.DataFrame):
 
 
 def get_min_max_target_popularity(format_metadata: pd.DataFrame) -> Tuple[float, float]:
-    min_popularity = format_metadata["Popularity"].min()
-    max_popularity = format_metadata["Popularity"].quantile(0.5)
-    closest_entry = top30.loc[(top30["Popularity"] - max_popularity).abs().idxmin()]
-    max_popularity = closest_entry["Popularity"]
+    top30 = format_metadata.sort_values(by="Popularity", ascending=False).head(30)
+    min_popularity = top30["Popularity"].min()
+    max_popularity = top30["Popularity"].quantile(0.5)
     return min_popularity, max_popularity
 
 
@@ -128,7 +142,7 @@ def get_min_popularity_of_pokemon_with_samplesize_30(
     format_metadata: pd.DataFrame,
 ) -> float:
     min_data_mons = format_metadata[
-        (format_metadata["SampleSize"] >= 30) & (format_metadata["Popularity"] != 0)
+        (format_metadata["SampleSize"] >= 20) & (format_metadata["Popularity"] != 0)
     ]
     min_popularity = min_data_mons["Popularity"].min()
     return min_popularity
@@ -139,14 +153,16 @@ def define_popularity_bounds_for_available_pokemon(
     target_avg_popularity: float,
     remaining_slots: int,
     top30: pd.DataFrame,
+    format_metadata: pd.DataFrame,
 ) -> Tuple[float, float]:
     std = top30["Popularity"].std()
     # we want to define a range of popularity values that we can use to restrict the available pokemon
     # we can use the remaining slots and the std to decide what kind of range of popularity we want to allow
-    limit_popularity = self.get_min_popularity_of_pokemon_with_samplesize_30(
-        format_metadata
-    )
+    limit_popularity = get_min_popularity_of_pokemon_with_samplesize_30(format_metadata)
     limit_max_popularity = limit_popularity + 0.5 * std
+    print(
+        f"limit_popularity: {limit_popularity} | limit_max_popularity: {limit_max_popularity}"
+    )
     if remaining_slots == 1:
         # define the window of popularities that would get us within 2% of the target and return the min, and max
         # now solve for what the final mon's popularity would have to be to be +2% from target and then -2% from target
@@ -160,11 +176,16 @@ def define_popularity_bounds_for_available_pokemon(
     else:
         # if there is more than 1 slot then we have time to adjust so add a buffer scaled off the std
         max_popularity = (
-            target_avg_popularity + (0.2) * std * (remaining_slots)
-        ) - current_avg_popularity * (6 - remaining_slots)
+            (target_avg_popularity + (0.2) * std * (remaining_slots)) * 6
+            - current_avg_popularity * (6 - remaining_slots)
+        ) / remaining_slots
         min_popularity = (
-            target_avg_popularity - (0.2) * std * (remaining_slots)
-        ) - current_avg_popularity * (6 - remaining_slots)
+            (target_avg_popularity - (0.2) * std * (remaining_slots)) * 6
+            - current_avg_popularity * (6 - remaining_slots)
+        ) / (remaining_slots)
+        print(
+            f"calc'd min_popularity: {min_popularity} | calc'd max_popularity: {max_popularity}"
+        )
         if min_popularity < limit_popularity and max_popularity < limit_max_popularity:
             return limit_popularity, limit_max_popularity
         elif min_popularity < limit_popularity:
@@ -176,7 +197,7 @@ def define_popularity_bounds_for_available_pokemon(
 
 
 def restrict_available_mons_based_on_creativity(
-    current_team: List[str], creativity: int
+    current_team: List[str], creativity: int, battle_format: str
 ):
     """
     creativity will be an int between 0-100, and we want to create a way to say more creative teams
@@ -203,6 +224,7 @@ def restrict_available_mons_based_on_creativity(
     target_avg_popularity = max_popularity - creativity_percent * (
         max_popularity - min_popularity
     )
+    print(f"target_avg_popularity: {target_avg_popularity}")
 
     current_avg_popularity = get_team_popularity(current_team, format_metadata)
     remaining_slots = 6 - len(current_team)
@@ -211,14 +233,14 @@ def restrict_available_mons_based_on_creativity(
         target_avg_popularity=target_avg_popularity,
         remaining_slots=remaining_slots,
         top30=top30,
+        format_metadata=format_metadata,
     )
-    available_pokemon = [
-        mon
-        for mon in all_mons
-        if min_popularity
-        <= format_metadata[format_metadata["Pokemon"] == mon]["Popularity"].values[0]
-        <= max_popularity
-    ]
+    print(f"min_popularity: {min_popularity} | max_popularity: {max_popularity}")
+    available_pokemon = []
+    for mon in all_mons:
+        mon = format_metadata[format_metadata["Pokemon"] == mon].iloc[0]
+        if mon["Popularity"] >= min_popularity and mon["Popularity"] <= max_popularity:
+            available_pokemon.append(mon["Pokemon"])
 
     return available_pokemon
 
@@ -245,6 +267,7 @@ def solve_for_remainder_of_team(
         available_pokemon = restrict_available_mons_based_on_creativity(
             current_team=current_team,
             creativity=creativity,
+            battle_format=battle_format,
         )
         available_pokemon = [
             mon
@@ -255,7 +278,7 @@ def solve_for_remainder_of_team(
         # now we can try adding each individual pokemon to see who improves the winrate the most
         best_improvement = -100
         best_mon = None
-        for mon in available_pokemon:
+        for mon in tqdm(available_pokemon):
             new_team = current_team.copy()
             new_team.append(mon)
             new_winrates = get_top_30_winrates_against_team(
@@ -270,6 +293,7 @@ def solve_for_remainder_of_team(
 
         # update the current team with the best improvement mon
         current_team.append(best_mon)
+        print(f"added {best_mon} to the team")
         remaining_slots -= 1
 
     current_avg_popularity = get_team_popularity(current_team, format_metadata)
@@ -279,9 +303,11 @@ def solve_for_remainder_of_team(
         battle_format=battle_format,
     )
     current_norm_winrate = normalized_winrate(current_winrates, battle_format)
-    return (
-        current_team,
-        current_avg_popularity,
-        target_avg_popularity,
-        current_norm_winrate,
-    )
+    solved_team_data = {
+        "team": current_team,
+        "avg_popularity": current_avg_popularity,
+        "norm_winrate": current_norm_winrate,
+        "target_avg_popularity": target_avg_popularity,
+        "top30_winrates": current_winrates,
+    }
+    return solved_team_data
