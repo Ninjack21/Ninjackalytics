@@ -169,7 +169,6 @@ def restrict_available_mons_based_on_creativity(
     target_avg_popularity = get_target_avg_popularity(
         top30=top30, creativity=creativity
     )
-    print(f"target_avg_popularity: {target_avg_popularity}")
 
     current_avg_popularity = get_team_popularity(current_team, format_metadata)
     remaining_slots = 6 - len(current_team)
@@ -180,7 +179,6 @@ def restrict_available_mons_based_on_creativity(
         top30=top30,
         format_metadata=format_metadata,
     )
-    print(f"min_popularity: {min_popularity} | max_popularity: {max_popularity}")
     available_pokemon = []
     for mon in all_mons:
         mon = format_metadata[format_metadata["Pokemon"] == mon].iloc[0]
@@ -222,9 +220,7 @@ def define_popularity_bounds_for_available_pokemon(
         format_metadata=format_metadata, sample_size=20
     )
     limit_max_popularity = limit_popularity + 0.5 * std
-    print(
-        f"limit_popularity: {limit_popularity} | limit_max_popularity: {limit_max_popularity}"
-    )
+
     if remaining_slots == 1:
         # define the window of popularities that would get us within 2% of the target and return the min, and max
         # now solve for what the final mon's popularity would have to be to be +2% from target and then -2% from target
@@ -238,16 +234,14 @@ def define_popularity_bounds_for_available_pokemon(
     else:
         # if there is more than 1 slot then we have time to adjust so add a buffer scaled off the std
         max_popularity = (
-            (target_avg_popularity + (0.3) * std * (remaining_slots)) * 6
+            (target_avg_popularity + (0.1) * std * (remaining_slots)) * 6
             - current_avg_popularity * (6 - remaining_slots)
         ) / remaining_slots
         min_popularity = (
-            (target_avg_popularity - (0.3) * std * (remaining_slots)) * 6
+            (target_avg_popularity - (0.1) * std * (remaining_slots)) * 6
             - current_avg_popularity * (6 - remaining_slots)
         ) / (remaining_slots)
-        print(
-            f"calc'd min_popularity: {min_popularity} | calc'd max_popularity: {max_popularity}"
-        )
+
         if min_popularity < limit_popularity and max_popularity < limit_max_popularity:
             return limit_popularity, limit_max_popularity
         elif min_popularity < limit_popularity:
@@ -325,7 +319,7 @@ def solve_for_remainder_of_team(
             new_team = current_team.copy()
             new_team.append(mon)
             new_winrates = get_team_winrates_against_top_30(
-                current_team=current_team,
+                current_team=new_team,
                 top30mons=top30["Pokemon"].tolist(),
                 format_pvp=f_pvpmetadata,
             )
@@ -342,7 +336,6 @@ def solve_for_remainder_of_team(
 
         # update the current team with the best improvement mon
         current_team.append(best_mon)
-        print(f"added {best_mon} to the team")
         remaining_slots -= 1
 
     current_avg_popularity = get_team_popularity(
