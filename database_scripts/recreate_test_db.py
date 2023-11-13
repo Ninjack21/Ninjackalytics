@@ -1,5 +1,6 @@
 from ninjackalytics.database.database import Base, engine, SessionLocal
 from ninjackalytics.database.models.battles import *
+from ninjackalytics.database.models.metadata import *
 import os
 
 session = SessionLocal()
