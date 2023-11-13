@@ -1,5 +1,7 @@
 import requests
 
+# gen9ou full replay list spanned ~ 2 days. 1275th battle was from 2 days prior.
+
 
 def get_replay_urls(battle_format: str, pages: int = 24):
     # Define the base URL for the replay search API

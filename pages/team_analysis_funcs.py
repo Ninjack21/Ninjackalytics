@@ -3,8 +3,6 @@ import pandas as pd
 from typing import List, Tuple
 from datetime import datetime, timedelta
 from tqdm import tqdm
-import cProfile
-import pstats
 
 
 # ----------- utility functions ----------------
@@ -54,6 +52,12 @@ def get_format_teams(format_battle_info: pd.DataFrame):
     return format_teams
 
 
+def get_pvpmetadata():
+    ta = TableAccessor()
+    pvpmetadata = ta.get_pvpmetadata()
+    return pvpmetadata
+
+
 # ----------- now utilize utility functions with dataframes passed around ------------
 
 
@@ -71,62 +75,41 @@ def get_team_ids_for_mons(format_teams: pd.DataFrame, mons: List[str]):
     return team_ids_for_mons
 
 
-def get_top_30_winrates_against_team(
+def get_team_winrates_against_top_30(
     current_team: List[str],
     top30mons: List[str],
-    format_info: pd.DataFrame,
-    teams: pd.DataFrame,
+    format_pvp: pd.DataFrame,
 ):
-    recent_battle_info = format_info[
-        (format_info["Date_Submitted"] > (datetime.now() - timedelta(days=14)))
-    ]
-    team_ids_for_current_team = get_team_ids_for_mons(
-        format_teams=teams, mons=current_team
-    )
-
-    # these are the battles where a pokemon on the current team was used, so we can get the winrate of this specific
-    # combination of pokemon against each of the top 30
-    relevant_p1_battles = recent_battle_info[
-        (recent_battle_info["P1_team"].isin(team_ids_for_current_team))
-    ]
-    relevant_p2_battles = recent_battle_info[
-        (recent_battle_info["P2_team"].isin(team_ids_for_current_team))
-    ]
-
+    # the aim is to calculate how the team would do against the top30 mons, so we want to calculate the expected
+    # winrate against each of the top30 mons by using the sample sizes and winrates of each of the mons on our
+    # team to create the aggregate expected winrate against each of the top30 mons
     winrates = {}
+    pvps = format_pvp[
+        (format_pvp["Pokemon1"].isin(current_team))
+        & (format_pvp["Pokemon2"].isin(top30mons))
+    ]
+
     for mon in top30mons:
-        top30mon_teams_idxs = get_team_ids_for_mons(format_teams=teams, mons=[mon])
-        top30mon_teams = teams[teams["id"].isin(top30mon_teams_idxs)]
-        mon_wins = 0
-        mon_battles = 0
-        for team_id in top30mon_teams["id"]:
-            # find the battles where the current mon was on the other team relative to the relevant p1 and p2 battles
-            # this will ensure we check battles where the current mon fought against 1 or more of the pokemon on the
-            # current team
-            mon_in_p2_battles = relevant_p1_battles[
-                (relevant_p1_battles["P2_team"] == team_id)
-            ]
-            mon_in_p1_battles = relevant_p2_battles[
-                (relevant_p2_battles["P1_team"] == team_id)
-            ]
-            all_battles = len(mon_in_p2_battles) + len(mon_in_p1_battles)
-            mon_battles += all_battles
-            # now calculate the wins for the current mon
-            mon_in_p2_wins = len(
-                mon_in_p2_battles[
-                    mon_in_p2_battles["Winner"] == mon_in_p2_battles["P2"]
-                ]
+        # this gets our winrate into each of the top 30
+        team_wr_into_mon = pvps[
+            pvps["Pokemon1"].isin(current_team) & (pvps["Pokemon2"] == mon)
+        ].copy()  # create a copy of the slice to avoid SettingWithCopyWarning
+        total_samplesize = team_wr_into_mon["SampleSize"].sum()
+        if total_samplesize == 0:
+            # if no data, suggests highly off meta so assume 40% winrate
+            winrates[mon] = 40
+            continue
+        else:
+            team_wr_into_mon["Weighted Winrate"] = (
+                team_wr_into_mon["Winrate"]
+                * team_wr_into_mon["SampleSize"]
+                / total_samplesize
             )
-            mon_in_p1_wins = len(
-                mon_in_p1_battles[
-                    mon_in_p1_battles["Winner"] == mon_in_p1_battles["P1"]
-                ]
-            )
-            mon_wins += mon_in_p2_wins + mon_in_p1_wins
+            winrate = team_wr_into_mon["Weighted Winrate"].sum()
+            winrates[mon] = winrate
 
-        winrates[mon] = mon_wins / mon_battles
-
-    return pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+    winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+    return winrates
 
 
 def normalized_winrate(winrates: pd.DataFrame, top30: pd.DataFrame) -> pd.DataFrame:
@@ -307,13 +290,14 @@ def solve_for_remainder_of_team(
     top30 = format_metadata.sort_values(by="Popularity", ascending=False).head(30)
     format_info = get_format_battle_info(battle_format)
     format_teams = get_format_teams(format_info)
+    pvpmetadata = get_pvpmetadata()
+    f_pvpmetadata = pvpmetadata[pvpmetadata["Format"] == battle_format]
     remaining_slots = 6 - len(current_team)
     while remaining_slots > 0:
-        current_winrates = get_top_30_winrates_against_team(
+        current_winrates = get_team_winrates_against_top_30(
             current_team=current_team,
             top30mons=top30["Pokemon"].tolist(),
-            format_info=format_info,
-            teams=format_teams,
+            format_pvp=f_pvpmetadata,
         )
         current_norm_winrate = normalized_winrate(
             winrates=current_winrates, top30=top30
@@ -340,11 +324,10 @@ def solve_for_remainder_of_team(
         for mon in tqdm(available_pokemon):
             new_team = current_team.copy()
             new_team.append(mon)
-            new_winrates = get_top_30_winrates_against_team(
-                current_team=new_team,
+            new_winrates = get_team_winrates_against_top_30(
+                current_team=current_team,
                 top30mons=top30["Pokemon"].tolist(),
-                format_info=format_info,
-                teams=format_teams,
+                format_pvp=f_pvpmetadata,
             )
             improvement = (
                 normalized_winrate(
@@ -366,11 +349,10 @@ def solve_for_remainder_of_team(
         team=current_team,
         format_metadata=format_metadata,
     )
-    current_winrates = get_top_30_winrates_against_team(
+    current_winrates = get_team_winrates_against_top_30(
         current_team=current_team,
         top30mons=top30["Pokemon"].tolist(),
-        format_info=format_info,
-        teams=format_teams,
+        format_pvp=f_pvpmetadata,
     )
     current_norm_winrate = normalized_winrate(
         winrates=current_winrates,
@@ -387,24 +369,3 @@ def solve_for_remainder_of_team(
         "top30_winrates": current_winrates,
     }
     return solved_team_data
-
-
-def profile_func(func):
-    def wrapper(*args, **kwargs):
-        profiler = cProfile.Profile()
-        profiler.enable()
-
-        result = func(*args, **kwargs)
-
-        profiler.disable()
-        stats = pstats.Stats(profiler).sort_stats("tottime")
-        stats.print_stats()
-
-        return result
-
-    return wrapper
-
-
-@profile_func
-def profiled_solve_for_remainder_of_team(*args, **kwargs):
-    return solve_for_remainder_of_team(*args, **kwargs)
