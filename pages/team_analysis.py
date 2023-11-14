@@ -20,21 +20,40 @@ def layout():
         html.Div(
             [
                 html.Label(f"Pokemon {i+1}", style={"color": "white"}),
-                dcc.Dropdown(
-                    id=f"pokemon-selector-{i}",
-                    options=[
-                        {"label": pokemon_name, "value": pokemon_name}
-                        for pokemon_name in get_viable_pokemon(
-                            format_options[0]["value"]
-                        )
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id=f"pokemon-selector-{i}",
+                                options=[
+                                    {"label": pokemon_name, "value": pokemon_name}
+                                    for pokemon_name in get_viable_pokemon(
+                                        format_options[0]["value"]
+                                    )
+                                ],
+                                value=get_viable_pokemon(format_options[0]["value"])[i],
+                                placeholder="fill for me",
+                                style={
+                                    "width": "250px",
+                                    "color": "black",
+                                    "background-color": "white",
+                                },
+                            ),
+                            width=3,
+                        ),
+                        dbc.Col(
+                            dbc.Button(
+                                "Don't Use",
+                                id=f"dont-use-pokemon-button-{i}",
+                                n_clicks=0,
+                                color="danger",
+                                className="mr-1",
+                                size="sm",
+                                style={"margin-left": "10px"},
+                            ),
+                            width=2,
+                        ),
                     ],
-                    value=get_viable_pokemon(format_options[0]["value"])[i],
-                    placeholder="fill for me",
-                    style={
-                        "width": "375px",
-                        "color": "black",
-                        "background-color": "white",
-                    },
                 ),
                 html.Img(
                     id=f"pokemon-sprite-{i}",
@@ -66,6 +85,50 @@ def layout():
             html.Br(),
             html.Label("Pokemon Selections", style={"color": "white"}),
             *pokemon_selectors,
+            html.Br(),
+            html.Label("Don't Use Pokemon", style={"color": "white"}),
+            dcc.Dropdown(
+                id="dont-use-pokemon-selector",
+                options=[
+                    {"label": pokemon_name, "value": pokemon_name}
+                    for pokemon_name in get_viable_pokemon(format_options[0]["value"])
+                ],
+                multi=True,
+                placeholder="Select Pokemon",
+                style={
+                    "width": "375px",
+                    "color": "black",
+                    "background-color": "white",
+                },
+            ),
+            html.Br(),
+            html.Label("Creativity", style={"color": "white"}),
+            dcc.Input(
+                id="creativity-input",
+                type="number",
+                min=0,
+                max=100,
+                step=1,
+                value=50,
+                style={
+                    "width": "100px",
+                    "color": "black",
+                    "background-color": "white",
+                    "margin-bottom": "10px",
+                },
+            ),
+            html.Br(),
+            html.Div(
+                [
+                    dbc.Button(
+                        "Build Team",
+                        id="build-team-button",
+                        n_clicks=0,
+                        color="primary",
+                        className="mr-1",
+                    ),
+                ]
+            ),
         ],
         className="bg-dark",
         style={
@@ -82,12 +145,15 @@ def layout():
 @callback(
     [dash.dependencies.Output(f"pokemon-selector-{i}", "options") for i in range(6)],
     [dash.dependencies.Input("format-selector", "value")],
+    [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
 )
-def update_pokemon_options(selected_format):
+def update_pokemon_options(ignore_mons, selected_format):
     pokemon_options = [
         {"label": pokemon_name, "value": pokemon_name}
         for pokemon_name in get_viable_pokemon(selected_format)
     ]
+    for mon in ignore_mons:
+        pokemon_options.remove({"label": mon, "value": mon})
     return [pokemon_options for _ in range(6)]
 
 

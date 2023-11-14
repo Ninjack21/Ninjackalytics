@@ -166,6 +166,8 @@ def restrict_available_mons_based_on_creativity(
 
     take a percentage of the overall spread. if a spread is very large and creativity is large then this means the
     """
+    if creativity == 0:
+        return all_mons
     target_avg_popularity = get_target_avg_popularity(
         top30=top30, creativity=creativity
     )
