@@ -30,11 +30,10 @@ def layout():
                                     for pokemon_name in get_viable_pokemon(
                                         selected_format=format_options[0]["value"],
                                         selected_ignore_mons=[],
+                                        already_used_mons=[],
                                     )
                                 ],
-                                value=get_viable_pokemon(
-                                    format_options[0]["value"], selected_ignore_mons=[]
-                                )[i],
+                                value=None,
                                 placeholder="fill for me",
                                 style={
                                     "width": "250px",
@@ -60,12 +59,7 @@ def layout():
                 ),
                 html.Img(
                     id=f"pokemon-sprite-{i}",
-                    src=find_closest_sprite(
-                        get_viable_pokemon(
-                            selected_format=format_options[0]["value"],
-                            selected_ignore_mons=[],
-                        )[i],
-                    ),
+                    src=None,
                     style={
                         "height": mon_height,
                         "width": mon_width,
@@ -100,6 +94,7 @@ def layout():
                     for pokemon_name in get_viable_pokemon(
                         selected_format=format_options[0]["value"],
                         selected_ignore_mons=[],
+                        already_used_mons=[],
                     )
                 ],
                 multi=True,
@@ -151,20 +146,33 @@ def layout():
     )
 
 
-@callback(
-    [dash.dependencies.Output(f"pokemon-selector-{i}", "options") for i in range(6)],
-    [dash.dependencies.Input("format-selector", "value")],
-    [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
-)
-def update_pokemon_options(selected_format, ignore_mons):
-    print(ignore_mons)
-    pokemon_options = [
-        {"label": pokemon_name, "value": pokemon_name}
-        for pokemon_name in get_viable_pokemon(
-            selected_format=selected_format, selected_ignore_mons=ignore_mons
-        )
-    ]
-    return [pokemon_options for _ in range(6)]
+# define pokemon options based on format and other pokemon
+for i in range(6):
+    others = [x for x in range(6) if x != i]
+
+    @callback(
+        [dash.dependencies.Output(f"pokemon-selector-{i}", "options")],
+        [dash.dependencies.Input("format-selector", "value")],
+        [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
+        [dash.dependencies.Input(f"pokemon-selector-{others[0]}", "value")],
+        [dash.dependencies.Input(f"pokemon-selector-{others[1]}", "value")],
+        [dash.dependencies.Input(f"pokemon-selector-{others[2]}", "value")],
+        [dash.dependencies.Input(f"pokemon-selector-{others[3]}", "value")],
+        [dash.dependencies.Input(f"pokemon-selector-{others[4]}", "value")],
+    )
+    def update_pokemon_options(
+        selected_format, ignore_mons, other1, other2, other3, other4, other5
+    ):
+        already_used_mons = [other1, other2, other3, other4, other5]
+        pokemon_options = [
+            {"label": pokemon_name, "value": pokemon_name}
+            for pokemon_name in get_viable_pokemon(
+                selected_format=selected_format,
+                selected_ignore_mons=ignore_mons,
+                already_used_mons=already_used_mons,
+            )
+        ]
+        return pokemon_options
 
 
 @callback(
