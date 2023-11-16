@@ -51,7 +51,7 @@ def recalc_metadata_table_info():
             f_info = recent_battle_info[recent_battle_info["Format"] == f]
             rank_limit = get_rank_limit_based_on_quantile(f_info)
             f_info = f_info[f_info["Rank"] >= rank_limit]
-            print(rank_limit)
+            print(f"Rank Limit: {rank_limit} | Battles: {len(f_info)}")
             total_battles = len(f_info)
             team_ids = pd.concat([f_info["P1_team"], f_info["P2_team"]]).unique()
             # now get all of the pokemon in each team
@@ -136,7 +136,7 @@ def update_pvpmetadata():
             f_info = recent_battle_info[recent_battle_info["Format"] == f]
             rank_limit = get_rank_limit_based_on_quantile(f_info)
             f_info = f_info[f_info["Rank"] >= rank_limit]
-            print(rank_limit)
+            print(f"Rank Limit: {rank_limit} | Battles: {len(f_info)}")
             team_ids = pd.concat([f_info["P1_team"], f_info["P2_team"]]).unique()
             # now get all of the pokemon in each team
             format_teams = teams[teams["id"].isin(team_ids)]
