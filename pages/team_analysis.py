@@ -28,10 +28,13 @@ def layout():
                                 options=[
                                     {"label": pokemon_name, "value": pokemon_name}
                                     for pokemon_name in get_viable_pokemon(
-                                        format_options[0]["value"]
+                                        selected_format=format_options[0]["value"],
+                                        selected_ignore_mons=[],
                                     )
                                 ],
-                                value=get_viable_pokemon(format_options[0]["value"])[i],
+                                value=get_viable_pokemon(
+                                    format_options[0]["value"], selected_ignore_mons=[]
+                                )[i],
                                 placeholder="fill for me",
                                 style={
                                     "width": "250px",
@@ -58,7 +61,10 @@ def layout():
                 html.Img(
                     id=f"pokemon-sprite-{i}",
                     src=find_closest_sprite(
-                        get_viable_pokemon(format_options[0]["value"])[i]
+                        get_viable_pokemon(
+                            selected_format=format_options[0]["value"],
+                            selected_ignore_mons=[],
+                        )[i],
                     ),
                     style={
                         "height": mon_height,
@@ -91,7 +97,10 @@ def layout():
                 id="dont-use-pokemon-selector",
                 options=[
                     {"label": pokemon_name, "value": pokemon_name}
-                    for pokemon_name in get_viable_pokemon(format_options[0]["value"])
+                    for pokemon_name in get_viable_pokemon(
+                        selected_format=format_options[0]["value"],
+                        selected_ignore_mons=[],
+                    )
                 ],
                 multi=True,
                 placeholder="Select Pokemon",
@@ -147,13 +156,14 @@ def layout():
     [dash.dependencies.Input("format-selector", "value")],
     [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
 )
-def update_pokemon_options(ignore_mons, selected_format):
+def update_pokemon_options(selected_format, ignore_mons):
+    print(ignore_mons)
     pokemon_options = [
         {"label": pokemon_name, "value": pokemon_name}
-        for pokemon_name in get_viable_pokemon(selected_format)
+        for pokemon_name in get_viable_pokemon(
+            selected_format=selected_format, selected_ignore_mons=ignore_mons
+        )
     ]
-    for mon in ignore_mons:
-        pokemon_options.remove({"label": mon, "value": mon})
     return [pokemon_options for _ in range(6)]
 
 
