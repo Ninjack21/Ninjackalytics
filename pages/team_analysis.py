@@ -19,7 +19,6 @@ def layout():
     pokemon_selectors = [
         html.Div(
             [
-                html.Label(f"Pokemon {i+1}", style={"color": "white"}),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -41,32 +40,32 @@ def layout():
                                     "background-color": "white",
                                 },
                             ),
-                            width=3,
+                            width=6,
                         ),
                         dbc.Col(
-                            dbc.Button(
-                                "Don't Use",
-                                id=f"dont-use-pokemon-button-{i}",
-                                n_clicks=0,
-                                color="danger",
-                                className="mr-1",
-                                size="sm",
-                                style={"margin-left": "10px"},
+                            html.Img(
+                                id=f"pokemon-sprite-{i}",
+                                src=None,
+                                style={
+                                    "height": mon_height,
+                                    "width": mon_width,
+                                    "padding-top": "10px",
+                                    "padding-left": "10px",  # Add padding to the left
+                                },
                             ),
-                            width=2,
+                            width=6,
+                            style={
+                                "display": "flex",
+                                "align-items": "center",
+                                "justify-content": "flex-end",
+                            },
                         ),
                     ],
+                    style={"align-items": "center"},
                 ),
-                html.Img(
-                    id=f"pokemon-sprite-{i}",
-                    src=None,
-                    style={
-                        "height": mon_height,
-                        "width": mon_width,
-                        "padding-top": "10px",
-                    },
-                ),
-            ]
+            ],
+            className="col-md-4",
+            style={"display": "flex", "align-items": "center"},
         )
         for i in range(6)
     ]
