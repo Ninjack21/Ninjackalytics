@@ -164,6 +164,7 @@ for i in range(6):
         selected_format, ignore_mons, other1, other2, other3, other4, other5
     ):
         already_used_mons = [other1, other2, other3, other4, other5]
+
         pokemon_options = [
             {"label": pokemon_name, "value": pokemon_name}
             for pokemon_name in get_viable_pokemon(
@@ -172,7 +173,7 @@ for i in range(6):
                 already_used_mons=already_used_mons,
             )
         ]
-        return pokemon_options
+        return [pokemon_options]
 
 
 @callback(

@@ -20,10 +20,8 @@ def get_viable_pokemon(
         return []
     unavailable_mons = [None]
     if already_used_mons:
-        print(f"already used mons: {already_used_mons}")
         unavailable_mons += already_used_mons
     if selected_ignore_mons:
-        print(f"ignore mons: {selected_ignore_mons}")
         unavailable_mons += selected_ignore_mons
 
     format_info = get_format_battle_info(battle_format=selected_format)
