@@ -13,6 +13,19 @@ def get_viable_formats():
     return viable_formats
 
 
+def get_viable_format_pokemon(selected_format: str) -> List[str]:
+    if selected_format == None:
+        return []
+
+    format_info = get_format_battle_info(battle_format=selected_format)
+    format_teams = get_format_teams(format_battle_info=format_info)
+    # now get the pokemon from the teams
+    viable_pokemon = pd.concat([format_teams[f"Pok{i}"] for i in range(1, 7)]).unique()
+    # now remove any nulls
+    viable_pokemon = [mon for mon in viable_pokemon if mon != None]
+    return viable_pokemon
+
+
 def get_viable_pokemon(
     selected_format: str, selected_ignore_mons: List[str], already_used_mons: List[str]
 ):

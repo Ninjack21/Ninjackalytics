@@ -3,7 +3,11 @@ from dash import html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 from .navbar import navbar
 from .general_utility import find_closest_sprite
-from .team_analysis_funcs import get_viable_formats, get_viable_pokemon
+from .team_analysis_funcs import (
+    get_viable_formats,
+    get_viable_pokemon,
+    get_viable_format_pokemon,
+)
 
 dash.register_page(__name__, path="/team_analysis")
 
@@ -19,6 +23,12 @@ def layout():
     pokemon_selectors = [
         html.Div(
             [
+                dcc.Store(
+                    id="viable-pokemon-store",
+                    data=get_viable_format_pokemon(
+                        selected_format=format_options[0]["value"]
+                    ),
+                ),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -145,34 +155,57 @@ def layout():
     )
 
 
-# define pokemon options based on format and other pokemon
-for i in range(6):
-    others = [x for x in range(6) if x != i]
+# pokemon selector options
+@callback(
+    [dash.dependencies.Output(f"pokemon-selector-0", "options")],
+    [dash.dependencies.Output(f"pokemon-selector-1", "options")],
+    [dash.dependencies.Output(f"pokemon-selector-2", "options")],
+    [dash.dependencies.Output(f"pokemon-selector-3", "options")],
+    [dash.dependencies.Output(f"pokemon-selector-4", "options")],
+    [dash.dependencies.Output(f"pokemon-selector-5", "options")],
+    [dash.dependencies.Input("format-selector", "value")],
+    [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-0", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-1", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-2", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-3", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-4", "value")],
+    [dash.dependencies.Input(f"pokemon-selector-5", "value")],
+    [dash.dependencies.State("viable-pokemon-store", "data")],
+)
+def update_pokemon_options(
+    selected_format,
+    ignore_mons,
+    mon0,
+    mon1,
+    mon2,
+    mon3,
+    mon4,
+    mon5,
+    viable_pokemon,
+):
+    mons = [mon0, mon1, mon2, mon3, mon4, mon5]
 
-    @callback(
-        [dash.dependencies.Output(f"pokemon-selector-{i}", "options")],
-        [dash.dependencies.Input("format-selector", "value")],
-        [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
-        [dash.dependencies.Input(f"pokemon-selector-{others[0]}", "value")],
-        [dash.dependencies.Input(f"pokemon-selector-{others[1]}", "value")],
-        [dash.dependencies.Input(f"pokemon-selector-{others[2]}", "value")],
-        [dash.dependencies.Input(f"pokemon-selector-{others[3]}", "value")],
-        [dash.dependencies.Input(f"pokemon-selector-{others[4]}", "value")],
+    selector_options = []
+    for mon in mons:
+        unavailable_mons = [other for other in mons if other not in [mon, None]]
+        if ignore_mons is not None:
+            unavailable_mons += ignore_mons
+        selector_options.append(
+            [
+                {"label": pokemon_name, "value": pokemon_name}
+                for pokemon_name in viable_pokemon
+                if pokemon_name not in unavailable_mons
+            ]
+        )
+    return (
+        selector_options[0],
+        selector_options[1],
+        selector_options[2],
+        selector_options[3],
+        selector_options[4],
+        selector_options[5],
     )
-    def update_pokemon_options(
-        selected_format, ignore_mons, other1, other2, other3, other4, other5
-    ):
-        already_used_mons = [other1, other2, other3, other4, other5]
-
-        pokemon_options = [
-            {"label": pokemon_name, "value": pokemon_name}
-            for pokemon_name in get_viable_pokemon(
-                selected_format=selected_format,
-                selected_ignore_mons=ignore_mons,
-                already_used_mons=already_used_mons,
-            )
-        ]
-        return [pokemon_options]
 
 
 @callback(
@@ -184,3 +217,8 @@ def update_pokemon_sprites(*pokemon_names):
         find_closest_sprite(pokemon_name) if pokemon_name is not None else None
         for pokemon_name in pokemon_names
     ]
+
+
+@callback(Output("viable-pokemon-store", "data"), Input("format-selector", "value"))
+def update_viable_pokemon_store(selected_format):
+    return get_viable_format_pokemon(selected_format=selected_format)
