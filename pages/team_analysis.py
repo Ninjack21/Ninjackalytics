@@ -21,18 +21,32 @@ def layout():
         {"label": format_name, "value": format_name}
         for format_name in get_viable_formats()
     ]
-    pokemon_selectors = [
-        html.Div(
-            [
-                dcc.Store(
-                    id="viable-pokemon-store",
-                    data=get_viable_format_pokemon(
-                        selected_format=format_options[0]["value"]
-                    ),
+
+    return html.Div(
+        [
+            navbar(),
+            dcc.Store(
+                id="viable-pokemon-store",
+                data=get_viable_format_pokemon(
+                    selected_format=format_options[0]["value"]
                 ),
-                dbc.Row(
-                    [
-                        dbc.Col(
+            ),
+            html.H1("Team Builder Tool"),
+            html.Br(),
+            html.Label("Format", style={"color": "white"}),
+            dcc.Dropdown(
+                id="format-selector",
+                options=format_options,
+                value=format_options[0]["value"],
+                style={"width": "375px", "color": "black", "background-color": "white"},
+            ),
+            html.Br(),
+            # ===== POKEMON SELECTIONS ======
+            html.Label("Pokemon Selections", style={"color": "white"}),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
                             dcc.Dropdown(
                                 id=f"pokemon-selector-{i}",
                                 options=[
@@ -51,9 +65,6 @@ def layout():
                                     "background-color": "white",
                                 },
                             ),
-                            width=6,
-                        ),
-                        dbc.Col(
                             html.Img(
                                 id=f"pokemon-sprite-{i}",
                                 src=None,
@@ -64,62 +75,12 @@ def layout():
                                     "padding-left": "10px",  # Add padding to the left
                                 },
                             ),
-                            width=6,
-                            style={
-                                "display": "flex",
-                                "align-items": "center",
-                                "justify-content": "flex-end",
-                            },
-                        ),
-                    ],
-                    style={"align-items": "center"},
-                ),
-            ],
-            className="col-md-4",
-            style={"display": "flex", "align-items": "center"},
-        )
-        for i in range(6)
-    ]
-
-    suggested_team = html.Div(
-        [
-            html.Div(
-                [
-                    html.H5(id=f"suggested-pokemon-name-{i}", children=""),
-                    html.Img(
-                        id=f"suggested-pokemon-sprite-{i}",
-                        src=None,
-                        style={
-                            "height": mon_height,
-                            "width": mon_width,
-                            "padding-top": "10px",
-                            "padding-left": "10px",
-                        },
-                    ),
-                ],
-                className="col-md-4",
-                style={"display": "flex", "align-items": "center"},
-            )
-            for i in range(6)
-        ],
-        id="suggested-team",
-    )
-    return html.Div(
-        [
-            navbar(),
-            html.H1("Team Builder Tool"),
-            html.Br(),
-            html.Label("Format", style={"color": "white"}),
-            dcc.Dropdown(
-                id="format-selector",
-                options=format_options,
-                value=format_options[0]["value"],
-                style={"width": "375px", "color": "black", "background-color": "white"},
+                        ],
+                        width=2,
+                    )
+                    for i in range(6)
+                ]
             ),
-            html.Br(),
-            # ===== POKEMON SELECTIONS ======
-            html.Label("Pokemon Selections", style={"color": "white"}),
-            *pokemon_selectors,
             html.Br(),
             # ===== DON'T USE POKEMON ======
             html.Label("Don't Use Pokemon", style={"color": "white"}),
@@ -272,42 +233,43 @@ def update_viable_pokemon_store(selected_format):
     )
 
 
-@callback(
-    [
-        dash.dependencies.Output(f"suggested-pokemon-name-{i}", "children")
-        for i in range(6)
-    ]
-    + [
-        dash.dependencies.Output(f"suggested-pokemon-sprite-{i}", "src")
-        for i in range(6)
-    ],
-    [dash.dependencies.Input("build-team-button", "n_clicks")],
-    [dash.dependencies.Input("creativity-input", "value")],
-    [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
-    [dash.dependencies.Input("format-selector", "value")],
-    [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
-)
-def update_suggested_team(
-    n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
-):
-    if n_clicks == 0:
-        return [
-            dash.no_update
-        ] * 12  # Don't update anything if the button hasn't been clicked
+# build team script
+# @callback(
+#     [
+#         dash.dependencies.Output(f"suggested-pokemon-name-{i}", "children")
+#         for i in range(6)
+#     ]
+#     + [
+#         dash.dependencies.Output(f"suggested-pokemon-sprite-{i}", "src")
+#         for i in range(6)
+#     ],
+#     [dash.dependencies.Input("build-team-button", "n_clicks")],
+#     [dash.dependencies.Input("creativity-input", "value")],
+#     [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
+#     [dash.dependencies.Input("format-selector", "value")],
+#     [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
+# )
+# def update_suggested_team(
+#     n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
+# ):
+#     if n_clicks == 0:
+#         return [
+#             dash.no_update
+#         ] * 12  # Don't update anything if the button hasn't been clicked
 
-    if not ignore_mons:
-        ignore_mons = []
-    # Generate your suggested team here. This is just a placeholder.
-    current_team = [pokemon for pokemon in selected_pokemon if pokemon is not None]
-    suggested_team = solve_for_remainder_of_team(
-        current_team=current_team,
-        battle_format=battle_format,
-        creativity=creativity,
-        ignore_mons=ignore_mons,
-    )
+#     if not ignore_mons:
+#         ignore_mons = []
+#     # Generate your suggested team here. This is just a placeholder.
+#     current_team = [pokemon for pokemon in selected_pokemon if pokemon is not None]
+#     suggested_team = solve_for_remainder_of_team(
+#         current_team=current_team,
+#         battle_format=battle_format,
+#         creativity=creativity,
+#         ignore_mons=ignore_mons,
+#     )
 
-    # Get the names and sprites of the suggested team
-    suggested_names = suggested_team
-    suggested_sprites = [find_closest_sprite(name) for name in suggested_team]
+#     # Get the names and sprites of the suggested team
+#     suggested_names = suggested_team
+#     suggested_sprites = [find_closest_sprite(name) for name in suggested_team]
 
-    return suggested_names + suggested_sprites
+#     return suggested_names + suggested_sprites
