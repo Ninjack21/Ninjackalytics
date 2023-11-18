@@ -172,6 +172,7 @@ def layout():
     [dash.dependencies.Input(f"pokemon-selector-4", "value")],
     [dash.dependencies.Input(f"pokemon-selector-5", "value")],
     [dash.dependencies.State("viable-pokemon-store", "data")],
+    order=1,
 )
 def update_pokemon_options(
     selected_format,
@@ -211,6 +212,7 @@ def update_pokemon_options(
 @callback(
     [dash.dependencies.Output(f"pokemon-sprite-{i}", "src") for i in range(6)],
     [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
+    order=2,
 )
 def update_pokemon_sprites(*pokemon_names):
     return [
@@ -219,6 +221,24 @@ def update_pokemon_sprites(*pokemon_names):
     ]
 
 
-@callback(Output("viable-pokemon-store", "data"), Input("format-selector", "value"))
+@callback(
+    Output("viable-pokemon-store", "data"),
+    [dash.dependencies.Output(f"pokemon-selector-0", "value")],
+    [dash.dependencies.Output(f"pokemon-selector-1", "value")],
+    [dash.dependencies.Output(f"pokemon-selector-2", "value")],
+    [dash.dependencies.Output(f"pokemon-selector-3", "value")],
+    [dash.dependencies.Output(f"pokemon-selector-4", "value")],
+    [dash.dependencies.Output(f"pokemon-selector-5", "value")],
+    Input("format-selector", "value"),
+    order=0,
+)
 def update_viable_pokemon_store(selected_format):
-    return get_viable_format_pokemon(selected_format=selected_format)
+    return (
+        get_viable_format_pokemon(selected_format=selected_format),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
