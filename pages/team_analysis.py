@@ -131,6 +131,41 @@ def layout():
                     ),
                 ]
             ),
+            # ========= BUILT TEAM FIELDS =========
+            html.Label("Completed Team", style={"color": "white"}),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dcc.Input(
+                                id=f"team-mon-{i}",
+                                type="text",
+                                value=None,
+                                placeholder="Click Build Team!",
+                                disabled=True,
+                                style={
+                                    "width": "250px",
+                                    "color": "black",
+                                    "background-color": "white",
+                                },
+                            ),
+                            html.Img(
+                                id=f"team-sprite-{i}",
+                                src=None,
+                                style={
+                                    "height": mon_height,
+                                    "width": mon_width,
+                                    "padding-top": "10px",
+                                    "padding-left": "10px",  # Add padding to the left
+                                },
+                            ),
+                        ],
+                        width=2,
+                    )
+                    for i in range(6)
+                ]
+            ),
+            html.Br(),
         ],
         className="bg-dark",
         style={
@@ -210,6 +245,7 @@ def update_pokemon_sprites(*pokemon_names):
     ]
 
 
+# init pokemon options as None
 @callback(
     Output("viable-pokemon-store", "data"),
     [dash.dependencies.Output(f"pokemon-selector-0", "value")],
@@ -233,16 +269,9 @@ def update_viable_pokemon_store(selected_format):
     )
 
 
-# build team script
+# # build team script
 # @callback(
-#     [
-#         dash.dependencies.Output(f"suggested-pokemon-name-{i}", "children")
-#         for i in range(6)
-#     ]
-#     + [
-#         dash.dependencies.Output(f"suggested-pokemon-sprite-{i}", "src")
-#         for i in range(6)
-#     ],
+
 #     [dash.dependencies.Input("build-team-button", "n_clicks")],
 #     [dash.dependencies.Input("creativity-input", "value")],
 #     [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
