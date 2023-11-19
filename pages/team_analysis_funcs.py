@@ -146,6 +146,32 @@ def normalized_winrate(winrates: pd.DataFrame, top30: pd.DataFrame) -> pd.DataFr
     return winrates["Normalized Winrate"].sum()
 
 
+def add_meta_context_to_final_winrates(
+    current_winrates: pd.DataFrame, top30: pd.DataFrame
+) -> pd.DataFrame:
+    top30 = top30.set_index("Pokemon")
+    top30 = top30.drop(columns=["SampleSize", "Format"])
+    current_winrates = current_winrates.join(top30, how="left")
+    current_winrates = current_winrates.reset_index()
+    current_winrates = current_winrates.rename(
+        columns={
+            "index": "Pop Mon",
+            "winrate": "Team WR x Pop Mon",
+            "Popularity": "Popularity",
+            "Winrate": "Pop Mon General WR",
+        }
+    )
+    # show the highest threats first
+    current_winrates = current_winrates.sort_values(
+        by="Team WR x Pop Mon", ascending=True
+    )
+    # Round non-Pop Mon values to the nearest 1st decimal place
+    current_winrates.loc[
+        :, ~current_winrates.columns.isin(["Pop Mon"])
+    ] = current_winrates.loc[:, ~current_winrates.columns.isin(["Pop Mon"])].round(1)
+    return current_winrates
+
+
 # ----------- handle the available pokemon rules ----------------
 def get_format_available_pokemon(
     format_teams: pd.DataFrame, format_metadata: pd.DataFrame
@@ -367,6 +393,9 @@ def solve_for_remainder_of_team(
         top30mons=top30["Pokemon"].tolist(),
         format_pvp=f_pvpmetadata,
     )
+    display_winrates = add_meta_context_to_final_winrates(
+        current_winrates=current_winrates, top30=top30
+    )
     current_norm_winrate = normalized_winrate(
         winrates=current_winrates,
         top30=top30,
@@ -379,6 +408,6 @@ def solve_for_remainder_of_team(
         "avg_popularity": current_avg_popularity,
         "norm_winrate": current_norm_winrate,
         "target_avg_popularity": target_avg_popularity,
-        "top30_winrates": current_winrates,
+        "top30_winrates": display_winrates,
     }
     return solved_team_data

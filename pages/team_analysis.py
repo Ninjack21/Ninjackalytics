@@ -209,9 +209,10 @@ def layout():
                                     columns=[
                                         {"name": i, "id": i}
                                         for i in [
-                                            "Top30 Most Popular Pokemon",
-                                            "Winrate Against",
+                                            "Pop Mon",
                                             "Popularity",
+                                            "Pop Mon General WR",
+                                            "Team WR x Pop Mon",
                                         ]
                                     ],
                                     data=[],
@@ -232,6 +233,8 @@ def layout():
                                         "minWidth": "0px",
                                         "maxWidth": "180px",  # Adjust column widths
                                         "whiteSpace": "normal",  # Allow the text to wrap
+                                        "textAlign": "center",  # Center the cell values
+                                        "padding": "10px",  # Add padding to the cells
                                     },
                                 ),
                             )
@@ -391,7 +394,6 @@ def update_suggested_team(
     )
     winrate_data = solved_team_dict["top30_winrates"]
     # show biggest threats to the team at the top
-    print(f"\n\n\n\n{winrate_data}\n\n\n\n")
     return (
         suggested_names
         + suggested_sprites
