@@ -1,6 +1,6 @@
 import re
 from typing import List, Tuple
-
+import traceback
 from .sub_modules import Pokemon, PokemonFinder, Team
 
 
