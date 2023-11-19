@@ -298,7 +298,7 @@ def solve_for_remainder_of_team(
     current_team: List[str],
     battle_format: str,
     creativity: int,
-    disregard_pokemon: List[str] = [],
+    ignore_mons: List[str] = [],
 ):
     format_metadata = get_format_metadata(battle_format)
     top30 = format_metadata.sort_values(by="Popularity", ascending=False).head(30)
@@ -329,7 +329,7 @@ def solve_for_remainder_of_team(
         available_pokemon = [
             mon
             for mon in available_pokemon
-            if mon not in disregard_pokemon and mon not in current_team
+            if mon not in ignore_mons and mon not in current_team
         ]
         # --------- now look for the next best pokemon to add -------
         # now we can try adding each individual pokemon to see who improves the winrate the most

@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, callback
+from dash import html, dcc, Input, Output, callback, dash_table
 import dash_bootstrap_components as dbc
 from .navbar import navbar
 from .general_utility import find_closest_sprite
@@ -133,37 +133,111 @@ def layout():
             ),
             # ========= BUILT TEAM FIELDS =========
             html.Label("Completed Team", style={"color": "white"}),
-            dbc.Row(
-                [
-                    dbc.Col(
+            dcc.Loading(
+                id="loading",
+                type="circle",
+                children=[
+                    # suggested team and sprites
+                    dbc.Row(
                         [
-                            dcc.Input(
-                                id=f"team-mon-{i}",
-                                type="text",
-                                value=None,
-                                placeholder="Click Build Team!",
-                                disabled=True,
-                                style={
-                                    "width": "250px",
-                                    "color": "black",
-                                    "background-color": "white",
-                                },
+                            dbc.Col(
+                                [
+                                    dcc.Input(
+                                        id=f"team-mon-{i}",
+                                        type="text",
+                                        value=None,
+                                        placeholder="Click Build Team!",
+                                        disabled=True,
+                                        style={
+                                            "width": "250px",
+                                            "color": "black",
+                                            "background-color": "white",
+                                        },
+                                    ),
+                                    html.Img(
+                                        id=f"team-sprite-{i}",
+                                        src=None,
+                                        style={
+                                            "height": mon_height,
+                                            "width": mon_width,
+                                            "padding-top": "10px",
+                                            "padding-left": "10px",  # Add padding to the left
+                                        },
+                                    ),
+                                ],
+                                width=2,
+                            )
+                            for i in range(6)
+                        ]
+                    ),
+                    html.Br(),
+                    html.Br(),
+                    # team stats
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Div(
+                                    id="expected-winrate",
+                                    children="Expected Overall Winrate: ",
+                                ),
+                                width=4,
                             ),
-                            html.Img(
-                                id=f"team-sprite-{i}",
-                                src=None,
-                                style={
-                                    "height": mon_height,
-                                    "width": mon_width,
-                                    "padding-top": "10px",
-                                    "padding-left": "10px",  # Add padding to the left
-                                },
+                            dbc.Col(
+                                html.Div(
+                                    id="avg-popularity", children="Average Popularity: "
+                                ),
+                                width=4,
                             ),
-                        ],
-                        width=2,
-                    )
-                    for i in range(6)
-                ]
+                            dbc.Col(
+                                html.Div(
+                                    id="target-avg-popularity",
+                                    children="Target Average Popularity: ",
+                                ),
+                                width=4,
+                            ),
+                        ]
+                    ),
+                    html.Br(),
+                    html.Br(),
+                    html.Br(),
+                    # DataFrame of Winrates into Top30
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dash_table.DataTable(
+                                    id="winrate-data",
+                                    columns=[
+                                        {"name": i, "id": i}
+                                        for i in [
+                                            "Top30 Most Popular Pokemon",
+                                            "Winrate Against",
+                                            "Popularity",
+                                        ]
+                                    ],
+                                    data=[],
+                                    style_data_conditional=[
+                                        {
+                                            "if": {"row_index": "odd"},
+                                            "backgroundColor": "rgb(48, 48, 48)",
+                                        }
+                                    ],
+                                    style_header={
+                                        "backgroundColor": "rgb(30, 30, 30)",
+                                        "color": "white",
+                                        "textAlign": "center",  # Center the column titles
+                                    },
+                                    style_cell={
+                                        "backgroundColor": "rgb(50, 50, 50)",
+                                        "color": "white",
+                                        "minWidth": "0px",
+                                        "maxWidth": "180px",  # Adjust column widths
+                                        "whiteSpace": "normal",  # Allow the text to wrap
+                                    },
+                                ),
+                            )
+                        ]
+                    ),
+                ],
             ),
             html.Br(),
         ],
@@ -233,6 +307,7 @@ def update_pokemon_options(
     )
 
 
+# pokemon sprites updates
 @callback(
     [dash.dependencies.Output(f"pokemon-sprite-{i}", "src") for i in range(6)],
     [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
@@ -245,7 +320,7 @@ def update_pokemon_sprites(*pokemon_names):
     ]
 
 
-# init pokemon options as None
+# init pokemon options as None and re-calc viable pokemon for format
 @callback(
     Output("viable-pokemon-store", "data"),
     [dash.dependencies.Output(f"pokemon-selector-0", "value")],
@@ -269,36 +344,61 @@ def update_viable_pokemon_store(selected_format):
     )
 
 
-# # build team script
-# @callback(
+# build team script
+@callback(
+    [dash.dependencies.Output(f"team-mon-{i}", "value") for i in range(6)]
+    + [dash.dependencies.Output(f"team-sprite-{i}", "src") for i in range(6)]
+    + [
+        dash.dependencies.Output("avg-popularity", "children"),
+        dash.dependencies.Output("target-avg-popularity", "children"),
+        dash.dependencies.Output("expected-winrate", "children"),
+        dash.dependencies.Output("winrate-data", "data"),  # New Output for winrate_data
+    ],
+    [dash.dependencies.Input("build-team-button", "n_clicks")],
+    [dash.dependencies.State("creativity-input", "value")],
+    [dash.dependencies.State("dont-use-pokemon-selector", "value")],
+    [dash.dependencies.State("format-selector", "value")]
+    + [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
+)
+def update_suggested_team(
+    n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
+):
+    if n_clicks == 0:
+        return [
+            dash.no_update
+        ] * 16  # Don't update anything if the button hasn't been clicked
 
-#     [dash.dependencies.Input("build-team-button", "n_clicks")],
-#     [dash.dependencies.Input("creativity-input", "value")],
-#     [dash.dependencies.Input("dont-use-pokemon-selector", "value")],
-#     [dash.dependencies.Input("format-selector", "value")],
-#     [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
-# )
-# def update_suggested_team(
-#     n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
-# ):
-#     if n_clicks == 0:
-#         return [
-#             dash.no_update
-#         ] * 12  # Don't update anything if the button hasn't been clicked
+    if not ignore_mons:
+        ignore_mons = []
+    # Generate your suggested team here. This is just a placeholder.
+    current_team = [pokemon for pokemon in selected_pokemon if pokemon is not None]
+    solved_team_dict = solve_for_remainder_of_team(
+        current_team=current_team,
+        battle_format=battle_format,
+        creativity=creativity,
+        ignore_mons=ignore_mons,
+    )
 
-#     if not ignore_mons:
-#         ignore_mons = []
-#     # Generate your suggested team here. This is just a placeholder.
-#     current_team = [pokemon for pokemon in selected_pokemon if pokemon is not None]
-#     suggested_team = solve_for_remainder_of_team(
-#         current_team=current_team,
-#         battle_format=battle_format,
-#         creativity=creativity,
-#         ignore_mons=ignore_mons,
-#     )
+    suggested_names = [pokemon for pokemon in solved_team_dict["team"]]
+    suggested_sprites = [find_closest_sprite(name) for name in solved_team_dict["team"]]
 
-#     # Get the names and sprites of the suggested team
-#     suggested_names = suggested_team
-#     suggested_sprites = [find_closest_sprite(name) for name in suggested_team]
-
-#     return suggested_names + suggested_sprites
+    avg_popularity = (
+        f"Average Popularity: {round(solved_team_dict['avg_popularity'], 2)}%"
+    )
+    target_avg_popularity = f"Target Average Popularity: {round(solved_team_dict['target_avg_popularity'],2)}%"
+    expected_winrate = (
+        f"Expected Overall Winrate: {round(solved_team_dict['norm_winrate'], 2)}%"
+    )
+    winrate_data = solved_team_dict["top30_winrates"]
+    # show biggest threats to the team at the top
+    print(f"\n\n\n\n{winrate_data}\n\n\n\n")
+    return (
+        suggested_names
+        + suggested_sprites
+        + [
+            avg_popularity,
+            target_avg_popularity,
+            expected_winrate,
+            winrate_data.to_dict("records"),
+        ]
+    )
