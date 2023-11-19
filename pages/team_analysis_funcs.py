@@ -102,28 +102,58 @@ def get_team_winrates_against_top_30(
     # winrate against each of the top30 mons by using the sample sizes and winrates of each of the mons on our
     # team to create the aggregate expected winrate against each of the top30 mons
     winrates = {}
-    pvps = format_pvp[
-        (format_pvp["Pokemon1"].isin(current_team))
-        & (format_pvp["Pokemon2"].isin(top30mons))
-    ]
 
     for mon in top30mons:
-        # this gets our winrate into each of the top 30
-        team_wr_into_mon = pvps[
-            pvps["Pokemon1"].isin(current_team) & (pvps["Pokemon2"] == mon)
-        ].copy()  # create a copy of the slice to avoid SettingWithCopyWarning
-        total_samplesize = team_wr_into_mon["SampleSize"].sum()
-        if total_samplesize == 0:
-            # if no data, suggests highly off meta so assume 40% winrate
-            winrates[mon] = 40
+        team_mon_in_pokemon1 = format_pvp[
+            (format_pvp["Pokemon1"].isin(current_team))
+            & (format_pvp["Pokemon2"] == mon)
+        ].copy()
+        team_mon_in_pokemon2 = format_pvp[
+            (format_pvp["Pokemon2"].isin(current_team))
+            & (format_pvp["Pokemon1"] == mon)
+        ].copy()
+
+        total_samplesize = (
+            team_mon_in_pokemon1["SampleSize"].sum()
+            + team_mon_in_pokemon2["SampleSize"].sum()
+        )
+        if total_samplesize < 30:
+            # if very low data, then entire team is super unpopular and we would expect a very bad winrate
+            winrates[mon] = 35
             continue
         else:
-            team_wr_into_mon["Weighted Winrate"] = (
-                team_wr_into_mon["Winrate"]
-                * team_wr_into_mon["SampleSize"]
-                / total_samplesize
+            # if in mon1 then we have the winrate against the top30 mon, which we want
+            team_mon_in_pokemon1["Weighted Winrate"] = (
+                team_mon_in_pokemon1["Winrate"]
+                * team_mon_in_pokemon1["SampleSize"]
+                / team_mon_in_pokemon1["SampleSize"].sum()
             )
-            winrate = team_wr_into_mon["Weighted Winrate"].sum()
+
+            winrate_in_mon1 = team_mon_in_pokemon1["Weighted Winrate"].sum()
+            in_mon1_samplesize = team_mon_in_pokemon1["SampleSize"].sum()
+
+            # if in mon2 then we have the winrate of top30 against us, so we need 1-winrate, but gets goofy with
+            # weighted winrates
+            # this is inefficient and it could be done in one line but won't slow it down to an amount the user will
+            # care about but it WILL make it much more intuitive how it works for future maintenance
+            team_mon_in_pokemon2["Reversed Winrate"] = (
+                100 - team_mon_in_pokemon2["Winrate"]
+            )
+            # use reversed winrates to get the winrate of team mons against top30 mons like desired
+            team_mon_in_pokemon2["Weighted Winrate"] = (
+                team_mon_in_pokemon2["Reversed Winrate"]
+                * team_mon_in_pokemon2["SampleSize"]
+                / team_mon_in_pokemon2["SampleSize"].sum()
+            )
+
+            winrate_in_mon2 = team_mon_in_pokemon2["Weighted Winrate"].sum()
+            in_mon2_samplesize = team_mon_in_pokemon2["SampleSize"].sum()
+
+            # now we can calculate the overall winrate
+            winrate = (winrate_in_mon1 * in_mon1_samplesize / total_samplesize) + (
+                winrate_in_mon2 * in_mon2_samplesize / total_samplesize
+            )
+
             winrates[mon] = winrate
 
     winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
@@ -163,7 +193,7 @@ def add_meta_context_to_final_winrates(
     )
     # show the highest threats first
     current_winrates = current_winrates.sort_values(
-        by="Team WR x Pop Mon", ascending=True
+        by="Team WR x Pop Mon (%)", ascending=True
     )
     # Round non-Pop Mon values to the nearest 1st decimal place
     current_winrates.loc[
@@ -280,11 +310,11 @@ def define_popularity_bounds_for_available_pokemon(
     else:
         # if there is more than 1 slot then we have time to adjust so add a buffer scaled off the std
         max_popularity = (
-            (target_avg_popularity + (0.1) * std * (remaining_slots)) * 6
+            (target_avg_popularity + (0.15) * std * (remaining_slots)) * 6
             - current_avg_popularity * (6 - remaining_slots)
         ) / remaining_slots
         min_popularity = (
-            (target_avg_popularity - (0.1) * std * (remaining_slots)) * 6
+            (target_avg_popularity - (0.15) * std * (remaining_slots)) * 6
             - current_avg_popularity * (6 - remaining_slots)
         ) / (remaining_slots)
 
