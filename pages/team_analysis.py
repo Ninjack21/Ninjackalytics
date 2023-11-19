@@ -210,9 +210,9 @@ def layout():
                                         {"name": i, "id": i}
                                         for i in [
                                             "Pop Mon",
-                                            "Popularity",
-                                            "Pop Mon General WR",
-                                            "Team WR x Pop Mon",
+                                            "Popularity (%)",
+                                            "Pop Mon General WR (%)",
+                                            "Team WR x Pop Mon (%)",
                                         ]
                                     ],
                                     data=[],

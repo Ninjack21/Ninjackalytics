@@ -156,9 +156,9 @@ def add_meta_context_to_final_winrates(
     current_winrates = current_winrates.rename(
         columns={
             "index": "Pop Mon",
-            "winrate": "Team WR x Pop Mon",
-            "Popularity": "Popularity",
-            "Winrate": "Pop Mon General WR",
+            "winrate": "Team WR x Pop Mon (%)",
+            "Popularity": "Popularity (%)",
+            "Winrate": "Pop Mon General WR (%)",
         }
     )
     # show the highest threats first
