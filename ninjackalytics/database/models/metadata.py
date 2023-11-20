@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, DateTime, Boolean, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, DateTime, Boolean, ForeignKey, Numeric, String
 from datetime import datetime
 from ninjackalytics.database import Base
 from sqlalchemy import UniqueConstraint
@@ -12,8 +12,8 @@ class BattleDbBase(Base):
 
 class pokemonmetadata(BattleDbBase):
     __tablename__ = "pokemonmetadata"
-    Format = Column(Text, nullable=False)
-    Pokemon = Column(Text, nullable=False)
+    Format = Column(String(length=255), nullable=False)
+    Pokemon = Column(String(length=255), nullable=False)
     Winrate = Column(Numeric(5, 2), nullable=False)
     SampleSize = Column(Integer, nullable=False)
     Popularity = Column(Numeric(5, 2), nullable=False)
@@ -26,9 +26,9 @@ class pokemonmetadata(BattleDbBase):
 class pvpmetadata(BattleDbBase):
     # pvp = pokemon vs pokemon
     __tablename__ = "pvpmetadata"
-    Format = Column(Text, nullable=False)
-    Pokemon1 = Column(Text, nullable=False)
-    Pokemon2 = Column(Text, nullable=False)
+    Format = Column(String(length=255), nullable=False)
+    Pokemon1 = Column(String(length=255), nullable=False)
+    Pokemon2 = Column(String(length=255), nullable=False)
     Winrate = Column(Numeric(5, 2), nullable=False)
     SampleSize = Column(Integer, nullable=False)
     __table_args__ = (
