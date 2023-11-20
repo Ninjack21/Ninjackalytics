@@ -46,7 +46,7 @@ else:
     engine = create_engine(
         f"mysql+mysqldb://{RemoteProductionConfig.DB_USERNAME}"
         + f":{RemoteProductionConfig.DB_PASSWORD}@127.0.0.1:{tunnel.local_bind_port}"
-        + f"{tunnel.local_bind_port}/{RemoteProductionConfig.DB_NAME}"
+        + f"/{RemoteProductionConfig.DB_NAME}"
     )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
