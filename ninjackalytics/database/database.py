@@ -26,9 +26,7 @@ else:
     config = TestingConfig
 
 if env != "remote-production":
-    engine = create_engine(
-        config.SQLALCHEMY_DATABASE_URI, connect_args={"check_same_thread": False}
-    )
+    engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
 
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
