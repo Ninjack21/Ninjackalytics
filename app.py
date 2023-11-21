@@ -9,5 +9,7 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
+server = app.server
+
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()

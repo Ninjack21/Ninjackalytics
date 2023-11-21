@@ -1,4 +1,7 @@
 import os
+import sys
+
+sys.path.append("/Users/jack/Desktop/Ninjackalytics")
 
 os.environ["FLASK_ENV"] = "remote-production"
 from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattlePokemon
@@ -20,10 +23,12 @@ from database_scripts import (
 )
 import subprocess
 
-
+print("START")
 try:
+    print("...")
     # Prevent macOS from entering sleep mode
-    subprocess.run(["caffeinate", "-s"])
+    caffeinate_process = subprocess.Popen(["caffeinate", "-s"])
+    print("done.")
     battle_formats = [
         "gen9ou",
         "gen9vgc2023regulatione",
@@ -43,6 +48,7 @@ try:
         "gen9nationaldexmonotype",
         "gen9cap",
     ]
+    print("prepare to pull URLS...")
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
@@ -50,7 +56,7 @@ try:
         urls = get_replay_urls(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
-
+    print("Prepare to begin uploading...")
     uploader = BattleDataUploader()
 
     total_errors = 0
@@ -90,4 +96,4 @@ except:
 
 close_tunnel()
 # Allow macOS to enter sleep mode again
-subprocess.run(["killall", "caffeinate"])
+caffeinate_process.run(["killall", "caffeinate"])
