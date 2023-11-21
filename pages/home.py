@@ -229,7 +229,7 @@ def layout():
             dcc.Location(id="url", refresh=False),
         ],
         style={
-            "background-image": "url('/assets/background.jpg')",
+            "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
             "height": "100vh",
