@@ -1,3 +1,9 @@
+import os
+import sys
+
+sys.path.append("/Users/jack/Desktop/Ninjackalytics")
+
+os.environ["FLASK_ENV"] = "remote-production"
 from ninjackalytics.database.models import pokemonmetadata, pvpmetadata
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from ninjackalytics.database.database import SessionLocal
@@ -221,3 +227,8 @@ def update_pvpmetadata():
                     existing_data.SampleSize = all_battles
 
             session.commit()
+
+
+if __name__ == "__main__":
+    recalc_metadata_table_info()
+    update_pvpmetadata()

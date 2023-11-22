@@ -1,13 +1,15 @@
 import os
 import sys
 
-sys.path.append("/Users/jack/Desktop/Ninjackalytics")
+# Append Ninjackalytics/ninjackalytics folder to sys path
+ninjackalytics_path = os.path.join(os.path.dirname(__file__), "..", "ninjackalytics")
+sys.path.append(ninjackalytics_path)
 
-os.environ["FLASK_ENV"] = "remote-production"
 from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattlePokemon
 from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
 )
+from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from ninjackalytics.services.auto_replay_pulls.script import get_replay_urls
 from ninjackalytics.database.database import close_tunnel
 import traceback
@@ -21,14 +23,10 @@ from database_scripts import (
     recalc_metadata_table_info,
     update_pvpmetadata,
 )
-import subprocess
 
-print("START")
+# ======= first get all the replay urls =======
+
 try:
-    print("...")
-    # Prevent macOS from entering sleep mode
-    caffeinate_process = subprocess.Popen(["caffeinate", "-s"])
-    print("done.")
     battle_formats = [
         "gen9ou",
         "gen9vgc2023regulatione",
@@ -58,6 +56,18 @@ try:
     print(f"Found {len(all_urls)} urls")
     print("Prepare to begin uploading...")
     uploader = BattleDataUploader()
+
+    # ========= now check the database and find only the ones that are not in the database ========
+    ta = TableAccessor()
+    battles = ta.get_battle_info()
+    battles = battles["Battle_ID"].tolist()
+    battles = [f"https://replay.pokemonshowdown.com/{battle}" for battle in battles]
+    errors = ta.get_errors()
+    errors = errors["Battle_URL"].tolist()
+
+    # only now run the new urls
+    all_urls = [url for url in all_urls if url not in battles and url not in errors]
+    print(f"Found {len(all_urls)} new urls")
 
     total_errors = 0
     errors_update_threshold = 10
@@ -95,5 +105,3 @@ except:
     close_tunnel()
 
 close_tunnel()
-# Allow macOS to enter sleep mode again
-caffeinate_process.run(["killall", "caffeinate"])
