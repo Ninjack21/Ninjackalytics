@@ -1,9 +1,9 @@
 import os
 import sys
 
-sys.path.append("/Users/jack/Desktop/Ninjackalytics")
-
-os.environ["FLASK_ENV"] = "remote-production"
+# Append Ninjackalytics/ninjackalytics folder to sys path
+ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ninjackalytics_path)
 from ninjackalytics.database.models import pokemonmetadata, pvpmetadata
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from ninjackalytics.database.database import SessionLocal
