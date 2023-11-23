@@ -66,6 +66,12 @@ def recalc_metadata_table_info():
                 [format_teams[f"Pok{i}"] for i in range(1, 7)]
             ).unique()
             all_mons = [mon for mon in all_mons if mon != None]
+            mon_teams_dict = {
+                mon: format_teams[
+                    format_teams.apply(lambda row: contains_mon(row, mon), axis=1)
+                ]
+                for mon in all_mons
+            }
             # check if any of the previously_seen_pokemon no longer show up
             for mon in previously_seen_mons:
                 if mon not in all_mons:
@@ -78,8 +84,7 @@ def recalc_metadata_table_info():
                     existing_data.Popularity = 0
             for mon in tqdm(all_mons):
                 # the repr of a team is a list of the mon names so we can use that to get which teams contain each mon
-                mon_teams_idx = teams.apply(lambda row: contains_mon(row, mon), axis=1)
-                mon_teams = teams[mon_teams_idx]
+                mon_teams = mon_teams_dict[mon]
                 # now I can get the winrate of each team
                 pokemon_meta_data_kwargs = {
                     "Format": f,
@@ -153,7 +158,9 @@ def update_pvpmetadata():
             # Precompute teams containing each Pokemon
             print("Precomputing teams containing each Pokemon...")
             mon_teams = {
-                mon: teams[teams.apply(lambda row: contains_mon(row, mon), axis=1)]
+                mon: format_teams[
+                    format_teams.apply(lambda row: contains_mon(row, mon), axis=1)
+                ]
                 for mon in all_mons
             }
 
