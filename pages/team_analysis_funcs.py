@@ -392,6 +392,9 @@ def solve_for_remainder_of_team(
         best_improvement = -100
         best_mon = None
         for mon in tqdm(available_pokemon):
+            # Skip this mon if it's a subset of any mon in current_team or any mon in current_team is a subset of it
+            if any((mon in team_mon or team_mon in mon) for team_mon in current_team):
+                continue
             new_team = current_team.copy()
             new_team.append(mon)
             new_winrates = get_team_winrates_against_top_30(
