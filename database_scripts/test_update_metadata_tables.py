@@ -14,7 +14,8 @@ from .update_metadata_tables import (
 )
 
 
-class TestYourModule(unittest.TestCase):
+# TODO: hook up to testing db and run tests to verify math working as expected
+class TestUpdateMetaDataTables(unittest.TestCase):
     def setUp(self):
         # Set up any necessary test data or configurations
         pass

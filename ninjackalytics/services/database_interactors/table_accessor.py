@@ -1,5 +1,5 @@
 import pandas as pd
-from ninjackalytics.database import SessionLocal
+from ninjackalytics.database import get_sessionlocal
 from ninjackalytics.database.models import *
 from contextlib import contextmanager
 
@@ -7,7 +7,7 @@ from contextlib import contextmanager
 @contextmanager
 def session_scope():
     """Provide a transactional scope around a series of operations."""
-    session = SessionLocal()
+    session = get_sessionlocal()
     try:
         yield session
         session.commit()
@@ -20,10 +20,7 @@ def session_scope():
 
 class TableAccessor:
     def __init__(self):
-        self.session = SessionLocal()
-
-    def __del__(self):
-        self.session.close()
+        pass
 
     def get_teams(self):
         with session_scope() as session:

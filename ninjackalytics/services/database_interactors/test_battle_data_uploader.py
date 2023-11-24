@@ -6,7 +6,7 @@ import os
 os.environ["FLASK_ENV"] = "testing"
 
 from ninjackalytics.database.config import TestingConfig
-from ninjackalytics.database import Base, engine, SessionLocal
+from ninjackalytics.database import Base, get_engine, get_sessionlocal
 from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
     session_scope,
@@ -32,11 +32,11 @@ from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
 
 class TestBattleDataUploader(unittest.TestCase):
     def setUp(self):
-        self.session = SessionLocal()
+        self.session = get_sessionlocal()
         self.battle_data_uploader = BattleDataUploader()
 
         # create all tables in the test database
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=get_engine())
 
         battle = TestBattle()
         battle_pokemon = BattlePokemon(battle)
@@ -47,7 +47,7 @@ class TestBattleDataUploader(unittest.TestCase):
 
     def tearDown(self):
         # drop all tables in the test database
-        Base.metadata.drop_all(bind=engine)
+        Base.metadata.drop_all(bind=get_engine())
 
     def test_teams_uploaded(self):
         self.battle_data_uploader.upload_battle(self.mock_parser)

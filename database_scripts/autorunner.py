@@ -11,7 +11,6 @@ from ninjackalytics.services.database_interactors.battle_data_uploader import (
 )
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from ninjackalytics.services.auto_replay_pulls.script import get_replay_urls
-from ninjackalytics.database.database import close_tunnel
 import traceback
 from tqdm import tqdm
 from database_scripts import (

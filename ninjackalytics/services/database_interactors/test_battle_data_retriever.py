@@ -10,7 +10,7 @@ from ninjackalytics.test_utilities.preppared_battle_objects.base_battle import (
 )
 
 from ninjackalytics.database.config import TestingConfig
-from ninjackalytics.database import Base, engine, SessionLocal
+from ninjackalytics.database import Base, get_engine, get_sessionlocal
 from ninjackalytics.services.database_interactors import (
     BattleDataRetriever,
     BattleDataUploader,
@@ -34,8 +34,8 @@ class testBattleDataRetriever(unittest.TestCase):
     def setUp(self):
         bd = TestBattle()
         bp = BattlePokemon(bd)
-        self.session = SessionLocal()
-        Base.metadata.create_all(bind=engine)
+        self.session = get_sessionlocal()
+        Base.metadata.create_all(bind=get_engine())
 
         self.battle_parser = BattleParser(bd, bp)
         self.battle_parser.analyze_battle()
