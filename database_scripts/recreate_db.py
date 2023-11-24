@@ -1,14 +1,16 @@
+import os
+import sys
+
+# Append Ninjackalytics/ninjackalytics folder to sys path
+ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ninjackalytics_path)
 from ninjackalytics.database.database import Base, engine, SessionLocal
 from ninjackalytics.database.models.battles import *
 from ninjackalytics.database.models.metadata import *
-import os
 
 session = SessionLocal()
 
-os.environ["FLASK_ENV"] = "testing"
-
-
-def recreate_test_db():
+if "production" not in os.environ.get("FLASK_ENV"):
     # Drop all tables in the database
     Base.metadata.drop_all(bind=engine)
 
@@ -20,3 +22,6 @@ def recreate_test_db():
 
     # Close the connection
     session.close()
+
+else:
+    raise Exception("You are not allowed to run this script in production")

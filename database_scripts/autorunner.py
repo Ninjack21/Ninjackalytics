@@ -15,13 +15,7 @@ from ninjackalytics.database.database import close_tunnel
 import traceback
 from tqdm import tqdm
 from database_scripts import (
-    recreate_test_db,
-    create_db,
-    create_new_tables,
-    get_showdown_mon_images,
-    retry_errors,
-    recalc_metadata_table_info,
-    update_pvpmetadata,
+    update_metadata,
 )
 
 # ======= first get all the replay urls =======
@@ -41,16 +35,12 @@ try:
         "gen9ru",
         "gen9nu",
         "gen9pu",
-        "gen9lc",
-        "gen9monotype",
-        "gen9nationaldexmonotype",
-        "gen9cap",
     ]
     print("prepare to pull URLS...")
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
-        pages = 24
+        pages = 1
         urls = get_replay_urls(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
@@ -97,11 +87,14 @@ try:
     print(f"Total Errors: {total_errors}")
     print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
 
-    recalc_metadata_table_info()
-    update_pvpmetadata()
-    # Allow macOS to enter sleep mode again
-    subprocess.run(["killall", "caffeinate"])
-except:
-    close_tunnel()
+    update_metadata()
 
-close_tunnel()
+except:
+    if os.environ.get("FLASK_ENV") == "remote-production":
+        close_tunnel()
+    else:
+        traceback.print_exc()
+        print("\n\n-------------Error Occured---------\n\n")
+
+if os.environ.get("FLASK_ENV") == "remote-production":
+    close_tunnel()
