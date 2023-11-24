@@ -44,7 +44,6 @@ try:
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
     print("Prepare to begin uploading...")
-    uploader = BattleDataUploader()
 
     # ========= now check the database and find only the ones that are not in the database ========
     ta = TableAccessor()
@@ -57,40 +56,38 @@ try:
     # only now run the new urls
     all_urls = [url for url in all_urls if url not in battles and url not in errors]
     print(f"Found {len(all_urls)} new urls")
+    if len(all_urls) != 0:
+        total_errors = 0
+        errors_update_threshold = 10
+        battle_parsers = []
+        uploader = BattleDataUploader()
+        for url in tqdm((all_urls), desc="Parsing Battles"):
+            try:
+                success = False
+                tries = 0
+                while not success and tries < 5:
+                    try:
+                        tries += 1
+                        battle = Battle(url)
+                        success = True
+                    except:
+                        tries += 1
+                        continue
+                battle_pokemon = BattlePokemon(battle)
+                parser = BattleParser(battle, battle_pokemon)
+                parser.analyze_battle()
+                uploader.upload_battle(parser)
+            except Exception as e:
+                total_errors += 1
+                if total_errors > errors_update_threshold:
+                    print(f"Total Errors: {total_errors}")
+                    errors_update_threshold += 10
+                continue
 
-    total_errors = 0
-    errors_update_threshold = 10
-    battle_parsers = []
-    for url in tqdm((all_urls), desc="Parsing Battles"):
-        try:
-            success = False
-            tries = 0
-            while not success and tries < 5:
-                try:
-                    tries += 1
-                    battle = Battle(url)
-                    success = True
-                except:
-                    tries += 1
-                    continue
-            battle_pokemon = BattlePokemon(battle)
-            parser = BattleParser(battle, battle_pokemon)
-            parser.analyze_battle()
-            battle_parsers.append(parser)
-        except Exception as e:
-            total_errors += 1
-            if total_errors > errors_update_threshold:
-                print(f"Total Errors: {total_errors}")
-                errors_update_threshold += 10
-            continue
+        print(f"Total Errors: {total_errors}")
+        print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
 
-    print(f"Total Errors: {total_errors}")
-    print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
-
-    for parser in tqdm(battle_parsers, desc="Uploading Battles"):
-        uploader.upload_battle(parser)
-
-    update_metadata()
+        update_metadata()
 
 except:
     if os.environ.get("FLASK_ENV") == "remote-production":

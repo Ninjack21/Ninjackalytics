@@ -46,6 +46,7 @@ def get_replay_urls(battle_format: str, pages: int = 24):
         except:
             if tries > 5:
                 raise Exception("Too many tries")
+
         replay_urls += [
             f"https://replay.pokemonshowdown.com/{replay['id']}" for replay in replays
         ]

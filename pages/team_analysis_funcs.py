@@ -4,6 +4,13 @@ from typing import List, Tuple
 from datetime import datetime, timedelta
 from tqdm import tqdm
 
+# TODO
+"""
+- handle monotype situation
+- remove scaling of winrates based on sample size - each mon's win rate should be counted equally valid
+- change too little data to use opposite of top30 mon general winrate (when in doubt, assume average)
+"""
+
 
 # ----------- utility functions ----------------
 def get_viable_formats():
