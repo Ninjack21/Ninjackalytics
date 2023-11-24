@@ -208,3 +208,7 @@ def update_no_longer_seen_mons(all_mons, previously_seen_mons, f):
                 existing_data.Popularity = 0
                 existing_data.SampleSize = 0
                 existing_data.Winrate = 0
+
+
+if __name__ == "__main__":
+    update_metadata()
