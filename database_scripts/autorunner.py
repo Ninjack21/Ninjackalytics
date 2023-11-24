@@ -39,7 +39,7 @@ try:
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
-        pages = 1
+        pages = 24
         urls = get_replay_urls(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
