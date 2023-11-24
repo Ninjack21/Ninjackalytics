@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
-from ninjackalytics.database import SessionLocal
+from ninjackalytics.database import get_sessionlocal
 from ninjackalytics.database.models.battles import (
     teams,
     battle_info,
@@ -19,7 +19,7 @@ from ninjackalytics.database.models.battles import (
 @contextmanager
 def session_scope():
     """Provide a transactional scope around a series of operations."""
-    session = SessionLocal()
+    session = get_sessionlocal()
     try:
         yield session
         session.commit()
