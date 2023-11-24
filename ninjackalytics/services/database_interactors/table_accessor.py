@@ -20,7 +20,7 @@ def session_scope():
 
 class TableAccessor:
     def __init__(self):
-        self.session = SessionLocal()
+        self.session = get_sessionlocal()
 
     def __del__(self):
         self.session.close()
