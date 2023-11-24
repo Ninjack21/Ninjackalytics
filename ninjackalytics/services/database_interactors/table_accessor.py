@@ -20,10 +20,7 @@ def session_scope():
 
 class TableAccessor:
     def __init__(self):
-        self.session = get_sessionlocal()
-
-    def __del__(self):
-        self.session.close()
+        pass
 
     def get_teams(self):
         with session_scope() as session:

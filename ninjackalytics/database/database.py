@@ -39,9 +39,11 @@ def get_db_uri():
             remote_bind_address=RemoteProductionConfig.REMOTE_BIND_ADDRESS,
         )
         tunnel.start()
-        db_uri = f"mysql+mysqldb://{RemoteProductionConfig.DB_USERNAME}"
-        +f":{RemoteProductionConfig.DB_PASSWORD}@127.0.0.1:{tunnel.local_bind_port}"
-        +f"/{RemoteProductionConfig.DB_NAME}"
+        db_uri = (
+            f"mysql+mysqldb://{RemoteProductionConfig.DB_USERNAME}"
+            + f":{RemoteProductionConfig.DB_PASSWORD}@127.0.0.1:{tunnel.local_bind_port}"
+            + f"/{RemoteProductionConfig.DB_NAME}"
+        )
 
     return db_uri
 
