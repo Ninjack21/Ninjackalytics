@@ -254,6 +254,7 @@ def restrict_available_mons_based_on_creativity(
         remaining_slots=remaining_slots,
         top30=top30,
         format_metadata=format_metadata,
+        creativity=creativity,
     )
     available_pokemon = []
     for mon in all_mons:
@@ -288,6 +289,7 @@ def define_popularity_bounds_for_available_pokemon(
     remaining_slots: int,
     top30: pd.DataFrame,
     format_metadata: pd.DataFrame,
+    creativity: int,
 ) -> Tuple[float, float]:
     std = top30["Popularity"].std()
     # we want to define a range of popularity values that we can use to restrict the available pokemon
@@ -296,6 +298,10 @@ def define_popularity_bounds_for_available_pokemon(
         format_metadata=format_metadata, sample_size=20
     )
     limit_max_popularity = limit_popularity + 0.5 * std
+
+    if creativity == 0:
+        # don't restrict the popularity beyond the minimum sample size
+        return limit_popularity, 100
 
     if remaining_slots == 1:
         # define the window of popularities that would get us within 2% of the target and return the min, and max
