@@ -61,7 +61,8 @@ try:
 
     total_errors = 0
     errors_update_threshold = 10
-    for url in tqdm((all_urls)):
+    battle_parsers = []
+    for url in tqdm((all_urls), desc="Parsing Battles"):
         try:
             success = False
             tries = 0
@@ -76,7 +77,7 @@ try:
             battle_pokemon = BattlePokemon(battle)
             parser = BattleParser(battle, battle_pokemon)
             parser.analyze_battle()
-            uploader.upload_battle(parser)
+            battle_parsers.append(parser)
         except Exception as e:
             total_errors += 1
             if total_errors > errors_update_threshold:
@@ -86,6 +87,9 @@ try:
 
     print(f"Total Errors: {total_errors}")
     print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
+
+    for parser in tqdm(battle_parsers, desc="Uploading Battles"):
+        uploader.upload_battle(parser)
 
     update_metadata()
 
