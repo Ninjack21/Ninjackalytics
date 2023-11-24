@@ -1,14 +1,14 @@
 import pandas as pd
 from contextlib import contextmanager
 
-from ninjackalytics.database import SessionLocal
+from ninjackalytics.database import get_sessionlocal
 from ninjackalytics.database.models.battles import errors
 
 
 @contextmanager
 def session_scope():
     """Provide a transactional scope around a series of operations."""
-    session = SessionLocal()
+    session = get_sessionlocal()
     try:
         yield session
         session.commit()

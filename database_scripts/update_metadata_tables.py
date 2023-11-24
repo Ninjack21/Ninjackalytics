@@ -6,7 +6,7 @@ ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".
 sys.path.append(ninjackalytics_path)
 from ninjackalytics.database.models import pokemonmetadata, pvpmetadata
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
-from ninjackalytics.database.database import SessionLocal
+from ninjackalytics.database.database import get_sessionlocal
 import pandas as pd
 from tqdm import tqdm
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ from math import comb
 @contextmanager
 def session_scope():
     """Provide a transactional scope around a series of operations."""
-    session = SessionLocal()
+    session = get_sessionlocal()
     try:
         yield session
         session.commit()

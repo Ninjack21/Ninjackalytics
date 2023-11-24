@@ -5,7 +5,7 @@ from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattleP
 from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
 )
-from ninjackalytics.database import SessionLocal
+from ninjackalytics.database import get_sessionlocal
 from ninjackalytics.database.models.battles import errors
 from tqdm import tqdm
 import traceback
@@ -26,7 +26,7 @@ def retry_errors():
             battle_parser.analyze_battle()
             uploader.upload_battle(battle_parser)
             # Delete row from error database if upload was successful
-            session = SessionLocal()
+            session = get_sessionlocal()
             error = session.query(errors).filter_by(Battle_URL=url).first()
             session.delete(error)
             session.commit()
@@ -36,7 +36,7 @@ def retry_errors():
             # handle case where there is a new error for this battle. sometimes we may fix the original error
             # but now have a new error to fix
             # first, check if e is the same as the error in the database
-            session = SessionLocal()
+            session = get_sessionlocal()
             error = session.query(errors).filter_by(Battle_URL=url).first()
 
             if not error.Error_Message == str(e):
