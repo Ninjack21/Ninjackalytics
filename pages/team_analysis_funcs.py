@@ -6,17 +6,262 @@ from tqdm import tqdm
 
 # TODO
 """
+- convert to class(es?) for improved readability and performance (init objs in page and pass around)
 - handle monotype situation
-- remove scaling of winrates based on sample size - each mon's win rate should be counted equally valid
 - change too little data to use opposite of top30 mon general winrate (when in doubt, assume average)
 """
+
+
+class DatabaseData:
+    def __init__(self):
+        self.ta = TableAccessor()
+        self.battle_info = self.ta.get_battle_info()
+        self.teams = self.ta.get_teams()
+        self.pvpmetadata = self.ta.get_pvpmetadata()
+        self.pokemonmetadata = self.ta.get_pokemonmetadata()
+
+    def get_battle_info(self):
+        return self.battle_info
+
+    def get_teams(self):
+        return self.teams
+
+    def get_pvpmetadata(self):
+        return self.pvpmetadata
+
+    def get_pokemonmetadata(self):
+        return self.pokemonmetadata
+
+
+class FormatData:
+    def __init__(self, battle_format: str, db: DatabaseData):
+        self.battle_format = battle_format
+        self.db = db
+        self.format_info = self.db.get_battle_info()[
+            self.db.get_battle_info()["Format"] == self.battle_format
+        ]
+        self.format_teams = self.db.get_teams()[
+            self.db.get_teams()["id"].isin(
+                self.format_info["P1_team"].tolist()
+                + self.format_info["P2_team"].tolist()
+            )
+        ]
+        self.format_pvpmetadata = self.db.get_pvpmetadata()[
+            self.db.get_pvpmetadata()["Format"] == self.battle_format
+        ]
+        self.format_metadata = self.db.get_pokemonmetadata()[
+            self.db.get_pokemonmetadata()["Format"] == self.battle_format
+        ]
+        self.top30 = self.format_metadata.sort_values(
+            by="Popularity", ascending=False
+        ).head(30)
+
+
+class TeamSolver:
+    def __init__(self, db: DatabaseData, battle_format: str):
+        self.db = db
+        self.format_data = FormatData(battle_format=battle_format, db=self.db)
+
+    def solve_for_remainder_of_team(
+        self,
+        current_team: List[str],
+        battle_format: str,
+        creativity: int,
+        ignore_mons: List[str] = [],
+    ):
+        # handle the case where the current team is empty
+        if len(current_team) == 0:
+            current_team = [self._pick_random_top30()]
+
+        remaining_slots = 6 - len(current_team)
+        while remaining_slots > 0:
+            pass
+
+    def _pick_random_top30(self):
+        mon = self.format_data.top30.sample(n=1)["Pokemon"].values[0]
+        return mon
+
+    def _get_team_winrates_against_top_30(
+        self,
+        current_team: List[str],
+    ):
+        # TODO: break this down into smaller functions.
+        # TODO: should winrate calcs be own class to allow for different methods of calculating winrates?
+        # the aim is to calculate how the team would do against the top30 mons, so we want to calculate the expected
+        # winrate against each of the top30 mons by using the sample sizes and winrates of each of the mons on our
+        # team to create the aggregate expected winrate against each of the top30 mons
+        winrates = {}
+        format_pvp = self.format_data.format_pvpmetadata
+        for mon in self.format_data.top30["Pokemon"].tolist():
+            team_mon_in_pokemon1 = format_pvp[
+                (format_pvp["Pokemon1"].isin(current_team))
+                & (format_pvp["Pokemon2"] == mon)
+            ].copy()
+            team_mon_in_pokemon2 = format_pvp[
+                (format_pvp["Pokemon2"].isin(current_team))
+                & (format_pvp["Pokemon1"] == mon)
+            ].copy()
+
+            total_samplesize = (
+                team_mon_in_pokemon1["SampleSize"].sum()
+                + team_mon_in_pokemon2["SampleSize"].sum()
+            )
+            if total_samplesize < 30:
+                # if very low data, then presume winrate against mon is opposite of mon general WR
+                format_metadata = self.format_data.format_metadata
+                winrates[mon] = (
+                    100
+                    - format_metadata[format_metadata["Pokemon"] == mon][
+                        "Winrate"
+                    ].values[0]
+                )
+                continue
+            else:
+                # if in mon1 then we have the winrate against the top30 mon, which we want
+                team_mon_in_pokemon1["Weighted Winrate"] = (
+                    team_mon_in_pokemon1["Winrate"]
+                    * team_mon_in_pokemon1["SampleSize"]
+                    / team_mon_in_pokemon1["SampleSize"].sum()
+                )
+
+                winrate_in_mon1 = team_mon_in_pokemon1["Weighted Winrate"].sum()
+                in_mon1_samplesize = team_mon_in_pokemon1["SampleSize"].sum()
+
+                # if in mon2 then we have the winrate of top30 against us, so we need 1-winrate, but gets goofy with
+                # weighted winrates
+                # this is inefficient and it could be done in one line but won't slow it down to an amount the user will
+                # care about but it WILL make it much more intuitive how it works for future maintenance
+                team_mon_in_pokemon2["Reversed Winrate"] = (
+                    100 - team_mon_in_pokemon2["Winrate"]
+                )
+                # use reversed winrates to get the winrate of team mons against top30 mons like desired
+                team_mon_in_pokemon2["Weighted Winrate"] = (
+                    team_mon_in_pokemon2["Reversed Winrate"]
+                    * team_mon_in_pokemon2["SampleSize"]
+                    / team_mon_in_pokemon2["SampleSize"].sum()
+                )
+
+                winrate_in_mon2 = team_mon_in_pokemon2["Weighted Winrate"].sum()
+                in_mon2_samplesize = team_mon_in_pokemon2["SampleSize"].sum()
+
+                # now we can calculate the overall winrate
+                winrate = (winrate_in_mon1 * in_mon1_samplesize / total_samplesize) + (
+                    winrate_in_mon2 * in_mon2_samplesize / total_samplesize
+                )
+
+                winrates[mon] = winrate
+
+        winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+        return winrates
+
+
+class DisplayTeam:
+    pass
+
+
+def solve_for_remainder_of_team(
+    current_team: List[str],
+    battle_format: str,
+    creativity: int,
+    ignore_mons: List[str] = [],
+):
+    format_metadata = get_format_metadata(battle_format)
+    top30 = format_metadata.sort_values(by="Popularity", ascending=False).head(30)
+    format_info = get_format_battle_info(battle_format)
+    format_teams = get_format_teams(format_info)
+    pvpmetadata = get_pvpmetadata()
+    f_pvpmetadata = pvpmetadata[pvpmetadata["Format"] == battle_format]
+    remaining_slots = 6 - len(current_team)
+    while remaining_slots > 0:
+        current_winrates = get_team_winrates_against_top_30(
+            current_team=current_team,
+            top30mons=top30["Pokemon"].tolist(),
+            format_pvp=f_pvpmetadata,
+        )
+        current_norm_winrate = normalized_winrate(
+            winrates=current_winrates, top30=top30
+        )
+        available_pokemon = get_format_available_pokemon(
+            format_teams=format_teams, format_metadata=format_metadata
+        )
+        available_pokemon = restrict_available_mons_based_on_creativity(
+            all_mons=available_pokemon,
+            current_team=current_team,
+            format_metadata=format_metadata,
+            top30=top30,
+            creativity=creativity,
+        )
+        available_pokemon = [
+            mon
+            for mon in available_pokemon
+            if mon not in ignore_mons and mon not in current_team
+        ]
+        # --------- now look for the next best pokemon to add -------
+        # now we can try adding each individual pokemon to see who improves the winrate the most
+        best_improvement = -100
+        best_mon = None
+        for mon in tqdm(available_pokemon):
+            # Skip this mon if it's a subset of any mon in current_team or any mon in current_team is a subset of it
+            if any((mon in team_mon or team_mon in mon) for team_mon in current_team):
+                continue
+            new_team = current_team.copy()
+            new_team.append(mon)
+            new_winrates = get_team_winrates_against_top_30(
+                current_team=new_team,
+                top30mons=top30["Pokemon"].tolist(),
+                format_pvp=f_pvpmetadata,
+            )
+            improvement = (
+                normalized_winrate(
+                    winrates=new_winrates,
+                    top30=top30,
+                )
+                - current_norm_winrate
+            )
+            if improvement > best_improvement:
+                best_improvement = improvement
+                best_mon = mon
+
+        # update the current team with the best improvement mon
+        current_team.append(best_mon)
+        remaining_slots -= 1
+
+    current_avg_popularity = get_team_popularity(
+        team=current_team,
+        format_metadata=format_metadata,
+    )
+    current_winrates = get_team_winrates_against_top_30(
+        current_team=current_team,
+        top30mons=top30["Pokemon"].tolist(),
+        format_pvp=f_pvpmetadata,
+    )
+    display_winrates = add_meta_context_to_final_winrates(
+        current_winrates=current_winrates, top30=top30
+    )
+    current_norm_winrate = normalized_winrate(
+        winrates=current_winrates,
+        top30=top30,
+    )
+    target_avg_popularity = get_target_avg_popularity(
+        top30=top30, creativity=creativity
+    )
+    solved_team_data = {
+        "team": current_team,
+        "avg_popularity": current_avg_popularity,
+        "norm_winrate": current_norm_winrate,
+        "target_avg_popularity": target_avg_popularity,
+        "top30_winrates": display_winrates,
+    }
+    return solved_team_data
 
 
 # ----------- utility functions ----------------
 def get_viable_formats():
     ta = TableAccessor()
     battle_info = ta.get_battle_info()
-    viable_formats = battle_info["Format"].unique()
+    format_counts = battle_info["Format"].value_counts()
+    viable_formats = format_counts[format_counts >= 1000].index.tolist()
+    viable_formats = [format for format in viable_formats if "monotype" not in format]
     return viable_formats
 
 
@@ -98,73 +343,6 @@ def get_team_ids_for_mons(format_teams: pd.DataFrame, mons: List[str]):
         new_team_ids = mon_teams["id"].tolist()
         team_ids_for_mons.update(new_team_ids)
     return team_ids_for_mons
-
-
-def get_team_winrates_against_top_30(
-    current_team: List[str],
-    top30mons: List[str],
-    format_pvp: pd.DataFrame,
-):
-    # the aim is to calculate how the team would do against the top30 mons, so we want to calculate the expected
-    # winrate against each of the top30 mons by using the sample sizes and winrates of each of the mons on our
-    # team to create the aggregate expected winrate against each of the top30 mons
-    winrates = {}
-
-    for mon in top30mons:
-        team_mon_in_pokemon1 = format_pvp[
-            (format_pvp["Pokemon1"].isin(current_team))
-            & (format_pvp["Pokemon2"] == mon)
-        ].copy()
-        team_mon_in_pokemon2 = format_pvp[
-            (format_pvp["Pokemon2"].isin(current_team))
-            & (format_pvp["Pokemon1"] == mon)
-        ].copy()
-
-        total_samplesize = (
-            team_mon_in_pokemon1["SampleSize"].sum()
-            + team_mon_in_pokemon2["SampleSize"].sum()
-        )
-        if total_samplesize < 30:
-            # if very low data, then entire team is super unpopular and we would expect a very bad winrate
-            winrates[mon] = 35
-            continue
-        else:
-            # if in mon1 then we have the winrate against the top30 mon, which we want
-            team_mon_in_pokemon1["Weighted Winrate"] = (
-                team_mon_in_pokemon1["Winrate"]
-                * team_mon_in_pokemon1["SampleSize"]
-                / team_mon_in_pokemon1["SampleSize"].sum()
-            )
-
-            winrate_in_mon1 = team_mon_in_pokemon1["Weighted Winrate"].sum()
-            in_mon1_samplesize = team_mon_in_pokemon1["SampleSize"].sum()
-
-            # if in mon2 then we have the winrate of top30 against us, so we need 1-winrate, but gets goofy with
-            # weighted winrates
-            # this is inefficient and it could be done in one line but won't slow it down to an amount the user will
-            # care about but it WILL make it much more intuitive how it works for future maintenance
-            team_mon_in_pokemon2["Reversed Winrate"] = (
-                100 - team_mon_in_pokemon2["Winrate"]
-            )
-            # use reversed winrates to get the winrate of team mons against top30 mons like desired
-            team_mon_in_pokemon2["Weighted Winrate"] = (
-                team_mon_in_pokemon2["Reversed Winrate"]
-                * team_mon_in_pokemon2["SampleSize"]
-                / team_mon_in_pokemon2["SampleSize"].sum()
-            )
-
-            winrate_in_mon2 = team_mon_in_pokemon2["Weighted Winrate"].sum()
-            in_mon2_samplesize = team_mon_in_pokemon2["SampleSize"].sum()
-
-            # now we can calculate the overall winrate
-            winrate = (winrate_in_mon1 * in_mon1_samplesize / total_samplesize) + (
-                winrate_in_mon2 * in_mon2_samplesize / total_samplesize
-            )
-
-            winrates[mon] = winrate
-
-    winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
-    return winrates
 
 
 def normalized_winrate(winrates: pd.DataFrame, top30: pd.DataFrame) -> pd.DataFrame:
@@ -361,99 +539,3 @@ def get_target_avg_popularity(top30: pd.DataFrame, creativity: int) -> float:
 
 
 # ----------- now solve for the team ----------------
-
-
-def solve_for_remainder_of_team(
-    current_team: List[str],
-    battle_format: str,
-    creativity: int,
-    ignore_mons: List[str] = [],
-):
-    format_metadata = get_format_metadata(battle_format)
-    top30 = format_metadata.sort_values(by="Popularity", ascending=False).head(30)
-    format_info = get_format_battle_info(battle_format)
-    format_teams = get_format_teams(format_info)
-    pvpmetadata = get_pvpmetadata()
-    f_pvpmetadata = pvpmetadata[pvpmetadata["Format"] == battle_format]
-    remaining_slots = 6 - len(current_team)
-    while remaining_slots > 0:
-        current_winrates = get_team_winrates_against_top_30(
-            current_team=current_team,
-            top30mons=top30["Pokemon"].tolist(),
-            format_pvp=f_pvpmetadata,
-        )
-        current_norm_winrate = normalized_winrate(
-            winrates=current_winrates, top30=top30
-        )
-        available_pokemon = get_format_available_pokemon(
-            format_teams=format_teams, format_metadata=format_metadata
-        )
-        available_pokemon = restrict_available_mons_based_on_creativity(
-            all_mons=available_pokemon,
-            current_team=current_team,
-            format_metadata=format_metadata,
-            top30=top30,
-            creativity=creativity,
-        )
-        available_pokemon = [
-            mon
-            for mon in available_pokemon
-            if mon not in ignore_mons and mon not in current_team
-        ]
-        # --------- now look for the next best pokemon to add -------
-        # now we can try adding each individual pokemon to see who improves the winrate the most
-        best_improvement = -100
-        best_mon = None
-        for mon in tqdm(available_pokemon):
-            # Skip this mon if it's a subset of any mon in current_team or any mon in current_team is a subset of it
-            if any((mon in team_mon or team_mon in mon) for team_mon in current_team):
-                continue
-            new_team = current_team.copy()
-            new_team.append(mon)
-            new_winrates = get_team_winrates_against_top_30(
-                current_team=new_team,
-                top30mons=top30["Pokemon"].tolist(),
-                format_pvp=f_pvpmetadata,
-            )
-            improvement = (
-                normalized_winrate(
-                    winrates=new_winrates,
-                    top30=top30,
-                )
-                - current_norm_winrate
-            )
-            if improvement > best_improvement:
-                best_improvement = improvement
-                best_mon = mon
-
-        # update the current team with the best improvement mon
-        current_team.append(best_mon)
-        remaining_slots -= 1
-
-    current_avg_popularity = get_team_popularity(
-        team=current_team,
-        format_metadata=format_metadata,
-    )
-    current_winrates = get_team_winrates_against_top_30(
-        current_team=current_team,
-        top30mons=top30["Pokemon"].tolist(),
-        format_pvp=f_pvpmetadata,
-    )
-    display_winrates = add_meta_context_to_final_winrates(
-        current_winrates=current_winrates, top30=top30
-    )
-    current_norm_winrate = normalized_winrate(
-        winrates=current_winrates,
-        top30=top30,
-    )
-    target_avg_popularity = get_target_avg_popularity(
-        top30=top30, creativity=creativity
-    )
-    solved_team_data = {
-        "team": current_team,
-        "avg_popularity": current_avg_popularity,
-        "norm_winrate": current_norm_winrate,
-        "target_avg_popularity": target_avg_popularity,
-        "top30_winrates": display_winrates,
-    }
-    return solved_team_data
