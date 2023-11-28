@@ -47,7 +47,11 @@ def update_metadata():
         (battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14)))
     ]
     teams = ta.get_teams()
-    formats = [f for f in battle_info["Format"].unique()]
+    formats = [
+        f
+        for f in battle_info["Format"].unique()
+        if len(battle_info[battle_info["Format"] == f]) > 1000
+    ]
 
     for f in formats:
         previous_data = ta.get_pokemonmetadata()
@@ -154,45 +158,47 @@ def update_metadata():
 
             new_pvp_metadata.append(pvp_meta_data_kwargs)
 
-    # now upload all the new data
-    for row in tqdm(new_pokemon_metadata, desc="Uploading Pokemon Metadata"):
-        upload_new_data(pokemonmetadata, row)
+        with session_scope() as session:
+            # now upload all the new data for the current format
+            for row in tqdm(new_pokemon_metadata, desc="Uploading Pokemon Metadata"):
+                upload_new_data(session, pokemonmetadata, row)
+            print("Finished uploading Pokemon Metadata")
 
-    for row in tqdm(new_pvp_metadata, desc="Uploading PvP Metadata"):
-        upload_new_data(pvpmetadata, row)
+            for row in tqdm(new_pvp_metadata, desc="Uploading PvP Metadata"):
+                upload_new_data(session, pvpmetadata, row)
+            print("Finished uploading PvP Metadata")
 
 
-def upload_new_data(db_class, row: dict):
-    with session_scope() as session:
-        if "Pokemon2" not in row:
-            existing_data = (
-                session.query(db_class)
-                .filter_by(Format=row["Format"], Pokemon=row["Pokemon"])
-                .first()
-            )
-            if existing_data is None:
-                new_data = db_class(**row)
-                session.add(new_data)
-            else:
-                existing_data.Winrate = row["Winrate"]
-                existing_data.SampleSize = row["SampleSize"]
-                existing_data.Popularity = row["Popularity"]
+def upload_new_data(session, db_class, row: dict):
+    if "Pokemon2" not in row:
+        existing_data = (
+            session.query(db_class)
+            .filter_by(Format=row["Format"], Pokemon=row["Pokemon"])
+            .first()
+        )
+        if existing_data is None:
+            new_data = db_class(**row)
+            session.add(new_data)
         else:
-            existing_data = (
-                session.query(db_class)
-                .filter_by(
-                    Format=row["Format"],
-                    Pokemon1=row["Pokemon1"],
-                    Pokemon2=row["Pokemon2"],
-                )
-                .first()
+            existing_data.Winrate = row["Winrate"]
+            existing_data.SampleSize = row["SampleSize"]
+            existing_data.Popularity = row["Popularity"]
+    else:
+        existing_data = (
+            session.query(db_class)
+            .filter_by(
+                Format=row["Format"],
+                Pokemon1=row["Pokemon1"],
+                Pokemon2=row["Pokemon2"],
             )
-            if existing_data is None:
-                new_data = db_class(**row)
-                session.add(new_data)
-            else:
-                existing_data.Winrate = row["Winrate"]
-                existing_data.SampleSize = row["SampleSize"]
+            .first()
+        )
+        if existing_data is None:
+            new_data = db_class(**row)
+            session.add(new_data)
+        else:
+            existing_data.Winrate = row["Winrate"]
+            existing_data.SampleSize = row["SampleSize"]
 
 
 def update_no_longer_seen_mons(all_mons, previously_seen_mons, f):
