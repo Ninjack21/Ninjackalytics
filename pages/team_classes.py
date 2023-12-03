@@ -65,7 +65,8 @@ class WinrateCalculator:
         self.engine_name = engine_name
 
     def get_team_winrate(self, team: List[str]):
-        pass
+        engine_method = self.winrate_engine[self.engine_name]
+        winrates = engine_method(team)
 
     def _mon1_v_mon2_winrate(self, mon1: str, mon2: str):
         pass
@@ -73,11 +74,56 @@ class WinrateCalculator:
     def _synergy_winrate(self, team: List[str]):
         pass
 
-    def _antimeta_winrate(self, team: List[str]):
-        pass
-
     def _star_mon_winrate(self, team: List[str]):
         pass
+
+    def _antimeta_winrate(self, team: List[str]):
+        winrates = {}
+        for top30mon in self.format_data.top30["Pokemon"].tolist():
+            team_mons_in_pokemon1, team_mons_in_pokemon2 = self._get_mon_vs_mon_winrates(top30mon, team)
+            total_samplesize = self._get_total_samplesize(team_mons_in_pokemon1, team_mons_in_pokemon2)
+            if total_samplesize < 30:
+                winrates[top30mon] = self._get_presumed_winrate(top30mon)
+            else:
+                winrate_in_mon1, in_mon1_samplesize = self._calculate_weighted_winrate(team_mons_in_pokemon1)
+                winrate_in_mon2, in_mon2_samplesize = self._calculate_reversed_weighted_winrate(team_mons_in_pokemon2)
+                winrate = self._calculate_overall_winrate(winrate_in_mon1, in_mon1_samplesize, winrate_in_mon2, in_mon2_samplesize, total_samplesize)
+                winrates[top30mon] = winrate
+        return pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+
+    def _get_mon_vs_mon_winrates(self, top30mon: str, team: List[str]):
+        format_pvp = self.format_data.format_pvpmetadata
+        team_mon_in_pokemon1 = format_pvp[
+            (format_pvp["Pokemon1"].isin(team))
+            & (format_pvp["Pokemon2"] == top30mon)
+        ].copy()
+        team_mon_in_pokemon2 = format_pvp[
+            (format_pvp["Pokemon2"].isin(team))
+            & (format_pvp["Pokemon1"] == top30mon)
+        ].copy()
+        return team_mon_in_pokemon1, team_mon_in_pokemon2
+
+    def _get_total_samplesize(self, team_mon_in_pokemon1, team_mon_in_pokemon2):
+        return team_mon_in_pokemon1["SampleSize"].sum() + team_mon_in_pokemon2["SampleSize"].sum()
+
+    def _get_presumed_winrate(self, top30mon: str) -> float:
+        format_metadata = self.format_data.format_metadata
+        # reverse the winrate because we want to get the team's expected winrate into the top30 mon
+        return 100 - format_metadata[format_metadata["Pokemon"] == top30mon: str]["Winrate"].values[0]
+
+    def _calculate_weighted_winrate(self, team_mons_in_mon1: pd.DataFrame) -> Tuple[float, int]:
+        # TODO: remove the samplesize weighting and just take the average for the team mons
+        team_mons_in_mon1["Weighted Winrate"] = team_mons_in_mon1["Winrate"] * team_mons_in_mon1["SampleSize"] / team_mons_in_mon1["SampleSize"].sum()
+        return team_mons_in_mon1["Weighted Winrate"].sum(), team_mons_in_mon1["SampleSize"].sum()
+
+    def _calculate_reversed_weighted_winrate(self, team_mons_in_mon2: pd.DataFrame) -> Tuple[float, int]:
+        # TODO: remove the samplesize weighting and just take the average for the team mons
+        team_mons_in_mon2["Reversed Winrate"] = 100 - team_mons_in_mon2["Winrate"]
+        team_mons_in_mon2["Weighted Winrate"] = team_mons_in_mon2["Reversed Winrate"] * team_mons_in_mon2["SampleSize"] / team_mons_in_mon2["SampleSize"].sum()
+        return team_mons_in_mon2["Weighted Winrate"].sum(), team_mons_in_mon2["SampleSize"].sum()
+
+    def _calculate_overall_winrate(self, winrate_in_mon1: float, in_mon1_samplesize: int, winrate_in_mon2: float, in_mon2_samplesize: int, total_samplesize: int) -> float:
+        return (winrate_in_mon1 * in_mon1_samplesize / total_samplesize) + (winrate_in_mon2 * in_mon2_samplesize / total_samplesize)
 
 
 # TODO: complete design utilizing WinrateCalculator
