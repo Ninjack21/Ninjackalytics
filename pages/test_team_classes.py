@@ -33,33 +33,49 @@ class TestWinrateCalculator(unittest.TestCase):
                     "Pikachu",
                     "Pikachu",
                     "Pikachu",
+                    "Pikachu",
+                    "Charizard",
                     "Charizard",
                     "Charizard",
                     "Bulbarsaur",
+                    "Bulbarsaur",
+                    "Squirtle",
                 ],
                 "Pokemon2": [
                     "Charizard",
                     "Bulbasaur",
                     "Squirtle",
+                    "Pikachu",
                     "Bulbasaur",
                     "Squirtle",
+                    "Charizard",
+                    "Squirtle",
+                    "Bulbasaur",
                     "Squirtle",
                 ],
                 "Winrate": [
                     60,  # Pikachu vs Charizard
                     70,  # Pikachu vs Bulbasaur
                     80,  # Pikachu vs Squirtle
+                    50,  # Pikachu vs Pikachu
                     90,  # Charizard vs Bulbasaur
                     55,  # Charizard vs Squirtle
+                    50,  # Charizard vs Charizard
                     60,  # Bulbasaur vs Squirtle
+                    50,  # Bulbasaur vs Bulbasaur
+                    50,  # Squirtle vs Squirtle
                 ],
                 "SampleSize": [
                     50,  # Pikachu vs Charizard
                     30,  # Pikachu vs Bulbasaur
                     10,  # Pikachu vs Squirtle
+                    100,  # Pikachu vs Pikachu
                     15,  # Charizard vs Bulbasaur
                     5,  # Charizard vs Squirtle
+                    20,  # Charizard vs Charizard
                     5,  # Bulbasaur vs Squirtle
+                    10,  # Bulbasaur vs Bulbasaur
+                    100,  # Squirtle vs Squirtle
                 ],
             }
         )
