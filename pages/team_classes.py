@@ -52,7 +52,6 @@ class FormatData:
         ).head(30)
 
 
-# TODO: implement methods
 class WinrateCalculator:
     winrate_engine = {
         "synergy": self._synergy_winrate,
@@ -64,12 +63,9 @@ class WinrateCalculator:
         self.format_data = format_data
         self.engine_name = engine_name
 
-    def get_team_winrate(self, team: List[str]):
+    def get_team_winrate_against_meta(self, team: List[str]):
         engine_method = self.winrate_engine[self.engine_name]
         winrates = engine_method(team)
-
-    def _mon1_v_mon2_winrate(self, mon1: str, mon2: str):
-        pass
 
     def _synergy_winrate(self, team: List[str]):
         pass
@@ -80,40 +76,58 @@ class WinrateCalculator:
     def _antimeta_winrate(self, team: List[str]):
         winrates = {}
         for top30mon in self.format_data.top30["Pokemon"].tolist():
-            team_mons_in_pokemon1, team_mons_in_pokemon2 = self._get_mon_vs_mon_winrates(top30mon, team)
-            team_v_top30mon_df = self._merge_team_mons_into_mon1(team_mons_in_pokemon1, team_mons_in_pokemon2)
+            (
+                team_mons_in_pokemon1,
+                team_mons_in_pokemon2,
+            ) = self._get_mon_vs_mon_winrates(top30mon, team)
+            team_v_top30mon_df = self._merge_team_mons_into_mon1(
+                team_mons_in_pokemon1, team_mons_in_pokemon2
+            )
             if team_v_top30mon_df["SampleSize"].sum() < 30:
                 winrates[top30mon] = self._get_presumed_winrate(top30mon)
             else:
                 # handle antimeta winrate calc
-                winrate = team_v_top30mon_df["Winrate"].mean() # assume each mon's weight is equal
+                winrate = team_v_top30mon_df[
+                    "Winrate"
+                ].mean()  # assume each mon's weight is equal
                 winrates[top30mon] = winrate
         return pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
 
-    def _get_mon_vs_mon_winrates(self, top30mon: str, team: List[str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _get_mon_vs_mon_winrates(
+        self, top30mon: str, team: List[str]
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         format_pvp = self.format_data.format_pvpmetadata
         team_mon_in_pokemon1 = format_pvp[
-            (format_pvp["Pokemon1"].isin(team))
-            & (format_pvp["Pokemon2"] == top30mon)
+            (format_pvp["Pokemon1"].isin(team)) & (format_pvp["Pokemon2"] == top30mon)
         ].copy()
         team_mon_in_pokemon2 = format_pvp[
-            (format_pvp["Pokemon2"].isin(team))
-            & (format_pvp["Pokemon1"] == top30mon)
+            (format_pvp["Pokemon2"].isin(team)) & (format_pvp["Pokemon1"] == top30mon)
         ].copy()
         return team_mons_in_pokemon1, team_mons_in_pokemon2
 
-    def _merge_team_mons_into_mon1(self, team_mons_in_mon1: pd.DataFrame, team_mons_in_mon2: pd.DataFrame) -> pd.DataFrame:
+    def _merge_team_mons_into_mon1(
+        self, team_mons_in_mon1: pd.DataFrame, team_mons_in_mon2: pd.DataFrame
+    ) -> pd.DataFrame:
         team_mons_in_mon2["Winrate"] = 100 - team_mons_in_mon2["Winrate"]
-        team_mons_in_mon2 = team_mons_in_mon2.rename(columns={"Pokemon1": "Pokemon2", "Pokemon2": "Pokemon1"})
-        team_mons_in_mon1 = pd.concat([team_mons_in_mon1, team_mons_in_mon2], ignore_index=True)
+        team_mons_in_mon2 = team_mons_in_mon2.rename(
+            columns={"Pokemon1": "Pokemon2", "Pokemon2": "Pokemon1"}
+        )
+        team_mons_in_mon1 = pd.concat(
+            [team_mons_in_mon1, team_mons_in_mon2], ignore_index=True
+        )
         return team_mons_in_mon1
-        
+
     def _get_presumed_winrate(self, top30mon: str) -> float:
         format_metadata = self.format_data.format_metadata
         # reverse the winrate because we want to get the team's expected winrate into the top30 mon
-        return 100 - format_metadata[format_metadata["Pokemon"] == top30mon: str]["Winrate"].values[0]
+        return (
+            100
+            - format_metadata[format_metadata["Pokemon"] == top30mon : str][
+                "Winrate"
+            ].values[0]
+        )
 
-    
+
 # TODO: complete design utilizing WinrateCalculator
 class TeamSolver:
     def __init__(self, db: DatabaseData, battle_format: str):
