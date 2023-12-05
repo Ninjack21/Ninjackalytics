@@ -188,11 +188,19 @@ class CreativityRestrictor:
             ]["Pokemon"].tolist()
 
             # handle case where available_mons is too restricted
-            if len(available_mons) < 5:
+            if len(available_mons) <= 5:
                 available_mons = self._get_15_nearest(
                     min_popularity, max_popularity, current_team
                 )
 
+            # not a creativity related thing but handle mon forms here
+            available_mons = [
+                mon
+                for mon in available_mons
+                if not any(
+                    mon in team_mon or team_mon in mon for team_mon in current_team
+                )
+            ]
             return available_mons
 
     def _get_15_nearest(
@@ -307,7 +315,6 @@ class CreativityRestrictor:
         ]["Popularity"].min()
 
 
-# TODO: complete design utilizing WinrateCalculator
 class TeamSolver:
     def __init__(self, db: DatabaseData, battle_format: str):
         self.db = db
@@ -323,29 +330,62 @@ class TeamSolver:
         winrate_calculator = WinrateCalculator(
             format_data=self.format_data, engine_name=engine_name
         )
+        creativity_restrictor = CreativityRestrictor(
+            creativity=creativity, format_data=self.format_data
+        )
         format_mons = self.format_data.get_format_available_mons()
         # handle the case where the current team is empty
         if len(current_team) == 0:
             current_team = [self._pick_random_top30_mon()]
 
+        # solve for remaining mons
         remaining_slots = 6 - len(current_team)
         while remaining_slots > 0:
             current_winrates = winrate_calculator.get_team_winrate_against_meta(
                 current_team
             )
             normalized_winrate = winrate_calculator.normalized_winrate(current_winrates)
+            available_mons = creativity_restrictor.restrict_available_mons(
+                available_mons=format_mons,
+                current_team=current_team,
+            )
+            # remove ignore_mons
+            available_mons = [mon for mon in available_mons if mon not in ignore_mons]
+            best_mon = self._choose_best_addition(
+                available_mons=available_mons,
+                current_team=current_team,
+                current_norm_winrate=normalized_winrate,
+                winrate_calculator=winrate_calculator,
+            )
+            current_team.append(best_mon)
+            remaining_slots -= 1
+
+        return current_team
 
     def _pick_random_top30_mon(self):
         mon = self.format_data.top30.sample(n=1)["Pokemon"].values[0]
         return mon
 
-    def _restrict_available_mons_by_creativity(
-        self, creativity: int, available_mons: List[str], current_team: List[str]
+    def _choose_best_addition(
+        self,
+        available_mons: List[str],
+        current_team: List[str],
+        current_norm_winrate: float,
+        winrate_calculator: WinrateCalculator,
     ):
-        if creativity == 0:
-            return available_mons
-        else:
-            pass
+        best_improvement = -100
+        best_mon = None
+        for mon in available_mons:
+            new_team = current_team.copy()
+            new_team.append(mon)
+            new_winrates = winrate_calculator.get_team_winrate_against_meta(new_team)
+            new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
+            improvement = new_norm_winrate - current_norm_winrate
+            if improvement > best_improvement:
+                best_improvement = improvement
+                best_mon = mon
+
+        return best_mon
 
 
 # TODO: build DisplayTeam class

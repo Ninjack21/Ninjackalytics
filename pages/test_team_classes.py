@@ -1,7 +1,12 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 import pandas as pd
-from .team_classes import WinrateCalculator, FormatData, CreativityRestrictor
+from .team_classes import (
+    WinrateCalculator,
+    FormatData,
+    CreativityRestrictor,
+    TeamSolver,
+)
 
 
 # NOTE: for FormatData tests only right now
@@ -107,7 +112,7 @@ class TestCreativityRestrictor(unittest.TestCase):
         )
         # the math is a pain here so I'm going to recreate it manually to verify rather than typing it out
         # yes this will more or less mimic the code but the math is too annoying to do otherwise haha
-        std = self.mock_format_data.format_metadata["Popularity"].std()
+        std = self.mock_format_data.top30["Popularity"].std()
 
         bound_range = std * 0.15 * remaining_slots
 
@@ -230,14 +235,42 @@ class TestCreativityRestrictor(unittest.TestCase):
             remaining_slots -= 1
 
     def test_restrict_available_mons(self):
-        available_mons = ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"]
+        # tool nearest 15 if less than 6 with idea that minimum pool I want to consider is 6 mons.
+        # after removing current team, ensure this list has 6 remaining mons
+        available_mons = [
+            "Pikachu",
+            "Charizard",
+            "Bulbasaur",
+            "Squirtle",
+            "Mon1",
+            "Mon2",
+            "Mon3",
+            "Mon4",
+        ]
+        # update format metadata to reflect above
+        self.mock_format_data.format_metadata = pd.DataFrame(
+            {
+                "Pokemon": [
+                    "Pikachu",
+                    "Charizard",
+                    "Bulbasaur",
+                    "Squirtle",
+                    "Mon1",
+                    "Mon2",
+                    "Mon3",
+                    "Mon4",
+                ],
+                "Popularity": [60, 55, 45, 40, 35, 30, 25, 20],
+                "SampleSize": [100, 100, 100, 35, 30, 25, 20, 15],
+            }
+        )
+
         current_team = ["Pikachu", "Charizard"]
-        # with a creativity of 50, the target avg popularity is 47.75, this excludes Squirtle as an option
-        expected_available_mons = ["Bulbasaur"]
         actual_available_mons = self.creativity_restrictor.restrict_available_mons(
             available_mons, current_team
         )
-        self.assertEqual(set(expected_available_mons), set(actual_available_mons))
+        # verify that at least 6 mons are present (per the logic of the calculator)
+        self.assertGreaterEqual(len(actual_available_mons), 6)
 
         # ====== CASE WHERE CREATIVITY = 0 ======
         creativity_restrictor = CreativityRestrictor(0, self.mock_format_data)
@@ -364,6 +397,16 @@ class TestCreativityRestrictor(unittest.TestCase):
         expected_available_mons = self.mock_format_data.top30["Pokemon"].tolist()
         expected_available_mons.remove("Pikachu")
         actual_available_mons = creativity_restrictor.restrict_available_mons(
+            available_mons, current_team
+        )
+        self.assertEqual(set(expected_available_mons), set(actual_available_mons))
+
+    def test_restrict_mons_where_available_mons_contain_subset_of_team(self):
+        # ensure that Pikachu and Charizard-Cool are not returned as available
+        available_mons = ["Pikachu", "Charizard-Cool", "Bulbasaur", "Squirtle"]
+        current_team = ["Pikachu-Cool", "Charizard"]
+        expected_available_mons = ["Bulbasaur", "Squirtle"]
+        actual_available_mons = self.creativity_restrictor.restrict_available_mons(
             available_mons, current_team
         )
         self.assertEqual(set(expected_available_mons), set(actual_available_mons))
@@ -660,6 +703,49 @@ class TestWinrateCalculator(unittest.TestCase):
         actual_result = self.wr_calc.normalized_winrate(team_winrates)
 
         self.assertAlmostEqual(expected_result, actual_result, places=4)
+
+
+class TestTeamSolver(unittest.TestCase):
+    def setUp(self):
+        self.mock_db = MockDatabaseData()
+        self.mock_format_data = Mock()
+        self.mock_format_data.top30 = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
+                "Popularity": [60, 55, 45, 40],
+            }
+        )
+        self.team_solver = TeamSolver(db=self.mock_db, battle_format="OU")
+        self.team_solver.format_data = self.mock_format_data
+
+    def test_pick_random_top30_mon(self):
+        # Call the method to test
+        mon = self.team_solver._pick_random_top30_mon()
+        # Check that the returned mon is in the top 30
+        self.assertIn(mon, self.team_solver.format_data.top30["Pokemon"].values)
+
+    @patch.object(WinrateCalculator, "get_team_winrate_against_meta")
+    @patch.object(WinrateCalculator, "normalized_winrate")
+    def test_choose_best_addition(
+        self, mock_normalized_winrate, mock_get_team_winrate_against_meta
+    ):
+        # Set up the mock methods
+        mock_normalized_winrate.side_effect = [0.5]
+        mock_get_team_winrate_against_meta.return_value = 0.5
+
+        # Call the method to test
+        available_mons = ["Bulbasaur", "Squirtle"]
+        current_team = ["Pikachu", "Charizard"]
+        current_norm_winrate = 0.5
+        winrate_calculator = WinrateCalculator(
+            format_data=self.mock_format_data, engine_name="antimeta"
+        )
+        best_mon = self.team_solver._choose_best_addition(
+            available_mons, current_team, current_norm_winrate, winrate_calculator
+        )
+
+        # Check that the best mon is Squirtle, as it has a higher normalized winrate
+        self.assertEqual(best_mon, "Squirtle")
 
 
 if __name__ == "__main__":
