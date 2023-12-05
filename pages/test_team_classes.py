@@ -123,6 +123,56 @@ class TestWinrateCalculator(unittest.TestCase):
             check_like=True,
         )
 
+    def test_merge_team_mons_into_mon1(self):
+        # dummy examples
+        team_mons_in_mon1 = pd.DataFrame(
+            {
+                "Format": ["[Gen 9] OU"],
+                "Pokemon1": ["Pikachu"],
+                "Pokemon2": ["Charizard"],
+                "Winrate": [60],
+                "SampleSize": [50],
+            }
+        )
+
+        team_mons_in_mon2 = pd.DataFrame(
+            {
+                "Format": ["[Gen 9] OU"],
+                "Pokemon1": ["Pikachu"],
+                "Pokemon2": ["Bulbasaur"],
+                "Winrate": [70],
+                "SampleSize": [30],
+            }
+        )
+
+        expected_result = pd.DataFrame(
+            {
+                "Format": ["[Gen 9] OU", "[Gen 9] OU"],
+                "Pokemon1": ["Pikachu", "Bulbasaur"],  # Bulbasaur is now in Pokemon1
+                "Pokemon2": ["Charizard", "Pikachu"],
+                "Winrate": [60, 30],  # reverse Pikachu vs Bulbasaur winrate, 70-->30
+                "SampleSize": [50, 30],
+            }
+        )
+
+        actual_result = self.antimeta_calculator._merge_team_mons_into_mon1(
+            team_mons_in_mon1, team_mons_in_mon2
+        )
+
+        pd.testing.assert_frame_equal(expected_result, actual_result, check_like=True)
+
+    def test_get_presumed_winrate(self):
+        self.mock_format_data.format_metadata = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
+                "Winrate": [60, 55, 45, 40],
+            }
+        )
+        top30mon = "Pikachu"
+        expected_winrate = 100 - 60  # 100 - Pikachu's winrate
+        actual_winrate = self.antimeta_calculator._get_presumed_winrate(top30mon)
+        self.assertEqual(expected_winrate, actual_winrate)
+
 
 if __name__ == "__main__":
     unittest.main()

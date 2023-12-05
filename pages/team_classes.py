@@ -122,9 +122,9 @@ class WinrateCalculator:
         # reverse the winrate because we want to get the team's expected winrate into the top30 mon
         return (
             100
-            - format_metadata[format_metadata["Pokemon"] == top30mon : str][
-                "Winrate"
-            ].values[0]
+            - format_metadata[format_metadata["Pokemon"] == top30mon]["Winrate"].values[
+                0
+            ]
         )
 
 
