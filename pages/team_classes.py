@@ -103,6 +103,18 @@ class WinrateCalculator:
         team_mons_in_pokemon2 = format_pvp[
             (format_pvp["Pokemon2"].isin(team)) & (format_pvp["Pokemon1"] == top30mon)
         ].copy()
+
+        # if a top30 mon is on your team and in the top30 then it will check itself against itself.
+        # to prevent it showing up in both team1 and team2 then if the team contains any mons in the top30
+        # then we will remove the top30mon from the team_mons_in_pokemon2 dataframe
+        if (
+            len(set(team).intersection(set(self.format_data.top30["Pokemon"].tolist())))
+            > 0
+        ):
+            team_mons_in_pokemon2 = team_mons_in_pokemon2[
+                team_mons_in_pokemon2["Pokemon2"] != top30mon
+            ]
+
         return team_mons_in_pokemon1, team_mons_in_pokemon2
 
     def _merge_team_mons_into_mon1(
@@ -118,14 +130,9 @@ class WinrateCalculator:
         return team_mons_in_mon1
 
     def _get_presumed_winrate(self, top30mon: str) -> float:
-        format_metadata = self.format_data.format_metadata
+        top30 = self.format_data.top30
         # reverse the winrate because we want to get the team's expected winrate into the top30 mon
-        return (
-            100
-            - format_metadata[format_metadata["Pokemon"] == top30mon]["Winrate"].values[
-                0
-            ]
-        )
+        return 100 - top30[top30["Pokemon"] == top30mon]["Winrate"].values[0]
 
 
 # TODO: complete design utilizing WinrateCalculator
