@@ -85,6 +85,7 @@ class WinrateCalculator:
     def get_team_winrate_against_meta(self, team: List[str]):
         engine_method = self.engine
         winrates = engine_method(team)
+        return winrates
 
     def _synergy_winrate(self, team: List[str]):
         pass

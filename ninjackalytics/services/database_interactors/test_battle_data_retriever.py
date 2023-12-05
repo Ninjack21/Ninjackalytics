@@ -35,6 +35,7 @@ class testBattleDataRetriever(unittest.TestCase):
         bd = TestBattle()
         bp = BattlePokemon(bd)
         self.session = get_sessionlocal()
+        self.session.begin_nested()
         Base.metadata.create_all(bind=get_engine())
 
         self.battle_parser = BattleParser(bd, bp)
@@ -45,6 +46,9 @@ class testBattleDataRetriever(unittest.TestCase):
         self.uploader = uploader
 
         self.retriever = BattleDataRetriever()
+
+    def tearDown(self):
+        self.session.rollback()  # rollback the transaction
 
     def test_get_battle_info(self):
         battle_id = self.uploader.battle_id

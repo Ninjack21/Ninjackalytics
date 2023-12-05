@@ -730,7 +730,7 @@ class TestTeamSolver(unittest.TestCase):
         self, mock_normalized_winrate, mock_get_team_winrate_against_meta
     ):
         # Set up the mock methods
-        mock_normalized_winrate.side_effect = [0.5]
+        mock_normalized_winrate.side_effect = [0.5, 0.6]
         mock_get_team_winrate_against_meta.return_value = 0.5
 
         # Call the method to test
@@ -744,8 +744,44 @@ class TestTeamSolver(unittest.TestCase):
             available_mons, current_team, current_norm_winrate, winrate_calculator
         )
 
-        # Check that the best mon is Squirtle, as it has a higher normalized winrate
+        # the last call to the normalized_winrate will be 0.6 which is better so Squirtle should be returned
         self.assertEqual(best_mon, "Squirtle")
+
+    @patch.object(WinrateCalculator, "get_team_winrate_against_meta")
+    @patch.object(WinrateCalculator, "normalized_winrate")
+    @patch.object(CreativityRestrictor, "restrict_available_mons")
+    def test_solve_for_remainder_of_team(
+        self,
+        mock_restrict_available_mons,
+        mock_normalized_winrate,
+        mock_get_team_winrate_against_meta,
+    ):
+        # ensure 4 new pokemon other than Bulba (in ignore mon) are present
+        mock_restrict_available_mons.return_value = [
+            "Bulbasaur",
+            "Squirtle",
+            "Pikachu",
+            "Charizard",
+            "Jigglypuff",
+            "Meowth",
+            "Psyduck",
+        ]
+        # just return 0.5 for everything: all improvements will be flat
+        # this will cause the optimizer to always choose the first mon it looks at
+        mock_normalized_winrate.return_value = 0.5
+        mock_get_team_winrate_against_meta.return_value = 0.5
+
+        # Call the method to test
+        current_team = ["Pikachu", "Charizard"]
+        creativity = 50
+        ignore_mons = ["Bulbasaur"]
+        engine_name = "antimeta"
+        actual_team = self.team_solver.solve_for_remainder_of_team(
+            current_team, creativity, ignore_mons, engine_name
+        )
+
+        # Check that the length of the returned team is 6
+        self.assertEqual(len(actual_team), 6)
 
 
 if __name__ == "__main__":
