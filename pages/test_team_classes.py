@@ -1,11 +1,12 @@
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 import pandas as pd
 from .team_classes import (
     WinrateCalculator,
     FormatData,
     CreativityRestrictor,
     TeamSolver,
+    DisplayTeam,
 )
 
 
@@ -782,6 +783,67 @@ class TestTeamSolver(unittest.TestCase):
 
         # Check that the length of the returned team is 6
         self.assertEqual(len(actual_team), 6)
+
+
+class TestDisplayTeam(unittest.TestCase):
+    def setUp(self):
+        self.team = ["Pikachu", "Charizard"]
+        self.engine = "antimeta"
+        self.format_data = MagicMock()
+        self.format_data.top30 = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur"],
+                "SampleSize": [100, 200, 150],
+                "Format": ["format1", "format2", "format3"],
+                "Winrate": [0.5, 0.6, 0.4],
+                "Popularity": [0.5, 0.6, 0.4],
+            }
+        )
+        self.format_data.format_metadata = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur"],
+                "Popularity": [0.5, 0.6, 0.4],
+            }
+        )
+        self.display_team = DisplayTeam(self.team, self.engine, self.format_data)
+
+    def test_get_avg_popularity(self):
+        avg_popularity = self.display_team._get_avg_popularity()
+        self.assertEqual(avg_popularity, 0.55)
+
+    def test_add_meta_context_to_winrates(self):
+        winrates = pd.DataFrame(
+            {"Pokemon": ["Pikachu", "Charizard"], "winrate": [0.5, 0.6]}
+        )
+        context_df = self.display_team._add_meta_context_to_winrates(winrates)
+        self.assertIsInstance(context_df, pd.DataFrame)
+        self.assertEqual(context_df.shape[1], 4)  # 4 columns in the resulting DataFrame
+
+    @patch.object(DisplayTeam, "_get_norm_winrate_and_winrates")
+    def test_get_display_information(self, mock_get_norm_winrate_and_winrates):
+        # Set up the mock method
+        mock_get_norm_winrate_and_winrates.return_value = (
+            0.75,
+            pd.DataFrame(
+                {
+                    "Pokemon": ["Pikachu", "Charizard", "Bulbasaur"],
+                    "winrate": [0.8, 0.7, 0.6],
+                }
+            ).set_index(
+                "Pokemon"
+            ),  # Set "Pokemon" as the index
+        )
+
+        # Call the method to test
+        display_info = self.display_team.get_display_information()
+
+        # Assertions
+        self.assertIsInstance(display_info, dict)
+        self.assertEqual(
+            set(display_info.keys()),
+            {"team", "avg_popularity", "norm_winrate", "team info"},
+        )
+        self.assertEqual(display_info["norm_winrate"], 0.75)
 
 
 if __name__ == "__main__":

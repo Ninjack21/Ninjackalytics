@@ -1,6 +1,6 @@
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 import pandas as pd
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from datetime import datetime, timedelta
 
 # TODO: keep in mind team preview as well
@@ -389,6 +389,70 @@ class TeamSolver:
         return best_mon
 
 
-# TODO: build DisplayTeam class
 class DisplayTeam:
-    pass
+    def __init__(
+        self,
+        team: List[str],
+        engine: str,
+        format_data: FormatData,
+    ):
+        self.team = team
+        self.engine = engine
+        self.format_data = format_data
+        self.top30 = self.format_data.top30
+        self.format_metadata = self.format_data.format_metadata
+
+    def get_display_information(self) -> Dict[str, object]:
+        display_dict = {
+            "team": self.team,
+        }
+        display_dict["avg_popularity"] = self._get_avg_popularity()
+        norm_winrate, winrates = self._get_norm_winrate_and_winrates()
+        display_dict["norm_winrate"] = norm_winrate
+        display_dict["team info"] = self._add_meta_context_to_winrates(winrates)
+        return display_dict
+
+    def _get_avg_popularity(self) -> float:
+        avg_popularity = self.format_metadata[
+            self.format_metadata["Pokemon"].isin(self.team)
+        ]["Popularity"].mean()
+        return avg_popularity
+
+    def _get_norm_winrate_and_winrates(self) -> Tuple[float, pd.DataFrame]:
+        winrate_calculator = WinrateCalculator(
+            format_data=self.format_data, engine_name=self.engine
+        )
+        winrates = winrate_calculator.get_team_winrate_against_meta(self.team)
+        norm_winrate = winrate_calculator.normalized_winrate(winrates)
+        return norm_winrate
+
+    def _add_meta_context_to_winrates(self, winrates: pd.DataFrame) -> pd.DataFrame:
+        top30 = self.top30.copy()
+        top30 = top30.set_index("Pokemon")
+        top30 = top30.drop(columns=["SampleSize", "Format"])
+        top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
+
+        winrates = winrates.rename(columns={"winrate": "Team Winrate"})
+        context_df = winrates.merge(top30, how="left", on="Pokemon")
+        context_df = context_df.rename(
+            columns={
+                "Pokemon": "Top30 Most Popular Mons",
+                "Popularity": "Top30 Mon Popularity (%)",
+                "Top30 Base Winrate": "Top30 Mon General Winrate (%)",
+                "Team Winrate": "Team Winrate x Top30 Mon (%)",
+            }
+        )
+        context_df = context_df.reset_index(drop=True)
+        # show the highest threats first
+        context_df = context_df.sort_values(
+            by="Team Winrate x Top30 Mon (%)", ascending=True
+        )
+        # Round all numeric values to the nearest 1st decimal place (aka all but the Top30 Most Popular Mons column)
+        context_df.loc[
+            :, ~context_df.columns.isin(["Top30 Most Popular Mons"])
+        ] = context_df.loc[
+            :, ~context_df.columns.isin(["Top30 Most Popular Mons"])
+        ].round(
+            1
+        )
+        return context_df
