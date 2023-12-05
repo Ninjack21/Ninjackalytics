@@ -1,7 +1,80 @@
 import unittest
 from unittest.mock import Mock
 import pandas as pd
-from .team_classes import WinrateCalculator
+from .team_classes import WinrateCalculator, FormatData
+
+
+# NOTE: for FormatData tests only right now
+class MockDatabaseData:
+    def __init__(self):
+        super().__init__()
+
+    def get_battle_info(self):
+        return pd.DataFrame(
+            {
+                "Format": ["battle_format", "battle_format", "battle_format"],
+                "P1_team": [1, 2, 3],
+                "P2_team": [2, 3, 1],
+            }
+        )
+
+    def get_teams(self):
+        # Return the desired teams data
+        return pd.DataFrame(
+            {
+                "id": [1, 2, 3],
+                "Pokemon1": ["Pikachu", "Charizard", "Bulbasaur"],
+                "Pokemon2": ["Charizard", "Bulbasaur", "Squirtle"],
+                "Pokemon3": ["Bulbasaur", "Squirtle", "Pikachu"],
+            }
+        )
+
+    def get_pvpmetadata(self):
+        # Return the desired pvpmetadata data
+        return pd.DataFrame(
+            {
+                "Format": ["battle_format", "battle_format", "battle_format"],
+                "Pokemon1": ["Pikachu", "Charizard", "Bulbasaur"],
+                "Pokemon2": ["Charizard", "Bulbasaur", "Squirtle"],
+                "Winrate": [60, 70, 80],
+                "SampleSize": [50, 30, 5],
+            }
+        )
+
+    def get_pokemonmetadata(self):
+        # Return the desired pokemonmetadata data
+        return pd.DataFrame(
+            {
+                "Format": [
+                    "battle_format",
+                    "battle_format",
+                    "battle_format",
+                    "battle_format",
+                ],
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
+                "Popularity": [100, 50, 30, 20],
+            }
+        )
+
+
+class TestFormatData(unittest.TestCase):
+    def setUp(self):
+        self.mock_db = MockDatabaseData()
+        self.format_data = FormatData("battle_format", self.mock_db)
+
+    def test_get_format_available_mons(self):
+        # Mock the format_metadata DataFrame
+        self.format_data.format_metadata = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
+                "SampleSize": [100, 50, 30, 20],
+            }
+        )
+
+        expected_mons = ["Pikachu", "Charizard", "Bulbasaur"]
+        actual_mons = self.format_data.get_format_available_mons()
+
+        self.assertEqual(actual_mons, expected_mons)
 
 
 class TestWinrateCalculator(unittest.TestCase):
@@ -266,6 +339,35 @@ class TestWinrateCalculator(unittest.TestCase):
         actual_result = self.wr_calc._antimeta_winrate(team)
 
         pd.testing.assert_frame_equal(expected_result, actual_result, check_like=True)
+
+    def test_normalized_winrate(self):
+        team_winrates = pd.DataFrame(
+            {
+                "Pokemon": ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
+                "winrate": [40.00, 50.00, 90.00, 55.00],
+            }
+        )
+
+        """
+        ----- MATH -----
+        Pikachu popularity = 60
+        Charizard popularity = 60
+        Bulbasaur popularity = 60
+        Squirtle popularity = 12
+
+        Pikachu normalized winrate = 40 * (60/192) = 12.5
+        Charizard normalized winrate = 50 * (60/192) = 15.625
+        Bulbasaur normalized winrate = 90 * (60/192) = 28.125
+        Squirtle normalized winrate = 55 * (12/192) = 3.4375
+
+        sum = 59.6875
+        """
+
+        expected_result = 59.6875
+
+        actual_result = self.wr_calc.normalized_winrate(team_winrates)
+
+        self.assertAlmostEqual(expected_result, actual_result, places=4)
 
 
 if __name__ == "__main__":

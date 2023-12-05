@@ -32,9 +32,8 @@ class FormatData:
     def __init__(self, battle_format: str, db: DatabaseData):
         self.battle_format = battle_format
         self.db = db
-        self.format_info = self.db.get_battle_info()[
-            self.db.get_battle_info()["Format"] == self.battle_format
-        ]
+        db_info = self.db.get_battle_info()
+        self.format_info = db_info[db_info["Format"] == self.battle_format]
         self.format_teams = self.db.get_teams()[
             self.db.get_teams()["id"].isin(
                 self.format_info["P1_team"].tolist()
@@ -51,6 +50,10 @@ class FormatData:
             by="Popularity", ascending=False
         ).head(30)
 
+    def get_format_available_mons(self):
+        mons = self.format_metadata["Pokemon"][self.format_metadata["SampleSize"] >= 30]
+        return mons.tolist()
+
 
 class WinrateCalculator:
     def __init__(self, format_data: FormatData, engine_name: str):
@@ -62,6 +65,22 @@ class WinrateCalculator:
             "star_mon": self._star_mon_winrate,
         }
         self.engine = winrate_engine[self.engine_name]
+
+    def normalized_winrate(self, team_winrates: pd.DataFrame) -> pd.DataFrame:
+        top30 = self.format_data.top30.copy()
+        top30 = top30.set_index("Pokemon")
+        top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
+        team_winrates = team_winrates.rename(columns={"winrate": "Team Winrate"})
+        merged_df = team_winrates.merge(top30, how="left", on="Pokemon")
+        merged_df["Relative Popularity"] = (
+            merged_df["Popularity"] / merged_df["Popularity"].sum()
+        )
+        merged_df["Normalized Winrate"] = (
+            merged_df["Team Winrate"] * merged_df["Relative Popularity"]
+        )
+        merged_df = merged_df.drop(columns=["Popularity", "Relative Popularity"])
+
+        return merged_df["Normalized Winrate"].sum()
 
     def get_team_winrate_against_meta(self, team: List[str]):
         engine_method = self.engine
@@ -146,90 +165,25 @@ class TeamSolver:
         current_team: List[str],
         creativity: int,
         ignore_mons: List[str] = [],
-        engine_name: str = "synergy",
+        engine_name: str = "antimeta",
     ):
+        winrate_calculator = WinrateCalculator(
+            format_data=self.format_data, engine_name=engine_name
+        )
         # handle the case where the current team is empty
         if len(current_team) == 0:
             current_team = [self._pick_random_top30_mon()]
 
         remaining_slots = 6 - len(current_team)
         while remaining_slots > 0:
-            pass
+            current_winrates = winrate_calculator.get_team_winrate_against_meta(
+                current_team
+            )
+            normalized_winrate = winrate_calculator.normalized_winrate(current_winrates)
 
     def _pick_random_top30_mon(self):
         mon = self.format_data.top30.sample(n=1)["Pokemon"].values[0]
         return mon
-
-    def _get_team_winrates_against_top_30(
-        self,
-        current_team: List[str],
-    ):
-        # TODO: break this down into smaller functions.
-        # TODO: should winrate calcs be own class to allow for different methods of calculating winrates?
-
-        winrates = {}
-        format_pvp = self.format_data.format_pvpmetadata
-        for mon in self.format_data.top30["Pokemon"].tolist():
-            team_mon_in_pokemon1 = format_pvp[
-                (format_pvp["Pokemon1"].isin(current_team))
-                & (format_pvp["Pokemon2"] == mon)
-            ].copy()
-            team_mon_in_pokemon2 = format_pvp[
-                (format_pvp["Pokemon2"].isin(current_team))
-                & (format_pvp["Pokemon1"] == mon)
-            ].copy()
-
-            total_samplesize = (
-                team_mon_in_pokemon1["SampleSize"].sum()
-                + team_mon_in_pokemon2["SampleSize"].sum()
-            )
-            if total_samplesize < 30:
-                # if very low data, then presume winrate against mon is opposite of mon general WR
-                format_metadata = self.format_data.format_metadata
-                winrates[mon] = (
-                    100
-                    - format_metadata[format_metadata["Pokemon"] == mon][
-                        "Winrate"
-                    ].values[0]
-                )
-                continue
-            else:
-                # if in mon1 then we have the winrate against the top30 mon, which we want
-                team_mon_in_pokemon1["Weighted Winrate"] = (
-                    team_mon_in_pokemon1["Winrate"]
-                    * team_mon_in_pokemon1["SampleSize"]
-                    / team_mon_in_pokemon1["SampleSize"].sum()
-                )
-
-                winrate_in_mon1 = team_mon_in_pokemon1["Weighted Winrate"].sum()
-                in_mon1_samplesize = team_mon_in_pokemon1["SampleSize"].sum()
-
-                # if in mon2 then we have the winrate of top30 against us, so we need 1-winrate, but gets goofy with
-                # weighted winrates
-                # this is inefficient and it could be done in one line but won't slow it down to an amount the user will
-                # care about but it WILL make it much more intuitive how it works for future maintenance
-                team_mon_in_pokemon2["Reversed Winrate"] = (
-                    100 - team_mon_in_pokemon2["Winrate"]
-                )
-                # use reversed winrates to get the winrate of team mons against top30 mons like desired
-                team_mon_in_pokemon2["Weighted Winrate"] = (
-                    team_mon_in_pokemon2["Reversed Winrate"]
-                    * team_mon_in_pokemon2["SampleSize"]
-                    / team_mon_in_pokemon2["SampleSize"].sum()
-                )
-
-                winrate_in_mon2 = team_mon_in_pokemon2["Weighted Winrate"].sum()
-                in_mon2_samplesize = team_mon_in_pokemon2["SampleSize"].sum()
-
-                # now we can calculate the overall winrate
-                winrate = (winrate_in_mon1 * in_mon1_samplesize / total_samplesize) + (
-                    winrate_in_mon2 * in_mon2_samplesize / total_samplesize
-                )
-
-                winrates[mon] = winrate
-
-        winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
-        return winrates
 
 
 # TODO: build DisplayTeam class
