@@ -53,18 +53,18 @@ class FormatData:
 
 
 class WinrateCalculator:
-    winrate_engine = {
-        "synergy": self._synergy_winrate,
-        "antimeta": self._antimeta_winrate,
-        "star_mon": self._star_mon_winrate,
-    }
-
     def __init__(self, format_data: FormatData, engine_name: str):
         self.format_data = format_data
         self.engine_name = engine_name
+        winrate_engine = {
+            "synergy": self._synergy_winrate,
+            "antimeta": self._antimeta_winrate,
+            "star_mon": self._star_mon_winrate,
+        }
+        self.engine = winrate_engine[self.engine_name]
 
     def get_team_winrate_against_meta(self, team: List[str]):
-        engine_method = self.winrate_engine[self.engine_name]
+        engine_method = self.engine
         winrates = engine_method(team)
 
     def _synergy_winrate(self, team: List[str]):
@@ -97,10 +97,10 @@ class WinrateCalculator:
         self, top30mon: str, team: List[str]
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         format_pvp = self.format_data.format_pvpmetadata
-        team_mon_in_pokemon1 = format_pvp[
+        team_mons_in_pokemon1 = format_pvp[
             (format_pvp["Pokemon1"].isin(team)) & (format_pvp["Pokemon2"] == top30mon)
         ].copy()
-        team_mon_in_pokemon2 = format_pvp[
+        team_mons_in_pokemon2 = format_pvp[
             (format_pvp["Pokemon2"].isin(team)) & (format_pvp["Pokemon1"] == top30mon)
         ].copy()
         return team_mons_in_pokemon1, team_mons_in_pokemon2
