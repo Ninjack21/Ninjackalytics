@@ -154,6 +154,159 @@ class WinrateCalculator:
         return 100 - top30[top30["Pokemon"] == top30mon]["Winrate"].values[0]
 
 
+class CreativityRestrictor:
+    def __init__(self, creativity: int, format_data: FormatData):
+        self.creativity = creativity
+        self.format_data = format_data
+
+    def restrict_available_mons(
+        self, available_mons: List[str], current_team: List[str]
+    ) -> Tuple[float, float]:
+        metadata = self.format_data.format_metadata
+        if self.creativity == 0:
+            # remove current team from available_mons and return
+            available_mons = [mon for mon in available_mons if mon not in current_team]
+            return available_mons
+        else:
+            # ---- calculate general data once -----
+            target_popularity = self._get_target_avg_popularity()
+            current_avg_popularity = metadata[metadata["Pokemon"].isin(current_team)][
+                "Popularity"
+            ].mean()
+            remaining_slots = 6 - len(current_team)
+            (
+                min_popularity,
+                max_popularity,
+            ) = self._define_popularity_bounds_for_available_pokemon(
+                current_avg_popularity, target_popularity, remaining_slots
+            )
+            available_mons = metadata[
+                (metadata["Pokemon"].isin(available_mons))
+                & (metadata["Pokemon"].isin(current_team) == False)
+                & (metadata["Popularity"] >= min_popularity)
+                & (metadata["Popularity"] <= max_popularity)
+            ]["Pokemon"].tolist()
+
+            # handle case where available_mons is too restricted
+            if len(available_mons) < 5:
+                available_mons = self._get_15_nearest(
+                    min_popularity, max_popularity, current_team
+                )
+
+            return available_mons
+
+    def _get_15_nearest(
+        self, min_popularity: float, max_popularity: float, current_team: List[str]
+    ):
+        mid_bound = (max_popularity - min_popularity) / 2
+        format_metadata = self.format_data.format_metadata.copy()
+        format_metadata = format_metadata[
+            format_metadata["Pokemon"].isin(current_team) == False
+        ]
+        format_metadata["distance"] = abs(format_metadata["Popularity"] - mid_bound)
+        nearest_15_mons = format_metadata.nsmallest(15, "distance")["Pokemon"].tolist()
+        return nearest_15_mons
+
+    def _get_min_max_popularity(
+        self,
+        target_popularity: float,
+        remaining_slots: int,
+        current_avg_popularity: float,
+    ) -> Tuple[float, float]:
+        std = self.format_data.top30["Popularity"].std()
+        max_popularity = (
+            (target_popularity + (0.15) * std * (remaining_slots)) * 6
+            - current_avg_popularity * (6 - remaining_slots)
+        ) / remaining_slots
+        min_popularity = (
+            (target_popularity - (0.15) * std * (remaining_slots)) * 6
+            - current_avg_popularity * (6 - remaining_slots)
+        ) / (remaining_slots)
+        return min_popularity, max_popularity
+
+    def _remaining_slots_1(
+        self,
+        target_avg_popularity: float,
+        current_avg_popularity: float,
+        limit_lower_popularity: float,
+        limit_max_popularity: float,
+    ):
+        # define the window of popularities that would get us within 2% of the target and return the min, and max
+        max_popularity = (target_avg_popularity + 2) * 6 - current_avg_popularity * 5
+        min_popularity = (target_avg_popularity - 2) * 6 - current_avg_popularity * 5
+        if (
+            min_popularity < limit_lower_popularity
+            or max_popularity < limit_max_popularity
+        ):
+            return limit_lower_popularity, limit_max_popularity
+        else:
+            return min_popularity, max_popularity
+
+    def _get_target_avg_popularity(self) -> float:
+        min_popularity, max_popularity = self._get_min_max_target_popularity()
+        target_avg_popularity = max_popularity - (self.creativity / 100) * (
+            max_popularity - min_popularity
+        )
+        return target_avg_popularity
+
+    def _get_min_max_target_popularity(self) -> Tuple[float, float]:
+        min_popularity = self.format_data.top30["Popularity"].min()
+        max_popularity = self.format_data.top30["Popularity"].quantile(0.70)
+        return min_popularity, max_popularity
+
+    def _define_popularity_bounds_for_available_pokemon(
+        self,
+        current_avg_popularity: float,
+        target_avg_popularity: float,
+        remaining_slots: int,
+    ) -> Tuple[float, float]:
+        std = self.format_data.top30["Popularity"].std()
+        # ---- define lower limits for min and max popularity ----
+        lower_limit_popularity = self._get_min_popularity_for_samplesize_limit()
+        lower_limit_max_popularity = lower_limit_popularity + 0.5 * std
+
+        # ---- now get bounds ----
+        if remaining_slots == 1:
+            min_popularity, max_popularity = self._remaining_slots_1(
+                target_avg_popularity,
+                current_avg_popularity,
+                lower_limit_popularity,
+                lower_limit_max_popularity,
+            )
+            return min_popularity, max_popularity
+        else:
+            # if there is more than 1 slot then we have time to adjust so add a buffer scaled off the std
+            min_popularity, max_popularity = self._get_min_max_popularity(
+                target_avg_popularity, remaining_slots, current_avg_popularity
+            )
+
+            # case: both popularities are too low
+            if (
+                min_popularity < lower_limit_popularity
+                and max_popularity < lower_limit_max_popularity
+            ):
+                return lower_limit_popularity, lower_limit_max_popularity
+
+            # case: min popularity is too low
+            elif min_popularity < lower_limit_popularity:
+                return lower_limit_popularity, max_popularity
+
+            # case: max popularity is too low
+            elif max_popularity < lower_limit_max_popularity:
+                return min_popularity, lower_limit_max_popularity
+
+            # case: both popularities are within bounds
+            else:
+                return min_popularity, max_popularity
+
+    def _get_min_popularity_for_samplesize_limit(
+        self, samplesize_limit: int = 30
+    ) -> float:
+        return self.format_data.format_metadata[
+            self.format_data.format_metadata["SampleSize"] >= samplesize_limit
+        ]["Popularity"].min()
+
+
 # TODO: complete design utilizing WinrateCalculator
 class TeamSolver:
     def __init__(self, db: DatabaseData, battle_format: str):
@@ -170,6 +323,7 @@ class TeamSolver:
         winrate_calculator = WinrateCalculator(
             format_data=self.format_data, engine_name=engine_name
         )
+        format_mons = self.format_data.get_format_available_mons()
         # handle the case where the current team is empty
         if len(current_team) == 0:
             current_team = [self._pick_random_top30_mon()]
@@ -184,6 +338,14 @@ class TeamSolver:
     def _pick_random_top30_mon(self):
         mon = self.format_data.top30.sample(n=1)["Pokemon"].values[0]
         return mon
+
+    def _restrict_available_mons_by_creativity(
+        self, creativity: int, available_mons: List[str], current_team: List[str]
+    ):
+        if creativity == 0:
+            return available_mons
+        else:
+            pass
 
 
 # TODO: build DisplayTeam class
