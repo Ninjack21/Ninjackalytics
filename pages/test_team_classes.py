@@ -110,7 +110,7 @@ class TestWinrateCalculator(unittest.TestCase):
                 "Pokemon1": ["Pikachu", "Pikachu", "Pikachu"],
                 "Pokemon2": ["Charizard", "Bulbasaur", "Squirtle"],
                 "Winrate": [60, 70, 80],
-                "SampleSize": [50, 30, 10],
+                "SampleSize": [50, 30, 5],
             },
         )
 
@@ -264,12 +264,6 @@ class TestWinrateCalculator(unittest.TestCase):
         )
 
         actual_result = self.wr_calc._antimeta_winrate(team)
-
-        print("\n\n")
-        print(expected_result)
-        print("\n\n")
-        print(actual_result)
-        print("\n\n")
 
         pd.testing.assert_frame_equal(expected_result, actual_result, check_like=True)
 
