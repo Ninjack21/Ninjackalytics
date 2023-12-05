@@ -3,9 +3,6 @@ import pandas as pd
 from typing import List, Tuple, Dict
 from datetime import datetime, timedelta
 
-# TODO: keep in mind team preview as well
-# TODO: build unit tests for appropriate classes to verify working as expected and to look for edge cases
-
 
 class DatabaseData:
     def __init__(self):
