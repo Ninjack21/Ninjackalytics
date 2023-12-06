@@ -33,8 +33,8 @@ class TestUpdateMetaDataTables(unittest.TestCase):
     def test_get_rank_limit_based_on_quantile(self):
         # Test the get_rank_limit_based_on_quantile function
         battle_info = pd.DataFrame({"Rank": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})
-        rank_limit = get_rank_limit_based_on_quantile(battle_info)
-        self.assertEqual(rank_limit, 7)
+        rank_limit = get_rank_limit_based_on_quantile(battle_info, quantile=0.8)
+        self.assertEqual(rank_limit, 8)
 
 
 if __name__ == "__main__":

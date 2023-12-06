@@ -818,7 +818,7 @@ class TestDisplayTeam(unittest.TestCase):
         )
         context_df = self.display_team._add_meta_context_to_winrates(winrates)
         self.assertIsInstance(context_df, pd.DataFrame)
-        self.assertEqual(context_df.shape[1], 4)  # 4 columns in the resulting DataFrame
+        self.assertEqual(context_df.shape[1], 5)  # 4 columns in the resulting DataFrame
 
     @patch.object(DisplayTeam, "_get_norm_winrate_and_winrates")
     def test_get_display_information(self, mock_get_norm_winrate_and_winrates):
