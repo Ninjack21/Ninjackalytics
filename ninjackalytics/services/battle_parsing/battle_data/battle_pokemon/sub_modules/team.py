@@ -7,5 +7,11 @@ from . import Pokemon
 class Team:
     def __init__(self, pokemon: List[Pokemon]):
         self.pokemon = pokemon
+        self._verify_mon_names()
 
-    # TODO: Add some checking to make sure the team is valid
+    def _verify_mon_names(self):
+        for mon in self.pokemon:
+            if "|" in mon.real_name or "|" in mon.nickname:
+                raise ValueError(
+                    f"Pokemon names cannot contain '|' --> Pokemon: real_name: {mon.real_name} | nickname: {mon.nickname}"
+                )
