@@ -1,3 +1,4 @@
+import re
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -22,7 +23,6 @@ def get_battle_urls_selenium(format_string, pages=25):
 
     battle_urls = []
     for url in urls:
-        print(url)
         # Go to the URL
         driver.get(url)
 
