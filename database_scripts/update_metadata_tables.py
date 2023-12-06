@@ -52,7 +52,7 @@ def update_metadata():
         f
         for f in battle_info["Format"].unique()
         if len(battle_info[battle_info["Format"] == f])
-        > (800 / (1 - metadata_quantile_threshold))
+        > (800 / round(1 - metadata_quantile_threshold))
     ]
 
     for f in formats:
@@ -62,7 +62,7 @@ def update_metadata():
         f_info = battle_info[battle_info["Format"] == f]
         # get up to the last 2000 / (1-quantile) battles (to capping at 2000 most recent battles)
         f_info = f_info.sort_values(by="Date_Submitted", ascending=False)
-        f_info = f_info.head(2000 / (1 - metadata_quantile_threshold))
+        f_info = f_info.head(2000 / round(1 - metadata_quantile_threshold))
         rank_limit = get_rank_limit_based_on_quantile(
             f_info, metadata_quantile_threshold
         )
