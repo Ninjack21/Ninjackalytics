@@ -34,8 +34,7 @@ def contains_mon(row, mon):
     return row.str.contains(mon).any()
 
 
-def get_rank_limit_based_on_quantile(battle_info: pd.DataFrame):
-    quantile = 0.7
+def get_rank_limit_based_on_quantile(battle_info: pd.DataFrame, quantile: float):
     rank_limit = battle_info["Rank"].quantile(quantile, interpolation="nearest")
     return round(rank_limit)
 
@@ -47,18 +46,26 @@ def update_metadata():
         (battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14)))
     ]
     teams = ta.get_teams()
+    metadata_quantile_threshold = 0.8
+    # 800 "high rank" battles is good minimum, so 800 / (1-quantile) = total needed battles
     formats = [
         f
         for f in battle_info["Format"].unique()
-        if len(battle_info[battle_info["Format"] == f]) > 1000
+        if len(battle_info[battle_info["Format"] == f])
+        > (800 / (1 - metadata_quantile_threshold))
     ]
 
     for f in formats:
         previous_data = ta.get_pokemonmetadata()
         previously_seen_mons = previous_data["Pokemon"][previous_data["Format"] == f]
         print(f"=================Starting format {f}===================")
-        f_info = recent_battle_info[recent_battle_info["Format"] == f]
-        rank_limit = get_rank_limit_based_on_quantile(f_info)
+        f_info = battle_info[battle_info["Format"] == f]
+        # get up to the last 2000 / (1-quantile) battles (to capping at 2000 most recent battles)
+        f_info = f_info.sort_values(by="Date_Submitted", ascending=False)
+        f_info = f_info.head(2000 / (1 - metadata_quantile_threshold))
+        rank_limit = get_rank_limit_based_on_quantile(
+            f_info, metadata_quantile_threshold
+        )
         f_info = f_info[f_info["Rank"] >= rank_limit]
         print(f"Rank Limit: {rank_limit} | Battles: {len(f_info)}")
         total_battles = len(f_info)
@@ -66,7 +73,8 @@ def update_metadata():
         # now get all of the pokemon in each team
         format_teams = teams[teams["id"].isin(team_ids)]
         all_mons = pd.concat([format_teams[f"Pok{i}"] for i in range(1, 7)]).unique()
-        all_mons = [mon for mon in all_mons if mon != None]
+        # 12-6-23: got bad teams with a mon with "|" in it so ensure this does not populate the db
+        all_mons = [mon for mon in all_mons if mon != None and "|" not in mon]
         update_no_longer_seen_mons(all_mons, previously_seen_mons, f)
         mon_teams_dict = {
             mon: format_teams[
@@ -205,15 +213,15 @@ def update_no_longer_seen_mons(all_mons, previously_seen_mons, f):
     with session_scope() as session:
         for mon in previously_seen_mons:
             if mon not in all_mons:
-                # if so, update the popularity to 0
-                existing_data = (
-                    session.query(pokemonmetadata)
-                    .filter_by(Format=f, Pokemon=mon)
-                    .first()
-                )
-                existing_data.Popularity = 0
-                existing_data.SampleSize = 0
-                existing_data.Winrate = 0
+                # Delete the row from pokemonmetadata table
+                session.query(pokemonmetadata).filter_by(Format=f, Pokemon=mon).delete()
+
+                # Delete all rows in pvpmetadata table for that particular mon + format combo
+                session.query(pvpmetadata).filter_by(Format=f).filter(
+                    sqlalchemy.or_(
+                        pvpmetadata.Pokemon1 == mon, pvpmetadata.Pokemon2 == mon
+                    )
+                ).delete()
 
 
 if __name__ == "__main__":

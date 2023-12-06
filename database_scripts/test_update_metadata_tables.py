@@ -39,6 +39,3 @@ class TestUpdateMetaDataTables(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-import unittest
-from unittest.mock import patch
-from datetime import datetime, timedelta

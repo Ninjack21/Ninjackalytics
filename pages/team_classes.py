@@ -25,10 +25,10 @@ class DatabaseData:
         return self.pokemonmetadata
 
     def get_viable_formats(self):
-        # only return formats with at least 1500 total battles
+        # only return formats with at least 4000 total battles (to match metadata table limits)
         viable_formats = (
             self.battle_info["Format"]
-            .value_counts()[lambda x: x >= 1500]
+            .value_counts()[lambda x: x >= 4000]
             .index.tolist()
         )
         return viable_formats
