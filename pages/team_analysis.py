@@ -4,11 +4,9 @@ import dash_bootstrap_components as dbc
 from .navbar import navbar
 from .general_utility import find_closest_sprite
 from .team_analysis_funcs import (
-    get_viable_formats,
     get_viable_pokemon,
-    get_viable_format_pokemon,
-    solve_for_remainder_of_team,
 )
+from .team_classes import DatabaseData, FormatData, TeamSolver, DisplayTeam
 
 dash.register_page(__name__, path="/team_analysis")
 
@@ -17,27 +15,29 @@ mon_width = "85px"
 
 
 def layout():
-    format_options = [
-        {"label": format_name, "value": format_name}
-        for format_name in get_viable_formats()
-    ]
+    db_data = DatabaseData()
+    viable_formats = db_data.get_viable_formats()
+    format_data = FormatData(
+        battle_format=viable_formats[0],
+        db=db_data,
+    )
+    format_mons = format_data.get_format_available_mons()
 
     return html.Div(
         [
             navbar(),
+            # ===== STORES =====
             dcc.Store(
                 id="viable-pokemon-store",
-                data=get_viable_format_pokemon(
-                    selected_format=format_options[0]["value"]
-                ),
+                data=[format_mons],
             ),
             html.H1("Team Builder Tool"),
             html.Br(),
             html.Label("Format", style={"color": "white"}),
             dcc.Dropdown(
                 id="format-selector",
-                options=format_options,
-                value=format_options[0]["value"],
+                options=viable_formats,
+                value=viable_formats[0],
                 style={"width": "375px", "color": "black", "background-color": "white"},
             ),
             html.Br(),
@@ -52,7 +52,7 @@ def layout():
                                 options=[
                                     {"label": pokemon_name, "value": pokemon_name}
                                     for pokemon_name in get_viable_pokemon(
-                                        selected_format=format_options[0]["value"],
+                                        format_pokemon=format_mons,
                                         selected_ignore_mons=[],
                                         already_used_mons=[],
                                     )
@@ -89,7 +89,7 @@ def layout():
                 options=[
                     {"label": pokemon_name, "value": pokemon_name}
                     for pokemon_name in get_viable_pokemon(
-                        selected_format=format_options[0]["value"],
+                        format_pokemon=format_mons,
                         selected_ignore_mons=[],
                         already_used_mons=[],
                     )
@@ -188,13 +188,6 @@ def layout():
                                 ),
                                 width=4,
                             ),
-                            dbc.Col(
-                                html.Div(
-                                    id="target-avg-popularity",
-                                    children="Target Average Popularity: ",
-                                ),
-                                width=4,
-                            ),
                         ]
                     ),
                     html.Br(),
@@ -209,10 +202,10 @@ def layout():
                                     columns=[
                                         {"name": i, "id": i}
                                         for i in [
-                                            "Pop Mon",
-                                            "Popularity (%)",
-                                            "Pop Mon General WR (%)",
-                                            "Team WR x Pop Mon (%)",
+                                            "Top30 Most Popular Mons",
+                                            "Top30 Mon Popularity (%)",
+                                            "Top30 Mon General Winrate (%)",
+                                            "Team Winrate x Top30 Mon (%)",
                                         ]
                                     ],
                                     data=[],
@@ -264,7 +257,6 @@ def layout():
     [dash.dependencies.Output(f"pokemon-selector-3", "options")],
     [dash.dependencies.Output(f"pokemon-selector-4", "options")],
     [dash.dependencies.Output(f"pokemon-selector-5", "options")],
-    [dash.dependencies.Input("format-selector", "value")],
     [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
     [dash.dependencies.Input(f"pokemon-selector-0", "value")],
     [dash.dependencies.Input(f"pokemon-selector-1", "value")],
@@ -276,7 +268,6 @@ def layout():
     order=1,
 )
 def update_pokemon_options(
-    selected_format,
     ignore_mons,
     mon0,
     mon1,
@@ -323,21 +314,27 @@ def update_pokemon_sprites(*pokemon_names):
     ]
 
 
-# init pokemon options as None and re-calc viable pokemon for format
+# update format data, viable mons, and mon selectors upon format change
 @callback(
-    Output("viable-pokemon-store", "data"),
+    [dash.dependencies.Output("viable-pokemon-store", "data")],
     [dash.dependencies.Output(f"pokemon-selector-0", "value")],
     [dash.dependencies.Output(f"pokemon-selector-1", "value")],
     [dash.dependencies.Output(f"pokemon-selector-2", "value")],
     [dash.dependencies.Output(f"pokemon-selector-3", "value")],
     [dash.dependencies.Output(f"pokemon-selector-4", "value")],
     [dash.dependencies.Output(f"pokemon-selector-5", "value")],
-    Input("format-selector", "value"),
+    [dash.dependencies.Input("format-selector", "value")],
     order=0,
 )
 def update_viable_pokemon_store(selected_format):
+    # GROSS : need to update db design with indexing so we don't have to pull everything everytime a new format
+    # is selected
+    database_data = DatabaseData()
+    format_data = FormatData(battle_format=selected_format, db=database_data)
+    available_mons = format_data.get_format_available_mons()
+    # upon a new format reset all selectors to None and update the format-data and available mons stores
     return (
-        get_viable_format_pokemon(selected_format=selected_format),
+        available_mons,
         None,
         None,
         None,
@@ -353,53 +350,66 @@ def update_viable_pokemon_store(selected_format):
     + [dash.dependencies.Output(f"team-sprite-{i}", "src") for i in range(6)]
     + [
         dash.dependencies.Output("avg-popularity", "children"),
-        dash.dependencies.Output("target-avg-popularity", "children"),
         dash.dependencies.Output("expected-winrate", "children"),
-        dash.dependencies.Output("winrate-data", "data"),  # New Output for winrate_data
-    ],
-    [dash.dependencies.Input("build-team-button", "n_clicks")],
-    [dash.dependencies.State("creativity-input", "value")],
-    [dash.dependencies.State("dont-use-pokemon-selector", "value")],
-    [dash.dependencies.State("format-selector", "value")]
+        dash.dependencies.Output("winrate-data", "data"),
+    ]
+    + [dash.dependencies.Input("build-team-button", "n_clicks")]
+    + [dash.dependencies.State("creativity-input", "value")]
+    + [dash.dependencies.State("dont-use-pokemon-selector", "value")]
     + [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
 )
-def update_suggested_team(
-    n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
-):
+def update_suggested_team(n_clicks, creativity, ignore_mons, *selected_pokemon):
     if n_clicks == 0:
         return [
             dash.no_update
-        ] * 16  # Don't update anything if the button hasn't been clicked
+        ] * 15  # Don't update anything if the button hasn't been clicked
 
     if not ignore_mons:
         ignore_mons = []
-    # Generate your suggested team here. This is just a placeholder.
+
+    # GROSS - need to update db design with indexing so we don't have to pull everything everytime we solve for a team
+    db_data = DatabaseData()
+    format_data = FormatData(
+        battle_format=db_data.get_viable_formats()[0],
+        db=db_data,
+    )
+    # ------ solve for remainder of team and get display team info -------
     current_team = [pokemon for pokemon in selected_pokemon if pokemon is not None]
-    solved_team_dict = solve_for_remainder_of_team(
+    team_solver = TeamSolver(
+        db=db_data,
+        battle_format=format_data.battle_format,
+    )
+    new_team = team_solver.solve_for_remainder_of_team(
         current_team=current_team,
-        battle_format=battle_format,
         creativity=creativity,
         ignore_mons=ignore_mons,
+        engine_name="antimeta",  # UPDATE WHEN NEW ENGINES AVAILABLE
     )
+    display_team = DisplayTeam(
+        team=new_team,
+        engine="antimeta",  # UPDATE WHEN NEW ENGINES AVAILABLE
+        format_data=format_data,
+    )
+    team_info_dict = display_team.get_display_information()
 
-    suggested_names = [pokemon for pokemon in solved_team_dict["team"]]
-    suggested_sprites = [find_closest_sprite(name) for name in solved_team_dict["team"]]
+    # ------ prepare team info for display form-------
+
+    suggested_names = [pokemon for pokemon in team_info_dict["team"]]
+    suggested_sprites = [find_closest_sprite(name) for name in team_info_dict["team"]]
 
     avg_popularity = (
-        f"Average Popularity: {round(solved_team_dict['avg_popularity'], 2)}%"
+        f"Average Popularity: {round(team_info_dict['avg_popularity'], 2)}%"
     )
-    target_avg_popularity = f"Target Average Popularity: {round(solved_team_dict['target_avg_popularity'],2)}%"
     expected_winrate = (
-        f"Expected Overall Winrate: {round(solved_team_dict['norm_winrate'], 2)}%"
+        f"Expected Overall Winrate: {round(team_info_dict['norm_winrate'], 2)}%"
     )
-    winrate_data = solved_team_dict["top30_winrates"]
-    # show biggest threats to the team at the top
+    winrate_data = team_info_dict["team info"]
+
     return (
         suggested_names
         + suggested_sprites
         + [
             avg_popularity,
-            target_avg_popularity,
             expected_winrate,
             winrate_data.to_dict("records"),
         ]
