@@ -13,9 +13,7 @@ from ninjackalytics.services.database_interactors.table_accessor import TableAcc
 from ninjackalytics.services.auto_replay_pulls.script import get_replay_urls
 import traceback
 from tqdm import tqdm
-from database_scripts import (
-    update_metadata,
-)
+
 
 # ======= first get all the replay urls =======
 
@@ -86,8 +84,6 @@ try:
 
         print(f"Total Errors: {total_errors}")
         print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
-
-        update_metadata()
 
 except:
     if os.environ.get("FLASK_ENV") == "remote-production":
