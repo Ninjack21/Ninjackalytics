@@ -24,6 +24,15 @@ class DatabaseData:
     def get_pokemonmetadata(self):
         return self.pokemonmetadata
 
+    def get_viable_formats(self):
+        # only return formats with at least 1500 total battles
+        viable_formats = (
+            self.battle_info["Format"]
+            .value_counts()[lambda x: x >= 1500]
+            .index.tolist()
+        )
+        return viable_formats
+
 
 class FormatData:
     def __init__(self, battle_format: str, db: DatabaseData):
@@ -38,11 +47,12 @@ class FormatData:
             )
         ]
         self.format_pvpmetadata = self.db.get_pvpmetadata()[
-            self.db.get_pvpmetadata()["Format"] == self.battle_format
+            (self.db.get_pvpmetadata()["Format"] == self.battle_format)
         ]
         self.format_metadata = self.db.get_pokemonmetadata()[
-            self.db.get_pokemonmetadata()["Format"] == self.battle_format
+            (self.db.get_pokemonmetadata()["Format"] == self.battle_format)
         ]
+
         self.top30 = self.format_metadata.sort_values(
             by="Popularity", ascending=False
         ).head(30)
@@ -108,7 +118,10 @@ class WinrateCalculator:
                     "Winrate"
                 ].mean()  # assume each mon's weight is equal
                 winrates[top30mon] = winrate
-        return pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+        winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
+        winrates.index.name = "Pokemon"
+
+        return winrates
 
     def _get_mon_vs_mon_winrates(
         self, top30mon: str, team: List[str]
@@ -421,7 +434,7 @@ class DisplayTeam:
         )
         winrates = winrate_calculator.get_team_winrate_against_meta(self.team)
         norm_winrate = winrate_calculator.normalized_winrate(winrates)
-        return norm_winrate
+        return norm_winrate, winrates
 
     def _add_meta_context_to_winrates(self, winrates: pd.DataFrame) -> pd.DataFrame:
         top30 = self.top30.copy()
@@ -430,7 +443,9 @@ class DisplayTeam:
         top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
 
         winrates = winrates.rename(columns={"winrate": "Team Winrate"})
+
         context_df = winrates.merge(top30, how="left", on="Pokemon")
+        context_df = context_df.reset_index()
         context_df = context_df.rename(
             columns={
                 "Pokemon": "Top30 Most Popular Mons",
@@ -439,7 +454,7 @@ class DisplayTeam:
                 "Team Winrate": "Team Winrate x Top30 Mon (%)",
             }
         )
-        context_df = context_df.reset_index(drop=True)
+
         # show the highest threats first
         context_df = context_df.sort_values(
             by="Team Winrate x Top30 Mon (%)", ascending=True

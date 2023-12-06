@@ -671,6 +671,7 @@ class TestWinrateCalculator(unittest.TestCase):
             },
             index=["Pikachu", "Charizard", "Bulbasaur", "Squirtle"],
         )
+        expected_result.index.name = "Pokemon"
 
         actual_result = self.wr_calc._antimeta_winrate(team)
 
