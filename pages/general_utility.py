@@ -24,7 +24,6 @@ def _return_sprite_path(sprite_dir, sprite):
 def find_closest_sprite(name):
     sprite_dir, gifs, pngs = _get_sprites()
     name = name.lower()
-    print(f"Looking for {name}")
 
     # First, look for an exact match in gifs
     if name in gifs:
@@ -63,4 +62,4 @@ def find_closest_sprite(name):
 
 def get_random_sprite():
     sprite_dir, gifs, pngs = _get_sprites()
-    return _return_sprite_path(sprite_dir, random.choice(gifs + pngs))
+    return _return_sprite_path(sprite_dir, random.choice(gifs) + ".gif")

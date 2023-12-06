@@ -284,6 +284,7 @@ def update_pokemon_options(
         unavailable_mons = [other for other in mons if other not in [mon, None]]
         if ignore_mons is not None:
             unavailable_mons += ignore_mons
+
         selector_options.append(
             [
                 {"label": pokemon_name, "value": pokemon_name}
@@ -291,6 +292,7 @@ def update_pokemon_options(
                 if pokemon_name not in unavailable_mons
             ]
         )
+
     return (
         selector_options[0],
         selector_options[1],
@@ -323,6 +325,7 @@ def update_pokemon_sprites(*pokemon_names):
     [dash.dependencies.Output(f"pokemon-selector-3", "value")],
     [dash.dependencies.Output(f"pokemon-selector-4", "value")],
     [dash.dependencies.Output(f"pokemon-selector-5", "value")],
+    [dash.dependencies.Output(f"dont-use-pokemon-selector", "options")],
     [dash.dependencies.Input("format-selector", "value")],
     order=0,
 )
@@ -332,6 +335,13 @@ def update_viable_pokemon_store(selected_format):
     database_data = DatabaseData()
     format_data = FormatData(battle_format=selected_format, db=database_data)
     available_mons = format_data.get_format_available_mons()
+
+    # don't use options
+    dont_use_options = [
+        {"label": pokemon_name, "value": pokemon_name}
+        for pokemon_name in available_mons
+    ]
+
     # upon a new format reset all selectors to None and update the format-data and available mons stores
     return (
         available_mons,
@@ -341,6 +351,7 @@ def update_viable_pokemon_store(selected_format):
         None,
         None,
         None,
+        dont_use_options,
     )
 
 
@@ -356,9 +367,12 @@ def update_viable_pokemon_store(selected_format):
     + [dash.dependencies.Input("build-team-button", "n_clicks")]
     + [dash.dependencies.State("creativity-input", "value")]
     + [dash.dependencies.State("dont-use-pokemon-selector", "value")]
+    + [dash.dependencies.State("format-selector", "value")]
     + [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
 )
-def update_suggested_team(n_clicks, creativity, ignore_mons, *selected_pokemon):
+def update_suggested_team(
+    n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon
+):
     if n_clicks == 0:
         return [
             dash.no_update
@@ -370,7 +384,7 @@ def update_suggested_team(n_clicks, creativity, ignore_mons, *selected_pokemon):
     # GROSS - need to update db design with indexing so we don't have to pull everything everytime we solve for a team
     db_data = DatabaseData()
     format_data = FormatData(
-        battle_format=db_data.get_viable_formats()[0],
+        battle_format=battle_format,
         db=db_data,
     )
     # ------ solve for remainder of team and get display team info -------

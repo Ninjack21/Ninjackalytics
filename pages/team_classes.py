@@ -110,7 +110,8 @@ class WinrateCalculator:
             team_v_top30mon_df = self._merge_team_mons_into_mon1(
                 team_mons_in_pokemon1, team_mons_in_pokemon2
             )
-            if team_v_top30mon_df["SampleSize"].sum() < 30:
+            # if the cumulative team sample size into a mon is less than 70, use presumed
+            if team_v_top30mon_df["SampleSize"].sum() < 70:
                 winrates[top30mon] = self._get_presumed_winrate(top30mon)
             else:
                 # handle antimeta winrate calc
