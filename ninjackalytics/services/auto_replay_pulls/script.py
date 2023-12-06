@@ -1,6 +1,47 @@
 import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-# gen9ou full replay list spanned ~ 2 days. 1275th battle was from 2 days prior.
+
+def get_battle_urls_selenium(format_string, pages=25):
+    # Create a new instance of the Firefox driver
+    driver = webdriver.Chrome()
+
+    urls = []
+    for page in range(1, pages + 1):
+        full_url = f"https://replay.pokemonshowdown.com/?format={format_string}&page={page}&sort=rating"
+        urls.append(full_url)
+
+    battle_urls = []
+    for url in urls:
+        print(url)
+        # Go to the URL
+        driver.get(url)
+
+        # Wait for the page to load
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "a"))
+        )
+
+        # Find all <a> tags in the HTML that contain a href attribute
+        a_tags = driver.find_elements(By.TAG_NAME, "a")
+
+        # Filter the <a> tags to only include those where the href attribute matches the form of the battle URLs
+        battle_urls += [
+            tag.get_attribute("href")
+            for tag in a_tags
+            if re.match(
+                rf"https://replay.pokemonshowdown.com/{format_string}-\d+",
+                tag.get_attribute("href"),
+            )
+        ]
+
+    # Close the browser
+    driver.quit()
+
+    return battle_urls
 
 
 def get_replay_urls(battle_format: str, pages: int = 24):

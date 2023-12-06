@@ -10,7 +10,7 @@ from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
 )
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
-from ninjackalytics.services.auto_replay_pulls.script import get_replay_urls
+from ninjackalytics.services.auto_replay_pulls.script import get_battle_urls_selenium
 import traceback
 from tqdm import tqdm
 
@@ -38,7 +38,7 @@ try:
     all_urls = []
     for battle_format in tqdm(battle_formats):
         pages = 24
-        urls = get_replay_urls(battle_format, pages)
+        urls = get_battle_urls_selenium(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
     print("Prepare to begin uploading...")
