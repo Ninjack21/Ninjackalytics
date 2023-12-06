@@ -8,10 +8,12 @@ from selenium.webdriver.support import expected_conditions as EC
 
 def get_battle_urls_selenium(format_string, pages=25):
     # Set Chrome options to run in headless mode
-    options = Options()
-    options.add_argument("--headless")
-    # Create a new instance of the Firefox driver
-    driver = webdriver.Chrome(options=options)
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+
+    driver = webdriver.Chrome(options=chrome_options)
 
     urls = []
     for page in range(1, pages + 1):
