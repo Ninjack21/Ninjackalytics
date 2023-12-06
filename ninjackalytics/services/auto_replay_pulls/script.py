@@ -1,13 +1,17 @@
 import requests
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
 def get_battle_urls_selenium(format_string, pages=25):
+    # Set Chrome options to run in headless mode
+    options = Options()
+    options.add_argument("--headless")
     # Create a new instance of the Firefox driver
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(options=options)
 
     urls = []
     for page in range(1, pages + 1):
