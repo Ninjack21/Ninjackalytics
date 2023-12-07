@@ -634,6 +634,7 @@ class TestWinrateCalculator(unittest.TestCase):
         ]  # include Squirtle to test presumed winrate as total sample size will be <30
 
         """
+        NOTE: Total SampleSize requirement = 70
         ----- MATH -----
         Charizard into top30 mons:
         1. Charizard vs Pikachu: 40 | SampleSize: 50
@@ -655,8 +656,8 @@ class TestWinrateCalculator(unittest.TestCase):
 
         team winrates into top30 mons:
         1. team vs Pikachu: 40, 30, 20 = 30 | SampleSize: sufficient
-        2. team vs Charizard: 50, 10, 45 = 35 | SampleSize: sufficient
-        3. team vs Bulbasaur: 90, 50, 40 = 60 | SampleSize: sufficient
+        2. team vs Charizard: 50, 10, 45 = 35 | SampleSize: NOT sufficient
+        3. team vs Bulbasaur: 90, 50, 40 = 60 | SampleSize: NOT sufficient
         4. team vs Squirtle: reverse overall = 60 | SampleSize: NOT sufficient
         """
 
@@ -664,8 +665,8 @@ class TestWinrateCalculator(unittest.TestCase):
             {
                 "winrate": [
                     30.00,
-                    35.00,
-                    60.00,
+                    45.00,  # Charizard's presumed winrate
+                    55.00,  # Bulbasaur's presumed winrate
                     60.00,  # Squirtle's presumed winrate
                 ]
             },
