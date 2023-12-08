@@ -51,7 +51,8 @@ class DealerSourceFinder:
                 event=event, turn=turn, battle=battle
             )
         # look for the most recent move type indicator in the turn lines right before the event
-        previous_turn_lines = reversed(list(turn.text.split(event)[0].splitlines()))
+        pre_event_text = self._get_pre_event_text(event=event, turn=turn)
+        previous_turn_lines = reversed(pre_event_text.splitlines())
         move_type = next(
             (
                 move_type
