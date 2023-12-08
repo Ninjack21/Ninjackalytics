@@ -37,7 +37,7 @@ try:
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
-        pages = 24
+        pages = 40
         urls = get_battle_urls_selenium(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
@@ -77,6 +77,7 @@ try:
                 uploader.upload_battle(parser)
             except Exception as e:
                 total_errors += 1
+                print(f"\n----------\nBattle = {url}\n\n{e}\n---------------")
                 if total_errors > errors_update_threshold:
                     print(f"Total Errors: {total_errors}")
                     errors_update_threshold += 10
