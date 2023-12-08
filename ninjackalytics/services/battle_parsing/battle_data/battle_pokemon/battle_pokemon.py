@@ -15,7 +15,7 @@ class BattlePokemon:
             tb = traceback.format_exc()
             function_with_error = self._find_function_with_error_from_traceback(tb)
             error = {
-                "Battle_URL": self.battle.url,
+                "Battle_URL": battle.url,
                 "Error_Message": str(e),
                 "Traceback": tb,
                 "Function": function_with_error,

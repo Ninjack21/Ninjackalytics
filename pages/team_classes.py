@@ -125,25 +125,23 @@ class WinrateCalculator:
         return winrates
 
     def _get_mon_vs_mon_winrates(
-        self, top30mon: str, team: List[str]
+        self, opposing_mon: str, team: List[str]
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         format_pvp = self.format_data.format_pvpmetadata
         team_mons_in_pokemon1 = format_pvp[
-            (format_pvp["Pokemon1"].isin(team)) & (format_pvp["Pokemon2"] == top30mon)
+            (format_pvp["Pokemon1"].isin(team))
+            & (format_pvp["Pokemon2"] == opposing_mon)
         ].copy()
         team_mons_in_pokemon2 = format_pvp[
-            (format_pvp["Pokemon2"].isin(team)) & (format_pvp["Pokemon1"] == top30mon)
+            (format_pvp["Pokemon2"].isin(team))
+            & (format_pvp["Pokemon1"] == opposing_mon)
         ].copy()
 
-        # if a top30 mon is on your team and in the top30 then it will check itself against itself.
-        # to prevent it showing up in both team1 and team2 then if the team contains any mons in the top30
-        # then we will remove the top30mon from the team_mons_in_pokemon2 dataframe
-        if (
-            len(set(team).intersection(set(self.format_data.top30["Pokemon"].tolist())))
-            > 0
-        ):
+        # Check if the opposing mon exists in the team
+        if opposing_mon in team:
+            # Remove the opposing mon instance from team_mons_in_pokemon2 dataframe
             team_mons_in_pokemon2 = team_mons_in_pokemon2[
-                team_mons_in_pokemon2["Pokemon2"] != top30mon
+                team_mons_in_pokemon2["Pokemon2"] != opposing_mon
             ]
 
         return team_mons_in_pokemon1, team_mons_in_pokemon2

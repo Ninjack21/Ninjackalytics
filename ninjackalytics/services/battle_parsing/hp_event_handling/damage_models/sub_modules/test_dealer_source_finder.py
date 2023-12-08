@@ -453,7 +453,7 @@ class TestDealerSourceFinder(unittest.TestCase):
             expected_output,
         )
 
-    def test_event_text_duplicated_within_same_turn(self):
+    def test_event_text_duplicated_within_same_turn_mimikyu_disguise(self):
         # https://replay.pokemonshowdown.com/gen8doublesou-1978226780
         """
         due to Mimikyu's disguise the line: |-damage|p2a: Mimikyu|91/100 shows up in two places! This causes the
@@ -526,6 +526,39 @@ class TestDealerSourceFinder(unittest.TestCase):
         # (dealer, source)
         expected_output = ((2, "Drapion"), "Knock Off")
         event = "|-damage|p1a: Mimikyu|56/100"
+        self.assertEqual(
+            self.move_dealer_finder.get_dealer_and_source(
+                event=event, turn=turn, battle=MockBattle()
+            ),
+            expected_output,
+        )
+
+        turn = MockTurn(
+            1,
+            """
+            |turn|31
+            |
+            |t:|1701974411
+            |switch|p1a: Mimikyu|Mimikyu, F|100/100
+            |-damage|p1a: Mimikyu|88/100|[from] Stealth Rock
+            |move|p2a: Thundurus|Volt Switch|p1a: Mimikyu
+            |-activate|p1a: Mimikyu|ability: Disguise
+            |-damage|p1a: Mimikyu|88/100
+            |detailschange|p1a: Mimikyu|Mimikyu-Busted, F
+            |-damage|p1a: Mimikyu|76/100|[from] pokemon: Mimikyu-Busted
+            |
+            |t:|1701974427
+            |switch|p2a: Empoleon|Empoleon, M|34/100|[from] Volt Switch
+            |
+            |-heal|p2a: Empoleon|40/100|[from] item: Leftovers
+            |upkeep
+            """,
+        )
+
+        # error retriggered on https://replay.pokemonshowdown.com/gen9ubers-2006856742
+        # (dealer, source)
+        expected_output = ((2, "Thundurus"), "Volt Switch")
+        event = "|-damage|p1a: Mimikyu|88/100"
         self.assertEqual(
             self.move_dealer_finder.get_dealer_and_source(
                 event=event, turn=turn, battle=MockBattle()
