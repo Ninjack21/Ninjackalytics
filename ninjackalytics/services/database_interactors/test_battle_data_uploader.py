@@ -216,29 +216,25 @@ class TestBattleDataUploader(unittest.TestCase):
         )
         self.assertEqual(battle.id, expected_id)
 
-    def test_upload_battle_error_handling(self):
-        # Set the error attribute of the mock parser
-        self.mock_parser.error = {
-            "Battle_URL": "test_url",
-            "Error_Message": "Test exception",
-            "Traceback": "Test traceback",
-        }
+    def test_upload_error(self):
+        # Define the test error data
+        battle_url = "test_url"
+        error_message = "Test exception"
+        traceback = "Test traceback"
+        function = "Test function"
 
-        # Call the upload_battle method and expect an exception
-        with self.assertRaises(Exception) as context:
-            self.battle_data_uploader.upload_battle(self.mock_parser)
-
-        # Check that the error message is correct
-        self.assertIn(
-            "Something went wrong while parsing the battle", str(context.exception)
+        # Call the upload_error method
+        self.battle_data_uploader.upload_error(
+            battle_url, error_message, traceback, function
         )
 
-        # Check that the error was uploaded to the database
+        # Verify that the error exists in the database
         with session_scope() as session:
-            error_db = session.query(errors).filter_by(Battle_URL="test_url").first()
+            error_db = session.query(errors).filter_by(Battle_URL=battle_url).first()
             self.assertIsNotNone(error_db)
-            self.assertEqual(error_db.Error_Message, "Test exception")
-            self.assertEqual(error_db.Traceback, "Test traceback")
+            self.assertEqual(error_db.Error_Message, error_message)
+            self.assertEqual(error_db.Traceback, traceback)
+            self.assertEqual(error_db.Function, function)
 
 
 if __name__ == "__main__":

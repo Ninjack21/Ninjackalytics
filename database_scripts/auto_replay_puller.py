@@ -13,6 +13,28 @@ from ninjackalytics.services.database_interactors.table_accessor import TableAcc
 from ninjackalytics.services.auto_replay_pulls.script import get_battle_urls_selenium
 import traceback
 from tqdm import tqdm
+import re
+
+
+def find_function_with_error_from_traceback(tb: str) -> str:
+    # Regex pattern to match the function name
+    pattern = r"\b(?P<function>\w+)\("
+
+    # Find all matches in the traceback
+    matches = re.findall(pattern, tb)
+
+    # Regex pattern to match the function name
+    pattern = r"\b(?P<function>\w+)\("
+
+    # Find all matches in the traceback
+    matches = re.findall(pattern, tb)
+
+    # The function name is the last match that does not contain "Error"
+    for match in reversed(matches):
+        if "Error" not in match:
+            return match
+
+    return None
 
 
 # ======= first get all the replay urls =======
@@ -37,7 +59,7 @@ try:
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
-        pages = 40
+        pages = 25
         urls = get_battle_urls_selenium(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
@@ -77,7 +99,14 @@ try:
                 uploader.upload_battle(parser)
             except Exception as e:
                 total_errors += 1
-                print(f"\n----------\nBattle = {url}\n\n{e}\n---------------")
+                tb = traceback.format_exc()
+                function = find_function_with_error_from_traceback(tb)
+                uploader.upload_error(
+                    battle_url=url,
+                    error_message=str(e),
+                    traceback=tb,
+                    function=function,
+                )
                 if total_errors > errors_update_threshold:
                     print(f"Total Errors: {total_errors}")
                     errors_update_threshold += 10
