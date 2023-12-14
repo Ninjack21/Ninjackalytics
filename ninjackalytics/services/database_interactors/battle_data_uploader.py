@@ -268,26 +268,41 @@ class BattleDataUploader:
         """
         # first check to see if the error attribute is not None
         with session_scope() as session:
-            if parser.error is None:
-                exists = self._check_if_battle_exists(session, parser.general_info)
-                if not exists:
-                    self._upload_teams(session, parser.teams)
-                    self._upload_general_info(session, parser.general_info)
-                    self._upload_actions(session, parser.action_info)
-                    self._upload_damages(session, parser.damages_info)
-                    self._upload_healing(session, parser.heals_info)
-                    self._upload_pivots(session, parser.pivot_info)
-            else:
-                # need to first test if the error already exists in the database
-                existing_error = (
-                    session.query(errors)
-                    .filter(errors.Battle_URL == parser.error["Battle_URL"])
-                    .first()
+            exists = self._check_if_battle_exists(session, parser.general_info)
+            if not exists:
+                self._upload_teams(session, parser.teams)
+                self._upload_general_info(session, parser.general_info)
+                self._upload_actions(session, parser.action_info)
+                self._upload_damages(session, parser.damages_info)
+                self._upload_healing(session, parser.heals_info)
+                self._upload_pivots(session, parser.pivot_info)
+
+    def upload_error(self, battle_url, error_message, traceback, function) -> None:
+        """
+        Uploads the error to the database
+
+        Parameters
+        ----------
+        battle_url : str
+            The url of the battle
+        error_message : str
+            The error message
+        traceback : str
+            The traceback
+        function : str
+            The function where the error occurred
+        """
+        with session_scope() as session:
+            # need to first test if the error already exists in the database
+            existing_error = (
+                session.query(errors).filter(errors.Battle_URL == battle_url).first()
+            )
+            if not existing_error:
+                error_db = errors(
+                    Battle_URL=battle_url,
+                    Error_Message=error_message,
+                    Traceback=traceback,
+                    Function=function,
                 )
-                if not existing_error:
-                    error_db = errors(**parser.error)
-                    session.add(error_db)
-                    session.commit()
-                raise Exception(
-                    "Something went wrong while parsing the battle.\nThis has been logged in the database. We apologize for the inconvenience."
-                )
+                session.add(error_db)
+                session.commit()
