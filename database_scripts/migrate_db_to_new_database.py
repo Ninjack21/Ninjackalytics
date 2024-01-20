@@ -1,3 +1,10 @@
+import os
+import sys
+
+# Append Ninjackalytics/ninjackalytics folder to sys path
+ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ninjackalytics_path)
+
 from ninjackalytics.database.config import OldProductionConfig, NewProductionConfig
 from tqdm import tqdm
 from sqlalchemy.orm import sessionmaker
