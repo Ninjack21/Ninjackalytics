@@ -33,8 +33,8 @@ class teams(BattleDbBase):
 class battle_info(BattleDbBase):
     __tablename__ = "battle_info"
     Battle_ID = Column(String(length=255), unique=True)
-    Date_Submitted = Column(DateTime, default=datetime.utcnow)
-    Format = Column(String(length=255), nullable=False)
+    Date_Submitted = Column(DateTime, default=datetime.utcnow, index=True)
+    Format = Column(String(length=255), nullable=False, index=True)
     P1 = Column(String(length=255), nullable=False)
     P1_team = Column(Integer, ForeignKey(teams.id), nullable=False)
     P2 = Column(String(length=255), nullable=False)
@@ -59,7 +59,7 @@ class actions(BattleDbBase):
 
 class damages(BattleDbBase):
     __tablename__ = "damages"
-    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id), index=True)
     Damage = Column(Numeric(5, 2), nullable=False)
     Dealer = Column(String(length=255), nullable=False)
     Dealer_Player_Number = Column(Integer, nullable=False)
@@ -75,7 +75,7 @@ class damages(BattleDbBase):
 
 class healing(BattleDbBase):
     __tablename__ = "healing"
-    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id), index=True)
     Healing = Column(Numeric(5, 2), nullable=False)
     Receiver = Column(String(length=255), nullable=False)
     Receiver_Player_Number = Column(Integer, nullable=False)
@@ -89,7 +89,7 @@ class healing(BattleDbBase):
 
 class pivots(BattleDbBase):
     __tablename__ = "pivots"
-    Battle_ID = Column(Integer, ForeignKey(battle_info.id))
+    Battle_ID = Column(Integer, ForeignKey(battle_info.id), index=True)
     Pokemon_Enter = Column(String(length=255), nullable=False)
     Player_Number = Column(Integer, nullable=False)
     Source_Name = Column(String(length=255), nullable=True)
