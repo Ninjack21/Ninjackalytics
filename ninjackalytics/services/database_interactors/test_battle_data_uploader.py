@@ -229,7 +229,7 @@ class TestBattleDataUploader(unittest.TestCase):
         )
 
         # Verify that the error exists in the database
-        with session_scope() as session:
+        with session_scope(self.battle_data_uploader.session_maker()) as session:
             error_db = session.query(errors).filter_by(Battle_URL=battle_url).first()
             self.assertIsNotNone(error_db)
             self.assertEqual(error_db.Error_Message, error_message)

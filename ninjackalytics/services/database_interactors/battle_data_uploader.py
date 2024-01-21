@@ -2,15 +2,14 @@ from typing import Dict, List
 from contextlib import contextmanager
 import re
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
-
+from sqlalchemy.orm import sessionmaker
 from ninjackalytics.database import get_sessionlocal
 from ninjackalytics.database.models import *
 
 
 @contextmanager
-def session_scope():
+def session_scope(session):
     """Provide a transactional scope around a series of operations."""
-    session = get_sessionlocal()
     try:
         yield session
         session.commit()
@@ -101,13 +100,19 @@ class BattleDataUploader:
             An instance of the BattleParser class containing the battle data
     """
 
-    def __init__(self):
+    def __init__(self, *, engine: object = None):
         """
         Constructs all the necessary attributes for the BattleDataUploader object.
         """
         self.p1_team_id = None
         self.p2_team_id = None
         self.battle_id = None
+        if engine is None:
+            # store the database.py function which will utilize the FLASK_ENV environ
+            self.session_maker = get_sessionlocal
+        else:
+            sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            self.session_maker = lambda: sessionlocal()
 
     def _upload_teams(self, session, teams_list: List[List[object]]) -> int:
         """
@@ -259,7 +264,7 @@ class BattleDataUploader:
             An instance of the BattleParser class containing the battle data
         """
         # first check to see if the error attribute is not None
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             exists = self._check_if_battle_exists(session, parser.general_info)
             if not exists:
                 self._upload_teams(session, parser.teams)
@@ -284,7 +289,7 @@ class BattleDataUploader:
         function : str
             The function where the error occurred
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             # need to first test if the error already exists in the database
             existing_error = (
                 session.query(errors).filter(errors.Battle_URL == battle_url).first()
