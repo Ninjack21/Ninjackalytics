@@ -5,6 +5,7 @@ import sys
 ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(ninjackalytics_path)
 
+from sqlalchemy.orm import make_transient
 from ninjackalytics.database.config import OldProductionConfig, NewProductionConfig
 from tqdm import tqdm
 from sqlalchemy.orm import sessionmaker
@@ -39,19 +40,23 @@ old_db_session_local = create_session_local(old_db_engine)
 new_db_session_local = create_session_local(new_db_engine)
 
 
-# Function to migrate data from one database to another
 def migrate_data(old_session, new_session, model):
     old_data = old_session.query(model).all()
-    for record in tqdm(old_data):
-        new_session.add(record)  # Add each record to the new session
+    for record in tqdm(old_data, f"Migrating {model.__tablename__}"):
+        make_transient(record)
+        record.id = None  # Reset primary key
+        new_session.add(record)
 
 
 # Main migration function
 def main_migration():
+    print("create new db")
     # Create new database engine for NewProductionConfig
     new_db_engine = create_db_engine(NewProductionConfig)
     # Create tables in the new database
     create_tables(new_db_engine)
+
+    print("prepare sessionlocals for old and new db")
 
     # Create session locals for old and new databases
     old_db_engine = create_db_engine(OldProductionConfig)
@@ -62,6 +67,7 @@ def main_migration():
     new_session = new_db_session_local()
 
     try:
+        print("migrate data")
         # Migrate data for each table
         migrate_data(old_session, new_session, teams)
         migrate_data(old_session, new_session, battle_info)
