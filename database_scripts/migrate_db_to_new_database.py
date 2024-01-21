@@ -40,12 +40,18 @@ old_db_session_local = create_session_local(old_db_engine)
 new_db_session_local = create_session_local(new_db_engine)
 
 
-def migrate_data(old_session, new_session, model):
-    old_data = old_session.query(model).all()
-    for record in tqdm(old_data, f"Migrating {model.__tablename__}"):
-        make_transient(record)
-        record.id = None  # Reset primary key
-        new_session.add(record)
+def migrate_data(old_session, new_session, model, batch_size=50000):
+    offset = 0
+    while True:
+        old_data = old_session.query(model).limit(batch_size).offset(offset).all()
+        if not old_data:
+            break
+        for record in tqdm(old_data, f"Migrating {model.__tablename__}"):
+            make_transient(record)
+            record.id = None  # Reset primary key
+            new_session.add(record)
+        new_session.commit()  # Commit in batches
+        offset += batch_size
 
 
 # Main migration function
