@@ -15,7 +15,7 @@ from ninjackalytics.services.battle_parsing import BattleParser
 from ninjackalytics.services.battle_parsing.battle_data.battle_pokemon import (
     BattlePokemon,
 )
-from ninjackalytics.database.models.battles import (
+from ninjackalytics.database.models import (
     teams,
     battle_info,
     actions,

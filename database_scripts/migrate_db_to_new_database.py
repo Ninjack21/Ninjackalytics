@@ -10,18 +10,7 @@ from tqdm import tqdm
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from ninjackalytics.database.database import get_sessionlocal
-from ninjackalytics.database.models import (
-    Base,
-    teams,
-    battle_info,
-    actions,
-    damages,
-    healing,
-    pivots,
-    errors,
-    pokemonmetadata,
-    pvpmetadata,
-)
+from ninjackalytics.database.models import *
 
 
 # Function to create a database engine

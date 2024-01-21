@@ -4,15 +4,7 @@ import re
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
 from ninjackalytics.database import get_sessionlocal
-from ninjackalytics.database.models.battles import (
-    teams,
-    battle_info,
-    actions,
-    damages,
-    healing,
-    pivots,
-    errors,
-)
+from ninjackalytics.database.models import *
 
 
 @contextmanager

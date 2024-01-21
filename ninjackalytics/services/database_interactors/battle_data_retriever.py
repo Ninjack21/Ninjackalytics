@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
 from ninjackalytics.database import get_sessionlocal
-from ninjackalytics.database.models.battles import (
+from ninjackalytics.database.models import (
     teams,
     battle_info,
     actions,
