@@ -3,7 +3,7 @@ from ninjackalytics.database import get_sessionlocal
 from sqlalchemy.orm import sessionmaker
 from ninjackalytics.database.models import *
 from contextlib import contextmanager
-from typing import Callable
+from typing import Dict
 
 
 @contextmanager
@@ -65,3 +65,11 @@ class TableAccessor:
     def get_pvpmetadata(self):
         with session_scope(self.session_maker()) as session:
             return pd.read_sql(session.query(pvpmetadata).statement, session.bind)
+
+    # TODO: fix this method - it does not work currently
+    def _build_conditions(self, where_conditions: Dict):
+        conditions = []
+        for column_name, (operation, value) in where_conditions.items():
+            conditions.append(getattr(getattr(self, column_name), operation)(value))
+        
+        return conditions
