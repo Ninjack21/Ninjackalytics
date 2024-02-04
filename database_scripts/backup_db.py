@@ -13,6 +13,7 @@ import re
 
 def dump_database():
     db_uri = get_db_uri()
+    print(db_uri)
 
     # Extract credentials from the URI
     pattern = r"mysql\+mysqldb:\/\/(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^:]+):(?P<port>[^\/]+)\/(?P<dbname>.+)"
