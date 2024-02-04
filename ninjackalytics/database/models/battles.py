@@ -31,13 +31,13 @@ class teams(BattleDbBase):
         "battle_info",
         cascade="all, delete",
         backref="team_as_P1",
-        ForeignKey=["batte_info.P1_team"],
+        primaryjoin="teams.id == battle_info.P1_team",
     )
     Battles_as_P2 = relationship(
         "battle_info",
         cascade="all, delete",
         backref="team_as_P2",
-        ForeignKey=["batte_info.P2_team"],
+        primaryjoin="teams.id == battle_info.P2_team",
     )
 
     def __repr__(self):
