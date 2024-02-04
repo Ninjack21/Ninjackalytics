@@ -16,7 +16,7 @@ def dump_database():
     print(db_uri)
 
     # Extract credentials from the URI
-    pattern = r"mysql\+mysqldb:\/\/(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^:]+):(?P<port>[^\/]+)\/(?P<dbname>.+)"
+    pattern = r"mysql\+mysqldb:\/\/(?P<user>[^:]+):(?P<password>[^@]+)@(?P<host>[^:]+)\/(?P<dbname>.+)"
     match = re.match(pattern, db_uri)
     if not match:
         raise ValueError("Could not parse database URI")
@@ -32,7 +32,6 @@ def dump_database():
         f"-u{credentials['user']}",
         f"-p{credentials['password']}",
         f"-h{credentials['host']}",
-        f"--port={credentials['port']}",
         f"{credentials['dbname']}",
         f"> {output_file}",
     ]
