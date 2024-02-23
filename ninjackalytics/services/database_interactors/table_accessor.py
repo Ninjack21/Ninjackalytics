@@ -35,7 +35,7 @@ class TableAccessor:
             query = session.query(teams)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, teams, conditions)
 
             return pd.read_sql(query.statement, session.bind)
 
@@ -44,7 +44,7 @@ class TableAccessor:
             query = session.query(battle_info)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, battle_info, conditions)
             return pd.read_sql(session.query(battle_info).statement, session.bind)
 
     def get_actions(self, conditions: Dict = None):
@@ -52,7 +52,7 @@ class TableAccessor:
             query = session.query(actions)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, actions, conditions)
             return pd.read_sql(session.query(actions).statement, session.bind)
 
     def get_damages(self, conditions: Dict = None):
@@ -60,7 +60,7 @@ class TableAccessor:
             query = session.query(damages)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, damages, conditions)
             return pd.read_sql(session.query(damages).statement, session.bind)
 
     def get_healing(self, conditions: Dict = None):
@@ -68,7 +68,7 @@ class TableAccessor:
             query = session.query(healing)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, healing, conditions)
             return pd.read_sql(session.query(healing).statement, session.bind)
 
     def get_pivots(self, conditions: Dict = None):
@@ -76,7 +76,7 @@ class TableAccessor:
             query = session.query(pivots)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, pivots, conditions)
             return pd.read_sql(session.query(pivots).statement, session.bind)
 
     def get_errors(self, conditions: Dict = None):
@@ -84,7 +84,7 @@ class TableAccessor:
             query = session.query(errors)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, errors, conditions)
             return pd.read_sql(session.query(errors).statement, session.bind)
 
     def get_pokemonmetadata(self, conditions: Dict = None):
@@ -92,7 +92,7 @@ class TableAccessor:
             query = session.query(pokemonmetadata)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, pokemonmetadata, conditions)
             return pd.read_sql(session.query(pokemonmetadata).statement, session.bind)
 
     def get_pvpmetadata(self, conditions: Dict = None):
@@ -100,10 +100,10 @@ class TableAccessor:
             query = session.query(pvpmetadata)
 
             if conditions:
-                query = self._add_conditions(query, conditions)
+                query = self._add_conditions(query, pvpmetadata, conditions)
             return pd.read_sql(session.query(pvpmetadata).statement, session.bind)
 
-    def _add_conditions(self, query, conditions: Dict):
+    def _add_conditions(self, query, table_obj, conditions: Dict):
         """
         conditions_format = {
             'column_name': {'op': '>=', 'value': 100},
@@ -128,9 +128,7 @@ class TableAccessor:
             value = cond["value"]
 
             # Retrieve the column attribute
-            field = getattr(
-                teams, column
-            )  # Assuming 'teams' is the model, adjust as necessary
+            field = getattr(table_obj, column)
 
             # Apply the condition
             if operation in op_map:
