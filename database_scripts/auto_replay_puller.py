@@ -45,6 +45,8 @@ def find_function_with_error_from_traceback(tb: str) -> str:
 try:
     battle_formats = [
         "gen9ou",
+        "gen9vgc2024regf",
+        "gen9vgc2024regfbo3",
         "gen9vgc2023regulatione",
         "gen9nationaldex",
         "gen9doublesou",
