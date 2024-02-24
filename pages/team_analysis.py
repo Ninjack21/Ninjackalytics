@@ -133,6 +133,14 @@ def build_team_button_and_creativity_input_component():
                 color="primary",
                 className="mr-1",
             ),
+            # Add a text note here
+            html.Span(
+                " This process can take up to 2 minutes.",
+                style={
+                    "color": "white",
+                    "margin-left": "10px",  # Add some spacing between the button and the text
+                },
+            ),
             html.Br(),
         ]
     )
