@@ -1,11 +1,11 @@
 from typing import Dict, List
 import pandas as pd
 from contextlib import contextmanager
-
+from sqlalchemy.orm import sessionmaker
 from ninjackalytics.protocols.battle_parsing.protocols import BattleParser
 
 from ninjackalytics.database import get_sessionlocal
-from ninjackalytics.database.models.battles import (
+from ninjackalytics.database.models import (
     teams,
     battle_info,
     actions,
@@ -17,9 +17,8 @@ from ninjackalytics.database.models.battles import (
 
 
 @contextmanager
-def session_scope():
+def session_scope(session):
     """Provide a transactional scope around a series of operations."""
-    session = get_sessionlocal()
     try:
         yield session
         session.commit()
@@ -62,11 +61,16 @@ class BattleDataRetriever:
         Retrieves information about the pivots in a specific battle from the database.
     """
 
-    def __init__(self):
+    def __init__(self, *, engine: object = None):
         """
         Constructs all the necessary attributes for the BattleDataRetriever object.
         """
-        pass
+        if engine is None:
+            # store the database.py function which will utilize the FLASK_ENV environ
+            self.session_maker = get_sessionlocal
+        else:
+            sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+            self.session_maker = lambda: sessionlocal()
 
     def get_battle_info(self, battle_id: str) -> pd.DataFrame:
         """
@@ -82,7 +86,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             battle_info_db = (
                 session.query(battle_info)
                 .filter(battle_info.Battle_ID == battle_id)
@@ -105,7 +109,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the teams in the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             team1_id = session.query(battle_info.P1_team).filter(
                 battle_info.Battle_ID == battle_id
             )
@@ -134,7 +138,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the actions taken in the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             dbid = self.get_db_id(battle_id)
             actions_db = session.query(actions).filter(actions.Battle_ID == dbid).all()
             df = pd.DataFrame([action.__dict__ for action in actions_db])
@@ -154,7 +158,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the damages dealt in the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             db_id = self.get_db_id(battle_id)
             damages_db = session.query(damages).filter(damages.Battle_ID == db_id).all()
             df = pd.DataFrame([damage.__dict__ for damage in damages_db])
@@ -174,7 +178,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the healing done in the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             db_id = self.get_db_id(battle_id)
             healing_db = session.query(healing).filter(healing.Battle_ID == db_id).all()
             df = pd.DataFrame([heal.__dict__ for heal in healing_db])
@@ -194,7 +198,7 @@ class BattleDataRetriever:
         pd.DataFrame
             A pandas DataFrame containing information about the pivots in the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             db_id = self.get_db_id(battle_id)
             pivots_db = session.query(pivots).filter(pivots.Battle_ID == db_id).all()
             df = pd.DataFrame([pivot.__dict__ for pivot in pivots_db])
@@ -214,7 +218,7 @@ class BattleDataRetriever:
         int
             The database ID of the battle.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             battle_info_db = (
                 session.query(battle_info)
                 .filter(battle_info.Battle_ID == battle_id)
@@ -281,7 +285,7 @@ class BattleDataRetriever:
         bool
             True if the battle exists in the database, False otherwise.
         """
-        with session_scope() as session:
+        with session_scope(self.session_maker()) as session:
             battle_info_db = (
                 session.query(battle_info)
                 .filter(battle_info.Battle_ID == battle_id)

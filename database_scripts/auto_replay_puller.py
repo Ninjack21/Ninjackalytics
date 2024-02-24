@@ -10,7 +10,10 @@ from ninjackalytics.services.database_interactors.battle_data_uploader import (
     BattleDataUploader,
 )
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
-from ninjackalytics.services.auto_replay_pulls.script import get_battle_urls_selenium
+from ninjackalytics.services.auto_replay_pulls.script import (
+    get_battle_urls_selenium,
+    get_replay_urls,
+)
 import traceback
 from tqdm import tqdm
 import re
@@ -42,25 +45,20 @@ def find_function_with_error_from_traceback(tb: str) -> str:
 try:
     battle_formats = [
         "gen9ou",
+        "gen9vgc2024regf",
+        "gen9vgc2024regfbo3",
         "gen9vgc2023regulatione",
         "gen9nationaldex",
         "gen9doublesou",
         "gen9ubers",
-        "gen9nationaldexubers",
-        "gen9doublesubers",
         "gen9uu",
-        "gen9nationaldexuu",
-        "gen9doublesuu",
-        "gen9ru",
-        "gen9nu",
-        "gen9pu",
     ]
     print("prepare to pull URLS...")
 
     all_urls = []
     for battle_format in tqdm(battle_formats):
-        pages = 25
-        urls = get_battle_urls_selenium(battle_format, pages)
+        pages = 5
+        urls = get_replay_urls(battle_format, pages)
         all_urls.extend(urls)
     print(f"Found {len(all_urls)} urls")
     print("Prepare to begin uploading...")
@@ -116,11 +114,5 @@ try:
         print(f"Total Error Percentage: {round(total_errors/len(all_urls)*100, 2)}")
 
 except:
-    if os.environ.get("FLASK_ENV") == "remote-production":
-        close_tunnel()
-    else:
-        traceback.print_exc()
-        print("\n\n-------------Error Occured---------\n\n")
-
-if os.environ.get("FLASK_ENV") == "remote-production":
-    close_tunnel()
+    traceback.print_exc()
+    print("\n\n-------------Error Occured---------\n\n")

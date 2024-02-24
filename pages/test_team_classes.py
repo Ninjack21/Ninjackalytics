@@ -24,7 +24,8 @@ class MockDatabaseData:
             }
         )
 
-    def get_teams(self):
+    # NOTE: don't recreate conditions - already tested in TableAccessor
+    def get_teams(self, conditions=None):
         # Return the desired teams data
         return pd.DataFrame(
             {
@@ -35,7 +36,7 @@ class MockDatabaseData:
             }
         )
 
-    def get_pvpmetadata(self):
+    def get_pvpmetadata(self, conditions=None):
         # Return the desired pvpmetadata data
         return pd.DataFrame(
             {
@@ -47,7 +48,7 @@ class MockDatabaseData:
             }
         )
 
-    def get_pokemonmetadata(self):
+    def get_pokemonmetadata(self, conditions=None):
         # Return the desired pokemonmetadata data
         return pd.DataFrame(
             {

@@ -5,8 +5,7 @@ import sys
 ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(ninjackalytics_path)
 from ninjackalytics.database.database import Base, get_engine, get_sessionlocal
-from ninjackalytics.database.models.battles import *
-from ninjackalytics.database.models.metadata import *
+from ninjackalytics.database.models import *
 
 session = get_sessionlocal()
 

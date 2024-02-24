@@ -1,4 +1,10 @@
 import os
+import sys
+
+# Append Ninjackalytics/ninjackalytics folder to sys path
+ninjackalytics_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(ninjackalytics_path)
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -36,9 +42,13 @@ def get_showdown_mon_images():
             full_url = urljoin(url, href)
             file_name = href.split("/")[-1]
             file_path = os.path.join(
-                os.getcwd(), "assets", "showdown_sprites", file_name
+                ninjackalytics_path, "assets", "showdown_sprites", file_name
             )
             if file_name not in downloaded_files:
                 with open(file_path, "wb") as f:
                     f.write(requests.get(full_url).content)
                 downloaded_files.append(file_name)
+
+
+if __name__ == "__main__":
+    get_showdown_mon_images()

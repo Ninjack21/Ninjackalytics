@@ -1,5 +1,4 @@
-from ninjackalytics.database.models.battles import *
-from ninjackalytics.database.models.metadata import *
+from ninjackalytics.database.models import *
 from sqlalchemy.orm import sessionmaker
 
 
