@@ -20,14 +20,13 @@ class DatabaseData:
             f_conditions = {
                 "Format": {"op": "==", "value": format},
             }
+            # --- now use viable formats to limit queries ---
+            self.pvpmetadata = self.ta.get_pvpmetadata(conditions=f_conditions)
+            self.pokemonmetadata = self.ta.get_pokemonmetadata(conditions=f_conditions)
         else:
-            f_conditions = {
-                "Format": {"op": "==", "value": self.viable_formats[0]},
-            }
-
-        # --- now use viable formats to limit queries ---
-        self.pvpmetadata = self.ta.get_pvpmetadata(conditions=f_conditions)
-        self.pokemonmetadata = self.ta.get_pokemonmetadata(conditions=f_conditions)
+            self.pvpmetadata = None
+            self.pokemonmetadata = None
+            
 
     def get_pvpmetadata(self):
         return self.pvpmetadata

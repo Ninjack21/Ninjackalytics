@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, callback, dash_table
+from dash import html, dcc, Input, Output, callback, dash_table, no_update
 import dash_bootstrap_components as dbc
 from .navbar import navbar
 from .general_utility import find_closest_sprite
@@ -14,15 +14,35 @@ mon_height = "85px"
 mon_width = "85px"
 
 
+def format_and_dependent_components(viable_formats):
+    return dcc.Loading(
+        id="loading-format-data",
+        children=[
+            html.Div(
+                "retrieving data from db, one moment...",
+                style={"color": "white", "textAlign": "center"},
+            ),
+            format_selector_component(viable_formats),
+            # Assume pokemon_selections_component and dont_use_pokemon_component depend on the selected format
+            pokemon_selections_component([]),  # Initially empty, filled via callback
+            dont_use_pokemon_component([]),  # Initially empty, filled via callback
+        ],
+        type="circle",  # Loading spinner type
+        fullscreen=False,  # Set to True to cover the whole screen while loading
+        style={"color": "#FFFFFF"},  # Custom styles here
+    )
+
+
 # ============ Format and Pokemon Selections ============
-def format_selector_component(viable_formats):
+def format_selector_component(viable_formats, selected_format=None):
     return html.Div(
         [
             html.Label("Format", style={"color": "white"}),
             dcc.Dropdown(
                 id="format-selector",
                 options=[{"label": f, "value": f} for f in viable_formats],
-                value=viable_formats[0],
+                value=selected_format,
+                placeholder="Select a format",  # Placeholder text
                 style={"width": "375px", "color": "black", "background-color": "white"},
             ),
             html.Br(),
@@ -243,19 +263,26 @@ def winrate_data_table():
 def layout():
     db_data = DatabaseData()
     viable_formats = db_data.viable_formats
-    format_data = FormatData(battle_format=viable_formats[0], db=db_data)
-    format_mons = format_data.get_format_available_mons()
 
+    # The initial call to get_format_available_mons() is removed to avoid loading data at layout definition time.
     return html.Div(
         [
             navbar(),
-            dcc.Store(id="viable-pokemon-store", data=[format_mons]),
+            dcc.Store(id="viable-pokemon-store"),  # Initially empty
             html.H1("Team Builder Tool"),
-            format_selector_component(viable_formats),
-            pokemon_selections_component(format_mons),
-            dont_use_pokemon_component(format_mons),
-            build_team_button_and_creativity_input_component(),
-            completed_team_component(),
+            dcc.Loading(
+                id="loading-format-data",
+                children=[
+                    format_selector_component(viable_formats),
+                    # The components below will be dynamically filled via callbacks
+                    html.Div(
+                        id="dynamic-content",
+                    ),
+                ],
+                type="circle",
+                fullscreen=False,  # Change to `True` for fullscreen loading indicator
+                color="#FFFFFF",
+            ),
         ],
         className="bg-dark",
         style={
@@ -269,67 +296,89 @@ def layout():
     )
 
 
-# pokemon selector options
+# dynamically load content once viable format is selected
 @callback(
-    [dash.dependencies.Output(f"pokemon-selector-0", "options")],
-    [dash.dependencies.Output(f"pokemon-selector-1", "options")],
-    [dash.dependencies.Output(f"pokemon-selector-2", "options")],
-    [dash.dependencies.Output(f"pokemon-selector-3", "options")],
-    [dash.dependencies.Output(f"pokemon-selector-4", "options")],
-    [dash.dependencies.Output(f"pokemon-selector-5", "options")],
-    [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-0", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-1", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-2", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-3", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-4", "value")],
-    [dash.dependencies.Input(f"pokemon-selector-5", "value")],
-    [dash.dependencies.State("viable-pokemon-store", "data")],
+    dash.dependencies.Output("dynamic-content", "children"),
+    [dash.dependencies.Input("format-selector", "value")],
     order=1,
 )
-def update_pokemon_options(
-    ignore_mons,
-    mon0,
-    mon1,
-    mon2,
-    mon3,
-    mon4,
-    mon5,
-    viable_pokemon,
-):
-    mons = [mon0, mon1, mon2, mon3, mon4, mon5]
-
-    selector_options = []
-    for mon in mons:
-        unavailable_mons = [other for other in mons if other not in [mon, None]]
-        if ignore_mons is not None:
-            unavailable_mons += ignore_mons
-
-        selector_options.append(
+def update_dynamic_content(selected_format):
+    if not selected_format:
+        # Return a placeholder or empty content if no format is selected
+        initial_content = html.Div(
             [
-                {"label": pokemon_name, "value": pokemon_name}
-                for pokemon_name in viable_pokemon
-                if pokemon_name not in unavailable_mons
+                pokemon_selections_component(["Choose a Format!"]),
+                dont_use_pokemon_component(["Choose a Format!"]),
+                build_team_button_and_creativity_input_component(),
+                completed_team_component(),
             ]
         )
+        return initial_content
 
-    return (
-        selector_options[0],
-        selector_options[1],
-        selector_options[2],
-        selector_options[3],
-        selector_options[4],
-        selector_options[5],
+    # Assuming you have functions to fetch data based on the selected format
+    db_data = DatabaseData(format=selected_format)
+    format_data = FormatData(battle_format=selected_format, db=db_data)
+    format_mons = format_data.get_format_available_mons()
+
+    # Now, populate the components that depend on the selected format
+    content = html.Div(
+        [
+            pokemon_selections_component(format_mons),
+            dont_use_pokemon_component(format_mons),
+            build_team_button_and_creativity_input_component(),
+            completed_team_component(),  # Ensure this component can handle being initially empty
+        ]
     )
+
+    return content
+
+
+# pokemon selector options
+@callback(
+    [dash.dependencies.Output(f"pokemon-selector-{i}", "options") for i in range(6)],
+    [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
+    dash.dependencies.State("viable-pokemon-store", "data"),
+    [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
+    prevent_initial_call=True,  # Prevents the callback from running on initial load
+    order=2,
+)
+def update_pokemon_options(ignore_mons, viable_mons, *selected_mons):
+    # Check if viable_pokemon data is not loaded yet
+    if not viable_mons:
+        return [no_update] * 6  # Return no_update for all dropdowns
+
+    # Build options considering ignore_mons and already selected mons
+    selector_options = []
+    for mon in selected_mons:
+        unavailable_mons = [
+            other for other in selected_mons if other not in [mon, None]
+        ]
+        if ignore_mons:
+            unavailable_mons += ignore_mons
+
+        options = [
+            {"label": pokemon_name, "value": pokemon_name}
+            for pokemon_name in viable_mons
+            if pokemon_name not in unavailable_mons
+        ]
+        selector_options.append(options)
+
+    return selector_options
 
 
 # pokemon sprites updates
 @callback(
     [dash.dependencies.Output(f"pokemon-sprite-{i}", "src") for i in range(6)],
     [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
-    order=2,
+    order=3,
 )
 def update_pokemon_sprites(*pokemon_names):
+    # Check if all pokemon_names are None (no Pokémon has been selected)
+    if all(name is None for name in pokemon_names):
+        # Return no_update for each sprite, indicating no change should be made
+        return [no_update] * 6
+
+    # Otherwise, proceed with updating sprites as before
     return [
         find_closest_sprite(pokemon_name) if pokemon_name is not None else None
         for pokemon_name in pokemon_names
@@ -347,9 +396,14 @@ def update_pokemon_sprites(*pokemon_names):
     [dash.dependencies.Output(f"pokemon-selector-5", "value")],
     [dash.dependencies.Output(f"dont-use-pokemon-selector", "options")],
     [dash.dependencies.Input("format-selector", "value")],
+    prevent_initial_call=True,  # Prevents the callback from running on initial load
     order=0,
 )
 def update_viable_pokemon_store(selected_format):
+    if selected_format is None:
+        # Return no_update for each sprite, indicating no change should be made
+        return [no_update] * 8
+
     database_data = DatabaseData(format=selected_format)
     format_data = FormatData(battle_format=selected_format, db=database_data)
     available_mons = format_data.get_format_available_mons()
