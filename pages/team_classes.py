@@ -4,20 +4,26 @@ from ninjackalytics.services.database_interactors.table_accessor import (
 )
 from ninjackalytics.database.models import battle_info
 import pandas as pd
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
 
 class DatabaseData:
-    def __init__(self):
+    def __init__(self, format=None):
         self.ta = TableAccessor()
         # --- first determine the viable formats before querying data ---
         self.viable_formats = self.get_viable_formats()
 
-        f_conditions = {
-            "Format": {"op": "in", "value": self.viable_formats},
-        }
+        # only load 1 format's data. if not specified, just pick one of viable formats for init loading
+        if format:
+            f_conditions = {
+                "Format": {"op": "==", "value": format},
+            }
+        else:
+            f_conditions = {
+                "Format": {"op": "==", "value": self.viable_formats[0]},
+            }
 
         # --- now use viable formats to limit queries ---
         self.pvpmetadata = self.ta.get_pvpmetadata(conditions=f_conditions)
@@ -53,8 +59,8 @@ class FormatData:
 
         format_conditions = {"Format": {"op": "==", "value": self.battle_format}}
 
-        self.format_pvpmetadata = self.db.get_pvpmetadata(conditions=format_conditions)
-        self.format_metadata = self.db.get_pokemonmetadata(conditions=format_conditions)
+        self.format_pvpmetadata = self.db.get_pvpmetadata()
+        self.format_metadata = self.db.get_pokemonmetadata()
 
         self.top30 = self.format_metadata.sort_values(
             by="Popularity", ascending=False

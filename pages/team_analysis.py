@@ -14,98 +14,82 @@ mon_height = "85px"
 mon_width = "85px"
 
 
-def layout():
-    db_data = DatabaseData()
-    viable_formats = (
-        db_data.viable_formats
-    )  # have to do this upon init to avoid hard coding options
-    format_data = FormatData(
-        battle_format=viable_formats[0],
-        db=db_data,
-    )
-    format_mons = format_data.get_format_available_mons()
-
+# ============ Format and Pokemon Selections ============
+def format_selector_component(viable_formats):
     return html.Div(
         [
-            navbar(),
-            # ===== STORES =====
-            dcc.Store(
-                id="viable-pokemon-store",
-                data=[format_mons],
-            ),
-            html.H1("Team Builder Tool"),
-            html.Br(),
             html.Label("Format", style={"color": "white"}),
             dcc.Dropdown(
                 id="format-selector",
-                options=viable_formats,
+                options=[{"label": f, "value": f} for f in viable_formats],
                 value=viable_formats[0],
                 style={"width": "375px", "color": "black", "background-color": "white"},
             ),
             html.Br(),
-            # ===== POKEMON SELECTIONS ======
+        ]
+    )
+
+
+def pokemon_selections_component(format_mons):
+    return html.Div(
+        [
             html.Label("Pokemon Selections", style={"color": "white"}),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        [
-                            dcc.Dropdown(
-                                id=f"pokemon-selector-{i}",
-                                options=[
-                                    {"label": pokemon_name, "value": pokemon_name}
-                                    for pokemon_name in get_viable_pokemon(
-                                        format_pokemon=format_mons,
-                                        selected_ignore_mons=[],
-                                        already_used_mons=[],
-                                    )
-                                ],
-                                value=None,
-                                placeholder="fill for me",
-                                style={
-                                    "width": "250px",
-                                    "color": "black",
-                                    "background-color": "white",
-                                },
-                            ),
-                            html.Img(
-                                id=f"pokemon-sprite-{i}",
-                                src=None,
-                                style={
-                                    "height": mon_height,
-                                    "width": mon_width,
-                                    "padding-top": "10px",
-                                    "padding-left": "10px",  # Add padding to the left
-                                },
-                            ),
-                        ],
-                        width=2,
-                    )
-                    for i in range(6)
-                ]
-            ),
+            dbc.Row([pokemon_selector_col(i, format_mons) for i in range(6)]),
             html.Br(),
-            # ===== DON'T USE POKEMON ======
+        ]
+    )
+
+
+def pokemon_selector_col(index, format_mons):
+    return dbc.Col(
+        [
+            dcc.Dropdown(
+                id=f"pokemon-selector-{index}",
+                options=[
+                    {"label": pokemon_name, "value": pokemon_name}
+                    for pokemon_name in format_mons
+                ],
+                value=None,
+                placeholder="Select a Pokemon",
+                style={"width": "250px", "color": "black", "background-color": "white"},
+            ),
+            html.Img(
+                id=f"pokemon-sprite-{index}",
+                src=None,
+                style={
+                    "height": mon_height,
+                    "width": mon_width,
+                    "padding-top": "10px",
+                    "padding-left": "10px",
+                },
+            ),
+        ],
+        width=2,
+    )
+
+
+def dont_use_pokemon_component(format_mons):
+    return html.Div(
+        [
             html.Label("Don't Use Pokemon", style={"color": "white"}),
             dcc.Dropdown(
                 id="dont-use-pokemon-selector",
                 options=[
                     {"label": pokemon_name, "value": pokemon_name}
-                    for pokemon_name in get_viable_pokemon(
-                        format_pokemon=format_mons,
-                        selected_ignore_mons=[],
-                        already_used_mons=[],
-                    )
+                    for pokemon_name in format_mons
                 ],
                 multi=True,
                 placeholder="Select Pokemon",
-                style={
-                    "width": "375px",
-                    "color": "black",
-                    "background-color": "white",
-                },
+                style={"width": "375px", "color": "black", "background-color": "white"},
             ),
             html.Br(),
-            # ===== BUILD TEAM OPTIONS ======
+        ]
+    )
+
+
+def build_team_button_and_creativity_input_component():
+    return html.Div(
+        [
             html.Label("Creativity", style={"color": "white"}),
             dcc.Input(
                 id="creativity-input",
@@ -122,122 +106,156 @@ def layout():
                 },
             ),
             html.Br(),
-            html.Div(
-                [
-                    dbc.Button(
-                        "Build Team",
-                        id="build-team-button",
-                        n_clicks=0,
-                        color="primary",
-                        className="mr-1",
-                    ),
-                ]
+            dbc.Button(
+                "Build Team",
+                id="build-team-button",
+                n_clicks=0,
+                color="primary",
+                className="mr-1",
             ),
-            # ========= BUILT TEAM FIELDS =========
+            html.Br(),
+        ]
+    )
+
+
+# ============ Completed Team ============
+def completed_team_component():
+    return html.Div(
+        [
             html.Label("Completed Team", style={"color": "white"}),
             dcc.Loading(
                 id="loading",
                 type="circle",
                 children=[
-                    # suggested team and sprites
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [
-                                    dcc.Input(
-                                        id=f"team-mon-{i}",
-                                        type="text",
-                                        value=None,
-                                        placeholder="Click Build Team!",
-                                        disabled=True,
-                                        style={
-                                            "width": "250px",
-                                            "color": "black",
-                                            "background-color": "white",
-                                        },
-                                    ),
-                                    html.Img(
-                                        id=f"team-sprite-{i}",
-                                        src=None,
-                                        style={
-                                            "height": mon_height,
-                                            "width": mon_width,
-                                            "padding-top": "10px",
-                                            "padding-left": "10px",  # Add padding to the left
-                                        },
-                                    ),
-                                ],
-                                width=2,
-                            )
-                            for i in range(6)
-                        ]
-                    ),
+                    # Suggested team and sprites
+                    suggested_team_and_sprites(),
                     html.Br(),
-                    html.Br(),
-                    # team stats
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Div(
-                                    id="expected-winrate",
-                                    children="Expected Overall Winrate: ",
-                                ),
-                                width=4,
-                            ),
-                            dbc.Col(
-                                html.Div(
-                                    id="avg-popularity", children="Average Popularity: "
-                                ),
-                                width=4,
-                            ),
-                        ]
-                    ),
-                    html.Br(),
-                    html.Br(),
+                    # Team stats
+                    team_stats(),
                     html.Br(),
                     # DataFrame of Winrates into Top30
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                dash_table.DataTable(
-                                    id="winrate-data",
-                                    columns=[
-                                        {"name": i, "id": i}
-                                        for i in [
-                                            "Top30 Most Popular Mons",
-                                            "Top30 Mon Popularity (%)",
-                                            "Top30 Mon General Winrate (%)",
-                                            "Team Winrate x Top30 Mon (%)",
-                                        ]
-                                    ],
-                                    data=[],
-                                    style_data_conditional=[
-                                        {
-                                            "if": {"row_index": "odd"},
-                                            "backgroundColor": "rgb(48, 48, 48)",
-                                        }
-                                    ],
-                                    style_header={
-                                        "backgroundColor": "rgb(30, 30, 30)",
-                                        "color": "white",
-                                        "textAlign": "center",  # Center the column titles
-                                    },
-                                    style_cell={
-                                        "backgroundColor": "rgb(50, 50, 50)",
-                                        "color": "white",
-                                        "minWidth": "0px",
-                                        "maxWidth": "180px",  # Adjust column widths
-                                        "whiteSpace": "normal",  # Allow the text to wrap
-                                        "textAlign": "center",  # Center the cell values
-                                        "padding": "10px",  # Add padding to the cells
-                                    },
-                                ),
-                            )
-                        ]
-                    ),
+                    winrate_data_table(),
                 ],
             ),
             html.Br(),
+        ]
+    )
+
+
+def suggested_team_and_sprites():
+    return dbc.Row(
+        [
+            dbc.Col(
+                [
+                    dcc.Input(
+                        id=f"team-mon-{i}",
+                        type="text",
+                        value=None,
+                        placeholder="Click Build Team!",
+                        disabled=True,
+                        style={
+                            "width": "250px",
+                            "color": "black",
+                            "background-color": "white",
+                        },
+                    ),
+                    html.Img(
+                        id=f"team-sprite-{i}",
+                        src=None,
+                        style={
+                            "height": mon_height,
+                            "width": mon_width,
+                            "padding-top": "10px",
+                            "padding-left": "10px",
+                        },
+                    ),
+                ],
+                width=2,
+            )
+            for i in range(6)
+        ]
+    )
+
+
+def team_stats():
+    return dbc.Row(
+        [
+            dbc.Col(
+                html.Div(
+                    id="expected-winrate",
+                    children="Expected Overall Winrate: ",
+                ),
+                width=4,
+            ),
+            dbc.Col(
+                html.Div(
+                    id="avg-popularity",
+                    children="Average Popularity: ",
+                ),
+                width=4,
+            ),
+        ]
+    )
+
+
+def winrate_data_table():
+    return dbc.Row(
+        [
+            dbc.Col(
+                dash_table.DataTable(
+                    id="winrate-data",
+                    columns=[
+                        {"name": i, "id": i}
+                        for i in [
+                            "Top30 Most Popular Mons",
+                            "Top30 Mon Popularity (%)",
+                            "Top30 Mon General Winrate (%)",
+                            "Team Winrate x Top30 Mon (%)",
+                        ]
+                    ],
+                    data=[],
+                    style_data_conditional=[
+                        {
+                            "if": {"row_index": "odd"},
+                            "backgroundColor": "rgb(48, 48, 48)",
+                        },
+                    ],
+                    style_header={
+                        "backgroundColor": "rgb(30, 30, 30)",
+                        "color": "white",
+                        "textAlign": "center",
+                    },
+                    style_cell={
+                        "backgroundColor": "rgb(50, 50, 50)",
+                        "color": "white",
+                        "minWidth": "0px",
+                        "maxWidth": "180px",
+                        "whiteSpace": "normal",
+                        "textAlign": "center",
+                        "padding": "10px",
+                    },
+                ),
+            )
+        ]
+    )
+
+
+def layout():
+    db_data = DatabaseData()
+    viable_formats = db_data.viable_formats
+    format_data = FormatData(battle_format=viable_formats[0], db=db_data)
+    format_mons = format_data.get_format_available_mons()
+
+    return html.Div(
+        [
+            navbar(),
+            dcc.Store(id="viable-pokemon-store", data=[format_mons]),
+            html.H1("Team Builder Tool"),
+            format_selector_component(viable_formats),
+            pokemon_selections_component(format_mons),
+            dont_use_pokemon_component(format_mons),
+            build_team_button_and_creativity_input_component(),
+            completed_team_component(),
         ],
         className="bg-dark",
         style={
@@ -332,7 +350,7 @@ def update_pokemon_sprites(*pokemon_names):
     order=0,
 )
 def update_viable_pokemon_store(selected_format):
-    database_data = DatabaseData()
+    database_data = DatabaseData(format=selected_format)
     format_data = FormatData(battle_format=selected_format, db=database_data)
     available_mons = format_data.get_format_available_mons()
 
@@ -381,6 +399,7 @@ def update_suggested_team(
     if not ignore_mons:
         ignore_mons = []
 
+    db_data = DatabaseData(format=battle_format)
     format_data = FormatData(
         battle_format=battle_format,
         db=db_data,
@@ -415,7 +434,8 @@ def update_suggested_team(
     expected_winrate = (
         f"Expected Overall Winrate: {round(team_info_dict['norm_winrate'], 2)}%"
     )
-    winrate_data = team_info_dict["team info"]
+    # only show the top 10
+    winrate_data = team_info_dict["team info"].head(10)
 
     return (
         suggested_names
