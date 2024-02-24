@@ -16,7 +16,9 @@ mon_width = "85px"
 
 def layout():
     db_data = DatabaseData()
-    viable_formats = db_data.get_viable_formats()
+    viable_formats = (
+        db_data.viable_formats
+    )  # have to do this upon init to avoid hard coding options
     format_data = FormatData(
         battle_format=viable_formats[0],
         db=db_data,
@@ -330,8 +332,6 @@ def update_pokemon_sprites(*pokemon_names):
     order=0,
 )
 def update_viable_pokemon_store(selected_format):
-    # GROSS : need to update db design with indexing so we don't have to pull everything everytime a new format
-    # is selected
     database_data = DatabaseData()
     format_data = FormatData(battle_format=selected_format, db=database_data)
     available_mons = format_data.get_format_available_mons()
@@ -381,8 +381,6 @@ def update_suggested_team(
     if not ignore_mons:
         ignore_mons = []
 
-    # GROSS - need to update db design with indexing so we don't have to pull everything everytime we solve for a team
-    db_data = DatabaseData()
     format_data = FormatData(
         battle_format=battle_format,
         db=db_data,
