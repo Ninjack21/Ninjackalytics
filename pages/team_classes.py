@@ -1,22 +1,27 @@
-from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
+from ninjackalytics.services.database_interactors.table_accessor import (
+    TableAccessor,
+    session_scope,
+)
+from ninjackalytics.database.models import battle_info
 import pandas as pd
 from typing import List, Tuple, Dict
 from datetime import datetime, timedelta
+from sqlalchemy import func
 
 
 class DatabaseData:
     def __init__(self):
         self.ta = TableAccessor()
-        self.battle_info = self.ta.get_battle_info()
-        self.teams = self.ta.get_teams()
-        self.pvpmetadata = self.ta.get_pvpmetadata()
-        self.pokemonmetadata = self.ta.get_pokemonmetadata()
+        # --- first determine the viable formats before querying data ---
+        self.viable_formats = self.get_viable_formats()
 
-    def get_battle_info(self):
-        return self.battle_info
+        f_conditions = {
+            "Format": {"op": "in", "value": self.viable_formats},
+        }
 
-    def get_teams(self):
-        return self.teams
+        # --- now use viable formats to limit queries ---
+        self.pvpmetadata = self.ta.get_pvpmetadata(conditions=f_conditions)
+        self.pokemonmetadata = self.ta.get_pokemonmetadata(conditions=f_conditions)
 
     def get_pvpmetadata(self):
         return self.pvpmetadata
@@ -24,13 +29,20 @@ class DatabaseData:
     def get_pokemonmetadata(self):
         return self.pokemonmetadata
 
+    # NOTE this is used to determine default format on main page as well as what formats are viable
     def get_viable_formats(self):
-        # only return formats with at least 4000 total battles (to match metadata table limits)
-        viable_formats = (
-            self.battle_info["Format"]
-            .value_counts()[lambda x: x >= 4000]
-            .index.tolist()
-        )
+        sessionmaker = self.ta.session_maker
+        with session_scope(sessionmaker()) as session:
+            viable_formats = (
+                session.query(battle_info.Format)
+                .group_by(battle_info.Format)
+                .having(
+                    func.count(battle_info.Format) >= 4000
+                )  # 4k is min for metadata tables
+                .all()
+            )
+            viable_formats = [f[0] for f in viable_formats]
+
         return viable_formats
 
 
@@ -38,20 +50,11 @@ class FormatData:
     def __init__(self, battle_format: str, db: DatabaseData):
         self.battle_format = battle_format
         self.db = db
-        db_info = self.db.get_battle_info()
-        self.format_info = db_info[db_info["Format"] == self.battle_format]
-        self.format_teams = self.db.get_teams()[
-            self.db.get_teams()["id"].isin(
-                self.format_info["P1_team"].tolist()
-                + self.format_info["P2_team"].tolist()
-            )
-        ]
-        self.format_pvpmetadata = self.db.get_pvpmetadata()[
-            (self.db.get_pvpmetadata()["Format"] == self.battle_format)
-        ]
-        self.format_metadata = self.db.get_pokemonmetadata()[
-            (self.db.get_pokemonmetadata()["Format"] == self.battle_format)
-        ]
+
+        format_conditions = {"Format": {"op": "==", "value": self.battle_format}}
+
+        self.format_pvpmetadata = self.db.get_pvpmetadata(conditions=format_conditions)
+        self.format_metadata = self.db.get_pokemonmetadata(conditions=format_conditions)
 
         self.top30 = self.format_metadata.sort_values(
             by="Popularity", ascending=False
@@ -459,11 +462,9 @@ class DisplayTeam:
             by="Team Winrate x Top30 Mon (%)", ascending=True
         )
         # Round all numeric values to the nearest 1st decimal place (aka all but the Top30 Most Popular Mons column)
-        context_df.loc[
-            :, ~context_df.columns.isin(["Top30 Most Popular Mons"])
-        ] = context_df.loc[
-            :, ~context_df.columns.isin(["Top30 Most Popular Mons"])
-        ].round(
-            1
+        context_df.loc[:, ~context_df.columns.isin(["Top30 Most Popular Mons"])] = (
+            context_df.loc[
+                :, ~context_df.columns.isin(["Top30 Most Popular Mons"])
+            ].round(1)
         )
         return context_df

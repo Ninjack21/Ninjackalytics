@@ -42,9 +42,6 @@ def get_rank_limit_based_on_quantile(battle_info: pd.DataFrame, quantile: float)
 def update_metadata():
     ta = TableAccessor()
     battle_info = ta.get_battle_info()
-    recent_battle_info = battle_info[
-        (battle_info["Date_Submitted"] > (datetime.now() - timedelta(days=14)))
-    ]
     teams = ta.get_teams()
     metadata_quantile_threshold = 0.8
     # 800 "high rank" battles is good minimum, so 800 / (1-quantile) = total needed battles

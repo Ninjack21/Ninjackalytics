@@ -51,14 +51,7 @@ try:
         "gen9nationaldex",
         "gen9doublesou",
         "gen9ubers",
-        "gen9nationaldexubers",
-        "gen9doublesubers",
         "gen9uu",
-        "gen9nationaldexuu",
-        "gen9doublesuu",
-        "gen9ru",
-        "gen9nu",
-        "gen9pu",
     ]
     print("prepare to pull URLS...")
 
