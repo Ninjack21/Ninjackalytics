@@ -1,6 +1,12 @@
 import os
 import difflib
 import random
+from ninjackalytics.services.database_interactors.table_accessor import (
+    TableAccessor,
+    session_scope,
+)
+from ninjackalytics.database.models import battle_info
+from sqlalchemy import func
 
 
 def _get_sprites():
@@ -63,3 +69,63 @@ def find_closest_sprite(name):
 def get_random_sprite():
     sprite_dir, gifs, pngs = _get_sprites()
     return _return_sprite_path(sprite_dir, random.choice(gifs) + ".gif")
+
+
+class DatabaseData:
+    def __init__(self, format=None):
+        self.ta = TableAccessor()
+        # --- first determine the viable formats before querying data ---
+        self.viable_formats = self.get_viable_formats()
+
+        # only load 1 format's data. if not specified, just pick one of viable formats for init loading
+        if format:
+            f_conditions = {
+                "Format": {"op": "==", "value": format},
+            }
+            # --- now use viable formats to limit queries ---
+            self.pvpmetadata = self.ta.get_pvpmetadata(conditions=f_conditions)
+            self.pokemonmetadata = self.ta.get_pokemonmetadata(conditions=f_conditions)
+        else:
+            self.pvpmetadata = None
+            self.pokemonmetadata = None
+
+    def get_pvpmetadata(self):
+        return self.pvpmetadata
+
+    def get_pokemonmetadata(self):
+        return self.pokemonmetadata
+
+    # NOTE this is used to determine default format on main page as well as what formats are viable
+    def get_viable_formats(self):
+        sessionmaker = self.ta.session_maker
+        with session_scope(sessionmaker()) as session:
+            viable_formats = (
+                session.query(battle_info.Format)
+                .group_by(battle_info.Format)
+                .having(
+                    func.count(battle_info.Format) >= 4000
+                )  # 4k is min for metadata tables
+                .all()
+            )
+            viable_formats = [f[0] for f in viable_formats]
+
+        return viable_formats
+
+
+class FormatData:
+    def __init__(self, battle_format: str, db: DatabaseData):
+        self.battle_format = battle_format
+        self.db = db
+
+        format_conditions = {"Format": {"op": "==", "value": self.battle_format}}
+
+        self.format_pvpmetadata = self.db.get_pvpmetadata()
+        self.format_metadata = self.db.get_pokemonmetadata()
+
+        self.top30 = self.format_metadata.sort_values(
+            by="Popularity", ascending=False
+        ).head(30)
+
+    def get_format_available_mons(self):
+        mons = self.format_metadata["Pokemon"][self.format_metadata["SampleSize"] >= 30]
+        return mons.tolist()

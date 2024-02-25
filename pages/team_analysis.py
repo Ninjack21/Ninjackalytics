@@ -6,7 +6,12 @@ from .page_utilities.general_utility import find_closest_sprite
 from .page_utilities.team_analysis_funcs import (
     get_viable_pokemon,
 )
-from .page_utilities.team_classes import DatabaseData, FormatData, TeamSolver, DisplayTeam
+from .page_utilities.team_classes import (
+    DatabaseData,
+    FormatData,
+    TeamSolver,
+    DisplayTeam,
+)
 
 dash.register_page(__name__, path="/team_analysis")
 
