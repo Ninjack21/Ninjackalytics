@@ -411,6 +411,7 @@ class TeamSolver:
         best_improvement, best_mon = max(results, key=lambda x: x[0])
 
         return best_mon
+    
     def _calculate_improvement(
         self, current_team, current_norm_winrate, winrate_calculator, mon
     ):
@@ -423,7 +424,6 @@ class TeamSolver:
         new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
         improvement = new_norm_winrate - current_norm_winrate
         return (improvement, mon)
-    
 
     def _get_optimal_process_count(self):
         cpu_usage = psutil.cpu_percent()

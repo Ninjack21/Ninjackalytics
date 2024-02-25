@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch, MagicMock
 import pandas as pd
-from .team_classes import (
+from . import (
     WinrateCalculator,
     FormatData,
     CreativityRestrictor,
