@@ -10,7 +10,7 @@ from sqlalchemy import func
 import multiprocessing
 from multiprocessing import Pool
 from functools import partial
-from tqdm import tqdm
+import psutil
 
 
 class DatabaseData:
@@ -403,7 +403,7 @@ class TeamSolver:
         )
 
         # Use multiprocessing to calculate improvements for all available mons
-        num_processors = multiprocessing.cpu_count()
+        num_processors = self._get_optimal_process_count()
         with Pool(processes=num_processors) as pool:
             results = pool.map(partial_calc_improvement, available_mons)
 
@@ -424,6 +424,15 @@ class TeamSolver:
         new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
         improvement = new_norm_winrate - current_norm_winrate
         return (improvement, mon)
+
+    def _get_optimal_process_count():
+        cpu_usage = psutil.cpu_percent()
+        if cpu_usage < 50:
+            return 4  # Less load, use more processes
+        elif cpu_usage < 75:
+            return 2  # Moderate load, reduce processes
+        else:
+            return 1  # High load, minimize number of processes
 
 
 class DisplayTeam:
