@@ -7,6 +7,10 @@ import pandas as pd
 from typing import List, Tuple, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy import func
+import multiprocessing
+from multiprocessing import Pool
+from functools import partial
+from tqdm import tqdm
 
 
 class DatabaseData:
@@ -26,7 +30,6 @@ class DatabaseData:
         else:
             self.pvpmetadata = None
             self.pokemonmetadata = None
-            
 
     def get_pvpmetadata(self):
         return self.pvpmetadata
@@ -391,19 +394,36 @@ class TeamSolver:
         current_norm_winrate: float,
         winrate_calculator: WinrateCalculator,
     ):
-        best_improvement = -100
-        best_mon = None
-        for mon in available_mons:
-            new_team = current_team.copy()
-            new_team.append(mon)
-            new_winrates = winrate_calculator.get_team_winrate_against_meta(new_team)
-            new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
-            improvement = new_norm_winrate - current_norm_winrate
-            if improvement > best_improvement:
-                best_improvement = improvement
-                best_mon = mon
+
+        partial_calc_improvement = partial(
+            self._calculate_improvement,
+            current_team,
+            current_norm_winrate,
+            winrate_calculator,
+        )
+
+        # Use multiprocessing to calculate improvements for all available mons
+        num_processors = multiprocessing.cpu_count()
+        with Pool(processes=num_processors) as pool:
+            results = pool.map(partial_calc_improvement, available_mons)
+
+        # Find the mon with the maximum improvement
+        best_improvement, best_mon = max(results, key=lambda x: x[0])
 
         return best_mon
+
+    def _calculate_improvement(
+        self, current_team, current_norm_winrate, winrate_calculator, mon
+    ):
+        """
+        Calculate the improvement for adding a single Pokémon to the current team.
+        Returns a tuple of (improvement, mon).
+        """
+        new_team = current_team + [mon]
+        new_winrates = winrate_calculator.get_team_winrate_against_meta(new_team)
+        new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
+        improvement = new_norm_winrate - current_norm_winrate
+        return (improvement, mon)
 
 
 class DisplayTeam:
