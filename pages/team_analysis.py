@@ -135,7 +135,7 @@ def build_team_button_and_creativity_input_component():
             ),
             # Add a text note here
             html.Span(
-                " This process can take up to 2 minutes.",
+                " This process generally takes less than a minute. Please be patient.",
                 style={
                     "color": "white",
                     "margin-left": "10px",  # Add some spacing between the button and the text
