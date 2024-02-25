@@ -57,7 +57,7 @@ def popularity_slider_component():
                 min=0,
                 max=100,
                 step=1,
-                value=[0, 100],  # Initial range set from 0% to 100%
+                value=[20, 100],  # Initial range set from 0% to 100%
                 marks={i: str(i) for i in range(0, 101, 20)},
                 allowCross=False,
             ),
