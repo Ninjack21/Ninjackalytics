@@ -411,7 +411,6 @@ class TeamSolver:
         best_improvement, best_mon = max(results, key=lambda x: x[0])
 
         return best_mon
-
     def _calculate_improvement(
         self, current_team, current_norm_winrate, winrate_calculator, mon
     ):
@@ -424,15 +423,18 @@ class TeamSolver:
         new_norm_winrate = winrate_calculator.normalized_winrate(new_winrates)
         improvement = new_norm_winrate - current_norm_winrate
         return (improvement, mon)
+    
 
-    def _get_optimal_process_count():
+    def _get_optimal_process_count(self):
         cpu_usage = psutil.cpu_percent()
+        n_processors = multiprocessing.cpu_count()
+        free_processors = n_processors - len(multiprocessing.active_children())
         if cpu_usage < 50:
-            return 4  # Less load, use more processes
+            return round(free_processors * 0.75)
         elif cpu_usage < 75:
-            return 2  # Moderate load, reduce processes
+            return round(free_processors * 0.5)
         else:
-            return 1  # High load, minimize number of processes
+            return max(round(free_processors * 0.25), 1)
 
 
 class DisplayTeam:
