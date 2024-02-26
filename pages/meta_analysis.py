@@ -228,17 +228,23 @@ def find_best_worst_matchups(
             best_matchup = (
                 mon1_best["Pokemon2"],
                 mon1_best["Winrate"],
-                pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]][
-                    "Popularity"
-                ].values[0],
+                round(
+                    pokemonmetadata[
+                        pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]
+                    ]["Popularity"].values[0],
+                    2,
+                ),
             )
         else:
             best_matchup = (
                 mon2_best["Pokemon1"],
                 100 - mon2_best["Winrate"],
-                pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]][
-                    "Popularity"
-                ].values[0],
+                round(
+                    pokemonmetadata[
+                        pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]
+                    ]["Popularity"].values[0],
+                    2,
+                ),
             )
 
         # ------ worst matchup -------
@@ -248,17 +254,23 @@ def find_best_worst_matchups(
             worst_matchup = (
                 mon1_best["Pokemon2"],
                 mon1_best["Winrate"],
-                pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]][
-                    "Popularity"
-                ].values[0],
+                round(
+                    pokemonmetadata[
+                        pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]
+                    ]["Popularity"].values[0],
+                    2,
+                ),
             )
         else:
             worst_matchup = (
                 mon2_best["Pokemon1"],
                 100 - mon2_best["Winrate"],
-                pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]][
-                    "Popularity"
-                ].values[0],
+                round(
+                    pokemonmetadata[
+                        pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]
+                    ]["Popularity"].values[0],
+                    2,
+                ),
             )
     elif not mon1_df.empty:
         mon1_best = mon1_df.sort_values(by="Winrate", ascending=False).iloc[0]
@@ -266,16 +278,22 @@ def find_best_worst_matchups(
         best_matchup = (
             mon1_best["Pokemon2"],
             mon1_best["Winrate"],
-            pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]][
-                "Popularity"
-            ].values[0],
+            round(
+                pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_best["Pokemon2"]][
+                    "Popularity"
+                ].values[0],
+                2,
+            ),
         )
         worst_matchup = (
             mon1_worst["Pokemon2"],
             mon1_worst["Winrate"],
-            pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_worst["Pokemon2"]][
-                "Popularity"
-            ].values[0],
+            round(
+                pokemonmetadata[pokemonmetadata["Pokemon"] == mon1_worst["Pokemon2"]][
+                    "Popularity"
+                ].values[0],
+                2,
+            ),
         )
     else:
         mon2_best = mon2_df.sort_values(by="Winrate", ascending=False).iloc[0]
@@ -283,16 +301,22 @@ def find_best_worst_matchups(
         best_matchup = (
             mon2_best["Pokemon1"],
             mon2_best["Winrate"],
-            pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]][
-                "Popularity"
-            ].values[0],
+            round(
+                pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_best["Pokemon1"]][
+                    "Popularity"
+                ].values[0],
+                2,
+            ),
         )
         worst_matchup = (
             mon2_worst["Pokemon1"],
             mon2_worst["Winrate"],
-            pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_worst["Pokemon1"]][
-                "Popularity"
-            ].values[0],
+            round(
+                pokemonmetadata[pokemonmetadata["Pokemon"] == mon2_worst["Pokemon1"]][
+                    "Popularity"
+                ].values[0],
+                2,
+            ),
         )
     return {
         "Best Matchup": best_matchup,
@@ -311,8 +335,8 @@ def create_table_data(all_mons, pokemonmetadata, mons2bestworst):
         row = {
             "Pokemon_Sprite": generate_markdown_for_sprite(mon),
             "Pokemon": mon,
-            "Winrate": f"{pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Winrate'].values[0]}%",
-            "Popularity": f"{pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Popularity'].values[0]}%",
+            "Winrate": f"{round(pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Winrate'].values[0], 2)}%",
+            "Popularity": f"{round(pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Popularity'].values[0], 2)}%",
             "Worst_Matchup_Sprite": generate_markdown_for_sprite(
                 mons2bestworst[mon]["Worst Matchup"][0]
             ),
