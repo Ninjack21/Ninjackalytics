@@ -6,12 +6,8 @@ from .page_utilities.general_utility import (
     find_closest_sprite,
     DatabaseData,
 )
-from typing import List, Tuple, Dict
 
 dash.register_page(__name__, path="/meta_analysis")
-
-mon_height = "85px"
-mon_width = "85px"
 
 
 def format_and_dependent_components(viable_formats):
@@ -192,14 +188,6 @@ def generate_table(
 def filter_pokemon_metadata(pokemonmetadata, lower_upper_pop=None, lower_upper_wr=None):
     copy_metadata = pokemonmetadata.copy()
     if lower_upper_pop:
-        # find the max popularity
-        max_pop = copy_metadata["Popularity"].max()
-        # convert the lower and upper bounds to represent %s of max
-        lower_upper_pop = (
-            max_pop * lower_upper_pop[0] / 100,
-            max_pop * lower_upper_pop[1] / 100,
-        )
-
         copy_metadata = copy_metadata[
             (copy_metadata["Popularity"] >= lower_upper_pop[0])
             & (copy_metadata["Popularity"] <= lower_upper_pop[1])
@@ -458,18 +446,42 @@ def layout():
 
 # ======================= Callbacks =======================
 @callback(
-    dash.dependencies.Output("popularity-range-display", "children"),
-    [dash.dependencies.Input("popularity-range-slider", "value")],
+    [
+        Output("popularity-range-slider", "min"),
+        Output("popularity-range-slider", "max"),
+        Output("popularity-range-slider", "value"),
+        Output("popularity-range-display", "children"),
+    ],
+    [Input("format-selector-meta-analysis", "value")],
+    order=1,
 )
-def update_popularity_range(value):
-    return (
-        f"Selected Popularity Range: {value[0]}% - {value[1]}% of Max Seen Popularity"
-    )
+def update_slider_and_message(selected_format):
+    if not selected_format:
+        # Default values if no format is selected
+        return 0, 100, [0, 100], "Please select a format to begin."
+
+    # Fetch data based on the selected format
+    db = DatabaseData(selected_format)
+    pokemonmetadata = db.get_pokemonmetadata()
+    max_pop = pokemonmetadata["Popularity"].max()
+
+    # Adjust the slider to the new max and update the message accordingly
+    new_min = 0
+    new_max = max_pop
+    new_value = [
+        10,
+        max_pop,
+    ]  # Adjust the slider value as well to span the entire range
+
+    new_message = f"Selected Popularity Range: {new_value[0]}% - {new_value[1]}%"
+
+    return new_min, new_max, new_value, new_message
 
 
 @callback(
-    dash.dependencies.Output("winrate-range-display", "children"),
-    [dash.dependencies.Input("winrate-range-slider", "value")],
+    Output("winrate-range-display", "children"),
+    [Input("winrate-range-slider", "value")],
+    order=2,
 )
 def update_winrate_range(value):
     return f"Selected Winrate Range: {value[0]}% - {value[1]}%"
@@ -483,6 +495,7 @@ def update_winrate_range(value):
         Input("winrate-range-slider", "value"),
         Input("display-rows-dropdown", "value"),
     ],
+    order=0,
 )
 def update_table(selected_format, popularity_range, winrate_range, page_size):
     if selected_format is None:
