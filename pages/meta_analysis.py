@@ -1,3 +1,4 @@
+import pandas as pd
 import dash
 from dash import html, dcc, Input, Output, callback, dash_table, no_update
 import dash_bootstrap_components as dbc
@@ -124,14 +125,12 @@ def choose_display_rows_component():
 
 # ============ Dynamic Content ============
 def generate_table(
-    selected_format,
+    pvpmetadata,
+    pokemonmetadata,
     lower_upper_pop=None,
     lower_upper_wr=None,
     page_size=10,
 ):
-    db = DatabaseData(selected_format)
-    pvpmetadata = db.get_pvpmetadata()
-    pokemonmetadata = db.get_pokemonmetadata()
 
     filt_monmetadata = filter_pokemon_metadata(
         pokemonmetadata, lower_upper_pop, lower_upper_wr
@@ -201,22 +200,23 @@ def filter_pokemon_metadata(pokemonmetadata, lower_upper_pop=None, lower_upper_w
 
 
 def calculate_matchups(pvpmetadata, pokemonmetadata, pokemon):
-    mon1_df = pvpmetadata[pvpmetadata["Pokemon1"] == pokemon]
-    mon2_df = pvpmetadata[pvpmetadata["Pokemon2"] == pokemon]
+    pvp = pvpmetadata.copy()
+    pvp = pvp[pvp["SampleSize"] >= 20]
+    mon1_df = pvp[pvp["Pokemon1"] == pokemon]
+    mon2_df = pvp[pvp["Pokemon2"] == pokemon]
     if mon1_df.empty and mon2_df.empty:
         return {
             "Best Matchup": ("No Data Found") * 3,
             "Worst Matchup": ("No Data Found") * 3,
         }
     else:
-        return find_best_worst_matchups(
-            pvpmetadata, pokemonmetadata, pokemon, mon1_df, mon2_df
-        )
+        return find_best_worst_matchups(pvp, pokemonmetadata, pokemon, mon1_df, mon2_df)
 
 
 def find_best_worst_matchups(
     pvpmetadata, pokemonmetadata, current_mon, mon1_df, mon2_df
 ):
+    
     mon1_df = pvpmetadata[pvpmetadata["Pokemon1"] == current_mon]
     mon2_df = pvpmetadata[pvpmetadata["Pokemon2"] == current_mon]
     # P1 vs P2 is the winrate displayed, so look at each df's first and last idxs
@@ -435,6 +435,8 @@ def layout():
     return html.Div(
         [
             navbar(),
+            dcc.Store("pvpmetadata-store"),
+            dcc.Store("monmetadata-store"),
             html.H1("Meta Analysis"),
             dbc.Row(  # Add this row to contain the filters
                 [
@@ -471,33 +473,55 @@ def layout():
 # ======================= Callbacks =======================
 @callback(
     [
+        Output("pvpmetadata-store", "data"),
+        Output("monmetadata-store", "data"),
+    ],
+    [Input("format-selector-meta-analysis", "value")],
+)
+def update_metadata_stores(selected_format):
+    if selected_format is None:
+        return no_update, no_update
+    else:
+        db = DatabaseData(selected_format)
+        pvpmetadata = db.get_pvpmetadata()
+        pokemonmetadata = db.get_pokemonmetadata()
+        return pvpmetadata.to_dict("records"), pokemonmetadata.to_dict("records")
+
+
+@callback(
+    [
         Output("popularity-range-slider", "min"),
         Output("popularity-range-slider", "max"),
         Output("popularity-range-slider", "value"),
         Output("popularity-range-display", "children"),
     ],
-    [Input("format-selector-meta-analysis", "value")],
+    [Input("monmetadata-store", "data")],
+    [Input("popularity-range-slider", "value")],
     order=1,
 )
-def update_slider_and_message(selected_format):
-    if not selected_format:
+def update_slider_and_message(pokemonmetadata, selected_min_max_pop):
+    if not pokemonmetadata:
         # Default values if no format is selected
         return 0, 100, [0, 100], "Please select a format to begin."
 
+    pokemonmetadata = pd.DataFrame(pokemonmetadata)
     # Fetch data based on the selected format
-    db = DatabaseData(selected_format)
-    pokemonmetadata = db.get_pokemonmetadata()
     max_pop = pokemonmetadata["Popularity"].max()
 
     # Adjust the slider to the new max and update the message accordingly
     new_min = 0
     new_max = max_pop
-    new_value = [
-        10,
-        max_pop,
-    ]  # Adjust the slider value as well to span the entire range
 
-    new_message = f"Selected Popularity Range: {new_value[0]}% - {new_value[1]}%"
+    smin_pop, smax_pop = selected_min_max_pop[0], selected_min_max_pop[1]
+    if smin_pop == 0 and smax_pop == 100:
+        new_value = [
+            10,
+            max_pop,
+        ]
+        new_message = f"Selected Popularity Range: {new_value[0]}% - {new_value[1]}%"
+    else:
+        new_value = [smin_pop, smax_pop]
+        new_message = f"Selected Popularity Range: {smin_pop}% - {smax_pop}%"
 
     return new_min, new_max, new_value, new_message
 
@@ -514,17 +538,22 @@ def update_winrate_range(value):
 @callback(
     Output("dynamic-content-meta-analysis", "children"),
     [
-        Input("format-selector-meta-analysis", "value"),
+        Input("pvpmetadata-store", "data"),
+        Input("monmetadata-store", "data"),
         Input("popularity-range-slider", "value"),
         Input("winrate-range-slider", "value"),
         Input("display-rows-dropdown", "value"),
     ],
     order=0,
 )
-def update_table(selected_format, popularity_range, winrate_range, page_size):
-    if selected_format is None:
+def update_table(pvpmetadata, monmetadata, popularity_range, winrate_range, page_size):
+    if pvpmetadata is None:
         return no_update
     else:
         return generate_table(
-            selected_format, popularity_range, winrate_range, page_size
+            pd.DataFrame(pvpmetadata),
+            pd.DataFrame(monmetadata),
+            popularity_range,
+            winrate_range,
+            page_size,
         )
