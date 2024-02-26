@@ -47,15 +47,15 @@ def get_active_teams(bi_df, ta):
     return teams
 
 
-def update_no_longer_seen_mons(all_mons, previously_seen_mons, f):
+def update_no_longer_seen_mons(all_mons, previously_seen_mons, fmat):
     no_longer_seen_mons = [mon for mon in previously_seen_mons if mon not in all_mons]
     with session_scope() as session:
         for mon in no_longer_seen_mons:
             # Delete the row from pokemonmetadata table
-            session.query(pokemonmetadata).filter_by(Format=f, Pokemon=mon).delete()
+            session.query(pokemonmetadata).filter_by(Format=fmat, Pokemon=mon).delete()
 
             # Delete all rows in pvpmetadata table for that particular mon + format combo
-            session.query(pvpmetadata).filter_by(Format=f).filter(
+            session.query(pvpmetadata).filter_by(Format=fmat).filter(
                 sqlalchemy.or_(pvpmetadata.Pokemon1 == mon, pvpmetadata.Pokemon2 == mon)
             ).delete()
 
@@ -118,9 +118,10 @@ def update_metadata():
     ta = TableAccessor()
     bi_df, teams = get_battle_info_and_teams_for_viable_formats(threshold, ta)
     for fmat in bi_df["Format"].unique():
-        fmat_df = bi_df[bi_df["Format"] == fmat]
-        mon_teams_dict = get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
-            fmat, bi_df, teams, ta, threshold
+        mon_teams_dict, fmat_df = (
+            get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
+                fmat, bi_df, teams, ta, threshold
+            )
         )
         new_pokemon_metadata = calculate_overall_metadata_values(
             fmat_df, mon_teams_dict
@@ -157,10 +158,9 @@ def get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
     f_condition = {
         "Format": {"op": "==", "value": fmat},
     }
-    current_pokemon_metadata = ta.get_pokemonmetadata(f_condition)
     print(f"=================Starting format {fmat}===================")
     f_info = bi_df[bi_df["Format"] == fmat]
-    # get up to the last 2000 / (1-quantile) battles (to capping at 2000 most recent battles)
+    # get up to the last 2000 / (1-threshold) most recent battles
     f_info = f_info.sort_values(by="Date_Submitted", ascending=False)
     f_info = f_info.head(round(2000 / (1 - quantile_threshold)))
     rank_limit = get_rank_limit_based_on_quantile(f_info, quantile_threshold)
@@ -172,6 +172,7 @@ def get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
     all_mons = pd.concat([format_teams[f"Pok{i}"] for i in range(1, 7)]).unique()
     # 12-6-23: got bad teams with a mon with "|" in it so ensure this does not populate the db
     all_mons = [mon for mon in all_mons if mon != None and "|" not in mon]
+    current_pokemon_metadata = ta.get_pokemonmetadata(f_condition)
     update_no_longer_seen_mons(
         all_mons, current_pokemon_metadata["Pokemon"].unique(), fmat
     )
@@ -181,7 +182,7 @@ def get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
         ]
         for mon in all_mons
     }
-    return mon_teams_dict
+    return mon_teams_dict, f_info
 
 
 def calculate_overall_metadata_values(fmat_df, mon_teams_dict):
@@ -218,7 +219,7 @@ def calculate_mon_v_mon_metadata_values(fmat_df, mon_teams_dict):
     new_pvp_metadata = []
     total_combinations = comb(len(fmat_df.keys()), 2)
     for mon1, mon2 in tqdm(
-        combinations(fmat_df.keys(), 2),
+        combinations(mon_teams_dict.keys(), 2),
         total=total_combinations,
         desc="Calculating All PvP Winrates",
     ):
@@ -265,6 +266,8 @@ def calculate_mon_v_mon_metadata_values(fmat_df, mon_teams_dict):
 
         new_pvp_metadata.append(pvp_meta_data_kwargs)
 
+    return new_pvp_metadata
+
 
 def upload_new_metadata(new_pokemon_metadata, new_pvp_metadata):
     with session_scope() as session:
@@ -278,6 +281,7 @@ def upload_new_metadata(new_pokemon_metadata, new_pvp_metadata):
         print("Finished staging PvP Metadata")
 
     print("Data committed to database")
+
 
 if __name__ == "__main__":
     update_metadata()
