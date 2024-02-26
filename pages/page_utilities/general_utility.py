@@ -96,15 +96,14 @@ class DatabaseData:
         return self.pokemonmetadata
 
     # NOTE this is used to determine default format on main page as well as what formats are viable
-    def get_viable_formats(self):
+    # 4k is min for metadata tables
+    def get_viable_formats(self, min_battles=4000):
         sessionmaker = self.ta.session_maker
         with session_scope(sessionmaker()) as session:
             viable_formats = (
                 session.query(battle_info.Format)
                 .group_by(battle_info.Format)
-                .having(
-                    func.count(battle_info.Format) >= 4000
-                )  # 4k is min for metadata tables
+                .having(func.count(battle_info.Format) >= min_battles)
                 .all()
             )
             viable_formats = [f[0] for f in viable_formats]
