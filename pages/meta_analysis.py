@@ -159,17 +159,7 @@ def generate_table(
         {"name": "Pokemon", "id": "Pokemon"},
         {"name": "Winrate", "id": "Winrate"},
         {"name": "Popularity", "id": "Popularity"},
-        {
-            "name": "Best Matchup Sprite",
-            "id": "Best_Matchup_Sprite",
-            "presentation": "markdown",
-        },
-        {"name": "Best Matchup", "id": "Best Matchup"},
-        {"name": "Winrate into Best Matchup", "id": "Winrate into Best Matchup"},
-        {
-            "name": "Popularity of Best Matchup Mon",
-            "id": "Popularity of Best Matchup Mon",
-        },
+        # ------ worst matchup ------
         {
             "name": "Worst Matchup Sprite",
             "id": "Worst_Matchup_Sprite",
@@ -180,6 +170,18 @@ def generate_table(
         {
             "name": "Popularity of Worst Matchup Mon",
             "id": "Popularity of Worst Matchup Mon",
+        },
+        # ------ best matchup ------
+        {
+            "name": "Best Matchup Sprite",
+            "id": "Best_Matchup_Sprite",
+            "presentation": "markdown",
+        },
+        {"name": "Best Matchup", "id": "Best Matchup"},
+        {"name": "Winrate into Best Matchup", "id": "Winrate into Best Matchup"},
+        {
+            "name": "Popularity of Best Matchup Mon",
+            "id": "Popularity of Best Matchup Mon",
         },
     ]
     data = create_table_data(all_mons, pokemonmetadata, mons2bestworst)
@@ -304,9 +306,6 @@ def find_best_worst_matchups(
                 "Popularity"
             ].values[0],
         )
-    print(
-        f"------ current mon = {current_mon} ------\nbest matchup = {best_matchup}\nworst matchup = {worst_matchup}"
-    )
     return {
         "Best Matchup": best_matchup,
         "Worst Matchup": worst_matchup,
@@ -326,18 +325,18 @@ def create_table_data(all_mons, pokemonmetadata, mons2bestworst):
             "Pokemon": mon,
             "Winrate": f"{pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Winrate'].values[0]}%",
             "Popularity": f"{pokemonmetadata[pokemonmetadata['Pokemon'] == mon]['Popularity'].values[0]}%",
-            "Best_Matchup_Sprite": generate_markdown_for_sprite(
-                mons2bestworst[mon]["Best Matchup"][0]
-            ),
-            "Best Matchup": mons2bestworst[mon]["Best Matchup"][0],
-            "Winrate into Best Matchup": mons2bestworst[mon]["Best Matchup"][1],
-            "Popularity of Best Matchup Mon": mons2bestworst[mon]["Best Matchup"][2],
             "Worst_Matchup_Sprite": generate_markdown_for_sprite(
                 mons2bestworst[mon]["Worst Matchup"][0]
             ),
             "Worst Matchup": mons2bestworst[mon]["Worst Matchup"][0],
             "Winrate into Worst Matchup": mons2bestworst[mon]["Worst Matchup"][1],
             "Popularity of Worst Matchup Mon": mons2bestworst[mon]["Worst Matchup"][2],
+            "Best_Matchup_Sprite": generate_markdown_for_sprite(
+                mons2bestworst[mon]["Best Matchup"][0]
+            ),
+            "Best Matchup": mons2bestworst[mon]["Best Matchup"][0],
+            "Winrate into Best Matchup": mons2bestworst[mon]["Best Matchup"][1],
+            "Popularity of Best Matchup Mon": mons2bestworst[mon]["Best Matchup"][2],
         }
         data.append(row)
     return data
@@ -348,22 +347,70 @@ def create_datatable(columns, data, page_size=10):
         id="meta-analysis-table",
         columns=columns,
         data=data,
-        style_table={"overflowX": "auto"},
-        style_cell={"textAlign": "center"},
-        style_data_conditional=[
-            {"if": {"column_id": c}, "textAlign": "left"}
-            for c in ["Pokemon", "Best Counter", "Worst Counter"]
-        ],
-        style_header={"backgroundColor": "rgb(30, 30, 30)", "color": "white"},
-        style_data={"backgroundColor": "rgb(50, 50, 50)", "color": "white"},
+        style_table={
+            "overflowX": "auto",
+        },
+        style_cell={
+            "textAlign": "left",
+            "minWidth": "100px",
+            "maxWidth": "200px",
+            "width": "150px",
+            "whiteSpace": "normal",
+            "height": "auto",
+        },
+        style_data_conditional=generate_style_data_conditional(columns),
+        style_header={
+            "backgroundColor": "rgb(30, 30, 30)",
+            "color": "white",
+            "fontWeight": "bold",
+            "whiteSpace": "normal",
+            "height": "auto",
+        },
+        style_data={
+            "backgroundColor": "rgb(50, 50, 50)",
+            "color": "white",
+        },
         # Enable pagination
         page_action="native",
         page_size=page_size,
         page_current=0,
-        sort_action="native",
+        sort_action="native",  # Enables sorting
     )
 
     return table
+
+
+def generate_style_data_conditional(columns):
+    style_data_conditional = []
+
+    for column in columns:
+        column_id = column.get("id")
+        if "Best Matchup" in column_id:
+            style_data_conditional.append(
+                {
+                    "if": {"column_id": column_id},
+                    "backgroundColor": "#ADD8E6",  # Light Blue for "Best Matchup"
+                    "color": "black",
+                }
+            )
+        elif "Worst Matchup" in column_id:
+            style_data_conditional.append(
+                {
+                    "if": {"column_id": column_id},
+                    "backgroundColor": "#FFA07A",  # Light Salmon for "Worst Matchup"
+                    "color": "black",
+                }
+            )
+
+        elif column_id in ["Pokemon", "Best Counter", "Worst Counter"]:
+            style_data_conditional.append(
+                {
+                    "if": {"column_id": column_id},
+                    "textAlign": "left",
+                }
+            )
+
+    return style_data_conditional
 
 
 # ============ Layout ============
