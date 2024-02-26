@@ -2,11 +2,16 @@ import dash
 from dash import html, dcc, Input, Output, callback, dash_table, no_update
 import dash_bootstrap_components as dbc
 from .navbar import navbar
-from .general_utility import find_closest_sprite
-from .team_analysis_funcs import (
+from .page_utilities.general_utility import find_closest_sprite
+from .page_utilities.team_analysis_funcs import (
     get_viable_pokemon,
 )
-from .team_classes import DatabaseData, FormatData, TeamSolver, DisplayTeam
+from .page_utilities.team_classes import (
+    DatabaseData,
+    FormatData,
+    TeamSolver,
+    DisplayTeam,
+)
 
 dash.register_page(__name__, path="/team_analysis")
 

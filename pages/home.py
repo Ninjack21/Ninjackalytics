@@ -3,7 +3,7 @@ from dash import html, dcc, Input, Output, callback
 import dash_bootstrap_components as dbc
 import random
 from .navbar import navbar
-from .general_utility import get_random_sprite
+from .page_utilities.general_utility import get_random_sprite
 
 dash.register_page(__name__, path="/")
 

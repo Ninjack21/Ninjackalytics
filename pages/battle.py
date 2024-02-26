@@ -5,7 +5,7 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 from ninjackalytics.services.battle_parsing import BattleParser, Battle, BattlePokemon
 from .navbar import navbar
-from .battle_funcs import (
+from .page_utilities.battle_funcs import (
     parse_and_return_battle_data,
     generate_damages_figures,
     generate_healing_figures,
