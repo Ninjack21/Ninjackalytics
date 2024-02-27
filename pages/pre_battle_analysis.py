@@ -3,6 +3,8 @@ from datetime import datetime
 import dash
 from dash import html, dcc, Input, Output, State, callback, dash_table, no_update
 import dash_bootstrap_components as dbc
+import plotly.graph_objects as go
+import plotly.colors as pcolors
 from .navbar import navbar
 from .page_utilities.general_utility import (
     find_closest_sprite,
@@ -118,13 +120,127 @@ def display_teams_with_sprites(team1=None, team2=None, p1_name=None, p2_name=Non
                         "vertical-align": "top",
                     },
                 ),
-                html.Div(html.H3("I am not yet complete...")),
             ],
             style={
                 "width": "100%",
                 "display": "flex",
                 "justify-content": "center",
             },
+        )
+
+
+def display_top_threats(
+    team1=None,
+    team2=None,
+    fmat=None,
+    p1_name=None,
+    p2_name=None,
+    engine_name="antimeta",
+):
+    db = DatabaseData(fmat)
+    fdata = FormatData(fmat, db)
+    winrate_calculator = WinrateCalculator(fdata, engine_name)
+
+    if team1 is None or team2 is None or fmat is None:
+        return html.Div("")
+    else:
+        winrates1 = winrate_calculator.get_team_winrate_against_other_team(team1, team2)
+        winrates2 = winrate_calculator.get_team_winrate_against_other_team(team2, team1)
+
+        norm1 = winrate_calculator.normalized_winrate(winrates1, team2)
+        norm2 = winrate_calculator.normalized_winrate(winrates2, team1)
+
+        team1_avg_norm_wr = (norm1 + (100 - norm2)) / 2
+
+        # WR calc returns the expected winrates against each mon on the opposing team (index) so have to
+        # reverse here to see the expected winrates for the originally passed in team (which shows up as the idx
+        # of the opposite calculated wrs. I know that's confusing)
+        team1_wr = winrates2.copy()
+        team2_wr = winrates1.copy()
+
+        team1_wr["winrate"] = 100 - team1_wr["winrate"]
+        team2_wr["winrate"] = 100 - team2_wr["winrate"]
+
+        team1_wr = team1_wr.sort_values("winrate", ascending=False)
+        team2_wr = team2_wr.sort_values("winrate", ascending=False)
+
+        chosen_palette = pcolors.sequential.ice
+
+        global_min_wr = min(team1_wr["winrate"].min(), team2_wr["winrate"].min())
+        global_max_wr = max(team1_wr["winrate"].max(), team2_wr["winrate"].max())
+
+        # Function to map winrate to color with a smooth transition from 0 to 100
+        def map_winrate_to_color(winrate, chosen_palette=chosen_palette):
+            # Normalize the winrate to the range [0, 1]
+            normalized = winrate / 100
+            # Calculate the color index based on the normalized winrate
+            color_index = int(normalized * (len(chosen_palette) - 1))
+            # Ensure the color index is within the bounds of the palette
+            color_index = max(0, min(color_index, len(chosen_palette) - 1))
+            return chosen_palette[color_index]
+
+        # Apply color mapping
+        colors1 = team1_wr["winrate"].apply(map_winrate_to_color)
+        colors2 = team2_wr["winrate"].apply(map_winrate_to_color)
+
+        fig1 = go.Figure()
+        fig1.add_trace(
+            go.Bar(
+                x=team1_wr.index,
+                y=team1_wr["winrate"],
+                marker_color=colors1,
+            )
+        )
+
+        fig2 = go.Figure()
+        fig2.add_trace(
+            go.Bar(
+                x=team2_wr.index,
+                y=team2_wr["winrate"],
+                marker_color=colors2,
+            )
+        )
+
+        fig1.update_layout(
+            template="plotly_dark",
+            title=f"{p1_name}'s Threats Defined by Expected Winrate<br>against Enemy Team"
+            + "<br>White=100, Dark Blue=0",
+        )
+        fig2.update_layout(
+            template="plotly_dark",
+            title=f"{p2_name}'s Threats Defined by Expected Winrate<br>against Enemy Team"
+            + "<br>White=100, Dark Blue=0",
+        )
+
+        expected_winrate_text = (
+            f"Expected likelihood of {p1_name} winning: {team1_avg_norm_wr:.2f}%"
+        )
+
+        return html.Div(
+            [
+                html.H3(expected_winrate_text, style={"textAlign": "center"}),
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=fig1,
+                            style={
+                                "width": "49%",
+                                "display": "inline-block",
+                                "padding": "20px",
+                            },
+                        ),
+                        dcc.Graph(
+                            figure=fig2,
+                            style={
+                                "width": "49%",
+                                "display": "inline-block",
+                                "padding": "20px",
+                            },
+                        ),
+                    ],
+                    style={"display": "flex", "justify-content": "space-around"},
+                ),
+            ]
         )
 
 
@@ -206,10 +322,14 @@ def update_dynamic_content(fmat, battle_input):
     team1 = team1_text.split(" / ")
     team2 = team2_text.split(" / ")
 
-    print(team1)
-    print(team2)
-
     p1_name = battle_input.split("'s team:\n")[0].split("\n")[-1]
     p2_name = battle_input.split("'s team:\n")[1].split("\n")[-1]
 
-    return [display_teams_with_sprites(team1, team2, p1_name, p2_name)]
+    return [
+        html.Div(
+            [
+                display_teams_with_sprites(team1, team2, p1_name, p2_name),
+                display_top_threats(team1, team2, fmat, p1_name, p2_name),
+            ]
+        )
+    ]

@@ -135,6 +135,7 @@ def update_metadata():
 
 def get_battle_info_and_teams_for_viable_formats(metadata_quantile_threshold, ta):
     with session_scope() as session:
+        # require that at a minimum, ~800 high rank battles be found before storing data
         viable_formats = (
             session.query(battle_info.Format)
             .group_by(battle_info.Format)
@@ -163,9 +164,10 @@ def get_fmat_mon_teams_dict_and_remove_no_longer_found_mons(
     }
     print(f"=================Starting format {fmat}===================")
     f_info = bi_df[bi_df["Format"] == fmat]
-    # get up to the last 2000 / (1-threshold) most recent battles
+    # get up to the last 2200 / (1-threshold) most recent battles (quantile thresholds not perfect so
+    # 2200 helps ensure will get at least 2k, if that many exist, each time)
     f_info = f_info.sort_values(by="Date_Submitted", ascending=False)
-    f_info = f_info.head(round(2000 / (1 - quantile_threshold)))
+    f_info = f_info.head(round(2200 / (1 - quantile_threshold)))
     rank_limit = get_rank_limit_based_on_quantile(f_info, quantile_threshold)
     f_info = f_info[f_info["Rank"] >= rank_limit]
     print(f"Rank Limit: {rank_limit} | Battles: {len(f_info)}")

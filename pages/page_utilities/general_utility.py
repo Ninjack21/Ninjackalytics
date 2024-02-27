@@ -185,8 +185,7 @@ class WinrateCalculator:
 
     def get_team_winrate_against_other_team(self, team1: List[str], team2: List[str]):
         team1vteam2 = self.engine(team1, team2)
-
-        return
+        return team1vteam2
 
     def _synergy_winrate(self, team: List[str]):
         pass
