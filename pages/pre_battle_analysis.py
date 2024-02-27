@@ -1,8 +1,5 @@
-import pandas as pd
-from datetime import datetime
 import dash
-from dash import html, dcc, Input, Output, State, callback, dash_table, no_update
-import dash_bootstrap_components as dbc
+from dash import html, dcc, Input, Output, State, callback, no_update
 import plotly.graph_objects as go
 import plotly.colors as pcolors
 from .navbar import navbar

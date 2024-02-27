@@ -271,8 +271,14 @@ class WinrateCalculator:
         return team_mons_in_mon1
 
     def _get_presumed_winrate(self, mon: str) -> float:
-        format_metadata = self.format_data.format_metadata
-        return (
-            100
-            - format_metadata[format_metadata["Pokemon"] == mon]["Winrate"].values[0]
-        )
+        try:
+            format_metadata = self.format_data.format_metadata
+            return (
+                100
+                - format_metadata[format_metadata["Pokemon"] == mon]["Winrate"].values[
+                    0
+                ]
+            )
+        # if the mon is not in the format, return 50
+        except IndexError:
+            return 50
