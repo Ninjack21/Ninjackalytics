@@ -81,6 +81,7 @@ def upload_new_data(session, db_class, row: dict):
 # built separate func to handle alphabetizing mon1 into mon2
 def insert_or_update_matchup(session, row: dict):
     mon1, mon2 = row["Pokemon1"], row["Pokemon2"]
+    fmat = row["Format"]
     if mon1 > mon2:
         # ensure alphabetical standard
         mon1, mon2 = mon2, mon1
@@ -92,7 +93,9 @@ def insert_or_update_matchup(session, row: dict):
         row["Pokemon2"] = mon2
 
     existing_matchup = (
-        session.query(pvpmetadata).filter_by(Pokemon1=mon1, Pokemon2=mon2).first()
+        session.query(pvpmetadata)
+        .filter_by(Pokemon1=mon1, Pokemon2=mon2, Format=fmat)
+        .first()
     )
     if existing_matchup is None:
         new_matchup = pvpmetadata(**row)
