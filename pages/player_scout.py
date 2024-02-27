@@ -160,7 +160,7 @@ def player_scout_dynamic_content(player_name, fmat, date):
 
 def _p_team_plots(p_teams_df):
     p_teams_df = p_teams_df.sort_values(by="Usage", ascending=False)
-    p_teams_df = p_teams_df[p_teams_df["Usage"] >= 15]  # 5% minimum usage
+    p_teams_df = p_teams_df[p_teams_df["Usage"] >= 10]
     p_teams_df = p_teams_df.sort_values(by="Usage", ascending=False)
 
     unique_mons = p_teams_df["Mon"].unique()
@@ -208,13 +208,13 @@ def _p_team_plots(p_teams_df):
 
 
 def _o_team_plots(o_teams_df):
-    top_25_perc_wrs = o_teams_df["Winrate"].quantile(0.75)
+    threshold_wr = o_teams_df["Winrate"].quantile(0.75)
     o_teams_df = o_teams_df[
-        (o_teams_df["Usage"] >= 5) & (o_teams_df["Winrate"] >= top_25_perc_wrs)
+        (o_teams_df["Usage"] >= 5) & (o_teams_df["Winrate"] >= threshold_wr)
     ]
     unique_mons = o_teams_df["Mon"].unique()
     num_colors = len(unique_mons)
-    colors = px.colors.sample_colorscale("Rainbow", np.linspace(0, 1, num_colors))
+    colors = px.colors.sample_colorscale("Hot", np.linspace(0, 1, num_colors))
     mon_color_mapping = {mon: color for mon, color in zip(unique_mons, colors)}
 
     o_teams_df = o_teams_df.sort_values(by="Winrate", ascending=False)
