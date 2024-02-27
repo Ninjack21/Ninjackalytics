@@ -1,112 +1,14 @@
-from pages.page_utilities.general_utility import DatabaseData, FormatData
+from pages.page_utilities.general_utility import (
+    DatabaseData,
+    FormatData,
+    WinrateCalculator,
+)
 import pandas as pd
 from typing import List, Tuple, Dict
 import multiprocessing
 from multiprocessing import Pool
 from functools import partial
 import psutil
-
-
-class WinrateCalculator:
-    def __init__(self, format_data: FormatData, engine_name: str):
-        self.format_data = format_data
-        self.engine_name = engine_name
-        winrate_engine = {
-            "synergy": self._synergy_winrate,
-            "antimeta": self._antimeta_winrate,
-            "star_mon": self._star_mon_winrate,
-        }
-        self.engine = winrate_engine[self.engine_name]
-
-    def normalized_winrate(self, team_winrates: pd.DataFrame) -> pd.DataFrame:
-        top30 = self.format_data.top30.copy()
-        top30 = top30.set_index("Pokemon")
-        top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
-        team_winrates = team_winrates.rename(columns={"winrate": "Team Winrate"})
-        merged_df = team_winrates.merge(top30, how="left", on="Pokemon")
-        merged_df["Relative Popularity"] = (
-            merged_df["Popularity"] / merged_df["Popularity"].sum()
-        )
-        merged_df["Normalized Winrate"] = (
-            merged_df["Team Winrate"] * merged_df["Relative Popularity"]
-        )
-        merged_df = merged_df.drop(columns=["Popularity", "Relative Popularity"])
-
-        return merged_df["Normalized Winrate"].sum()
-
-    def get_team_winrate_against_meta(self, team: List[str]):
-        engine_method = self.engine
-        winrates = engine_method(team)
-        return winrates
-
-    def _synergy_winrate(self, team: List[str]):
-        pass
-
-    def _star_mon_winrate(self, team: List[str]):
-        pass
-
-    def _antimeta_winrate(self, team: List[str]):
-        winrates = {}
-        for top30mon in self.format_data.top30["Pokemon"].tolist():
-            (
-                team_mons_in_pokemon1,
-                team_mons_in_pokemon2,
-            ) = self._get_mon_vs_mon_winrates(top30mon, team)
-            team_v_top30mon_df = self._merge_team_mons_into_mon1(
-                team_mons_in_pokemon1, team_mons_in_pokemon2
-            )
-            # if the cumulative team sample size into a mon is less than 70, use presumed
-            if team_v_top30mon_df["SampleSize"].sum() < 70:
-                winrates[top30mon] = self._get_presumed_winrate(top30mon)
-            else:
-                # handle antimeta winrate calc
-                winrate = team_v_top30mon_df[
-                    "Winrate"
-                ].mean()  # assume each mon's weight is equal
-                winrates[top30mon] = winrate
-        winrates = pd.DataFrame.from_dict(winrates, orient="index", columns=["winrate"])
-        winrates.index.name = "Pokemon"
-
-        return winrates
-
-    def _get_mon_vs_mon_winrates(
-        self, opposing_mon: str, team: List[str]
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        format_pvp = self.format_data.format_pvpmetadata
-        team_mons_in_pokemon1 = format_pvp[
-            (format_pvp["Pokemon1"].isin(team))
-            & (format_pvp["Pokemon2"] == opposing_mon)
-        ].copy()
-        team_mons_in_pokemon2 = format_pvp[
-            (format_pvp["Pokemon2"].isin(team))
-            & (format_pvp["Pokemon1"] == opposing_mon)
-        ].copy()
-
-        # Check if the opposing mon exists in the team
-        if opposing_mon in team:
-            # Remove the opposing mon instance from team_mons_in_pokemon2 dataframe
-            team_mons_in_pokemon2 = team_mons_in_pokemon2[
-                team_mons_in_pokemon2["Pokemon2"] != opposing_mon
-            ]
-
-        return team_mons_in_pokemon1, team_mons_in_pokemon2
-
-    def _merge_team_mons_into_mon1(
-        self, team_mons_in_mon1: pd.DataFrame, team_mons_in_mon2: pd.DataFrame
-    ) -> pd.DataFrame:
-        team_mons_in_mon2["Winrate"] = 100 - team_mons_in_mon2["Winrate"]
-        team_mons_in_mon2 = team_mons_in_mon2.rename(
-            columns={"Pokemon1": "Pokemon2", "Pokemon2": "Pokemon1"}
-        )
-        team_mons_in_mon1 = pd.concat(
-            [team_mons_in_mon1, team_mons_in_mon2], ignore_index=True
-        )
-        return team_mons_in_mon1
-
-    def _get_presumed_winrate(self, top30mon: str) -> float:
-        top30 = self.format_data.top30
-        # reverse the winrate because we want to get the team's expected winrate into the top30 mon
-        return 100 - top30[top30["Pokemon"] == top30mon]["Winrate"].values[0]
 
 
 class CreativityRestrictor:
