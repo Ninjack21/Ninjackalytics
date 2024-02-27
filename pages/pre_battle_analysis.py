@@ -118,6 +118,7 @@ def display_teams_with_sprites(team1=None, team2=None, p1_name=None, p2_name=Non
                         "vertical-align": "top",
                     },
                 ),
+                html.Div(html.H3("I am not yet complete...")),
             ],
             style={
                 "width": "100%",
@@ -204,6 +205,9 @@ def update_dynamic_content(fmat, battle_input):
     team2_text = battle_input.split("'s team:\n")[2].split("\n")[0]
     team1 = team1_text.split(" / ")
     team2 = team2_text.split(" / ")
+
+    print(team1)
+    print(team2)
 
     p1_name = battle_input.split("'s team:\n")[0].split("\n")[-1]
     p2_name = battle_input.split("'s team:\n")[1].split("\n")[-1]

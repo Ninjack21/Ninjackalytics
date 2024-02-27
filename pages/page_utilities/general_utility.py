@@ -144,15 +144,33 @@ class WinrateCalculator:
         }
         self.engine = winrate_engine[self.engine_name]
 
-    def normalized_winrate(self, team_winrates: pd.DataFrame) -> pd.DataFrame:
-        top30 = self.format_data.top30.copy()
-        top30 = top30.set_index("Pokemon")
-        top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
-        team_winrates = team_winrates.rename(columns={"winrate": "Team Winrate"})
-        merged_df = team_winrates.merge(top30, how="left", on="Pokemon")
-        merged_df["Relative Popularity"] = (
-            merged_df["Popularity"] / merged_df["Popularity"].sum()
-        )
+    def normalized_winrate(
+        self, team_winrates: pd.DataFrame, opposing_team=None
+    ) -> pd.DataFrame:
+        # if opposing_team is None, we are calculating the winrate against the meta
+        if opposing_team is None:
+            top30 = self.format_data.top30.copy()
+            top30 = top30.set_index("Pokemon")
+            top30 = top30.rename(columns={"Winrate": "Top30 Base Winrate"})
+            team_winrates = team_winrates.rename(columns={"winrate": "Team Winrate"})
+            merged_df = team_winrates.merge(top30, how="left", on="Pokemon")
+            merged_df["Relative Popularity"] = (
+                merged_df["Popularity"] / merged_df["Popularity"].sum()
+            )
+        # if opposing_team is not None, we are calculating the winrate against another team
+        else:
+            other_mons = self.format_data.format_metadata.copy()
+            other_mons = other_mons[other_mons["Pokemon"].isin(opposing_team)]
+            other_mons = other_mons.set_index("Pokemon")
+            other_mons = other_mons.rename(
+                columns={"Winrate": "Opposing Team Base Winrate"}
+            )
+            team_winrates = team_winrates.rename(columns={"winrate": "Team Winrate"})
+            merged_df = team_winrates.merge(other_mons, how="left", on="Pokemon")
+            merged_df["Relative Popularity"] = (
+                merged_df["Popularity"] / merged_df["Popularity"].sum()
+            )
+
         merged_df["Normalized Winrate"] = (
             merged_df["Team Winrate"] * merged_df["Relative Popularity"]
         )
@@ -166,12 +184,9 @@ class WinrateCalculator:
         return winrates
 
     def get_team_winrate_against_other_team(self, team1: List[str], team2: List[str]):
-        team1_winrates = self.get_team_winrate_against_meta(team1)
-        team2_winrates = self.get_team_winrate_against_meta(team2)
-        team1_winrate = self.normalized_winrate(team1_winrates)
-        team2_winrate = self.normalized_winrate(team2_winrates)
+        team1vteam2 = self.engine(team1, team2)
 
-        return team1_winrate, team2_winrate
+        return
 
     def _synergy_winrate(self, team: List[str]):
         pass
