@@ -1,7 +1,8 @@
 import dash
 import dash_bootstrap_components as dbc
 from flask import Flask
-from .config import SECRET_KEY
+from datetime import timedelta
+from pages.config import SECRET_KEY
 
 server = Flask(__name__)
 server.secret_key = SECRET_KEY
@@ -15,12 +16,8 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
-# (Optional) Configure session lifetime or other Flask session settings
-from datetime import timedelta
 
-server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
-    days=7
-)  # Sessions last for 7 days
+server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 
 if __name__ == "__main__":
     app.run_server(debug=True)

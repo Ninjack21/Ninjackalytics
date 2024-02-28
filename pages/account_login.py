@@ -1,4 +1,5 @@
 # Assuming this is in a file named login.py in your 'pages' directory
+from flask import session
 import dash
 from dash import html, dcc, callback, Output, Input, State, no_update
 import dash_bootstrap_components as dbc
@@ -65,10 +66,15 @@ def layout():
 def login(n_clicks, username, password):
     if n_clicks is None or n_clicks < 1:
         return no_update
-    with get_sessionlocal() as session:
-        user = session.query(User).filter_by(username=username).first()
+    with get_sessionlocal() as db_session:
+        user = db_session.query(User).filter_by(username=username).first()
         if user and check_password_hash(user.hashed_password, password):
-            # Here you would handle successful login, e.g., by setting session data
+            # Set the user's ID (or username) in the session to indicate they are logged in
+            session["user_id"] = user.id  # Or use username if you prefer
+            session.permanent = (
+                True  # Make the session permanent so it lasts beyond a single request
+            )
+
             return "Login successful"
         else:
             return "Invalid username or password"
