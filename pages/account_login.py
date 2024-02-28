@@ -70,7 +70,9 @@ def login(n_clicks, username, password):
         user = db_session.query(User).filter_by(username=username).first()
         if user and check_password_hash(user.hashed_password, password):
             # Set the user's ID (or username) in the session to indicate they are logged in
-            session["user_id"] = user.id  # Or use username if you prefer
+            session["username"] = user.username
+            session["role_id"] = user.role
+            session["subscription_tier_id"] = user.subscription_tier
             session.permanent = (
                 True  # Make the session permanent so it lasts beyond a single request
             )

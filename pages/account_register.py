@@ -105,11 +105,18 @@ def register(n_clicks, username, password, email):
         existing_email = session.query(User).filter_by(email=email).first()
         if existing_email:
             return "Email already in use"
+
+        # default subscription tier is Free and role is User
+        # get the default sub tier id and default role id
+        sub_id = session.query(SubscriptionTiers).filter_by(tier="Free").first()
+        role_id = session.query(Roles).filter_by(role="User").first()
+
         new_user = User(
             username=username,
             hashed_password=hashed_password,
             email=email,
-            subscription_tier="Free",
+            subscription_tier=sub_id.id,
+            role=role_id.id,
         )
         session.add(new_user)
         session.commit()
