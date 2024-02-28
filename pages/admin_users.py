@@ -1,5 +1,6 @@
 import dash
 from dash import html, callback, Output, Input, State, no_update, dash_table, dcc
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import User
 from ninjackalytics.database import get_sessionlocal
@@ -42,6 +43,23 @@ def layout():
             navbar(),
             dcc.Store(id="users-table-store", data=data),
             html.H1("Manage User", style={"color": "white"}),
+            html.Div(
+                [
+                    dbc.Input(
+                        id="filter-input",
+                        placeholder="Enter filters (e.g., 'username=a_user_name,email=a_email')",
+                        type="text",
+                        className="mb-3",
+                    ),
+                    dbc.Button(
+                        "Apply Filters",
+                        id="apply-filters-button",
+                        color="primary",
+                        className="mb-3",
+                    ),
+                ],
+                className="d-flex justify-content-center",
+            ),
             # ------- User Table -------
             dash_table.DataTable(
                 id="users-table",
@@ -63,6 +81,8 @@ def layout():
                 style_data_conditional=[
                     {"if": {"row_index": "odd"}, "backgroundColor": "rgb(60, 60, 60)"}
                 ],
+                page_action="native",
+                page_size=20,
             ),
             dbc.Button(
                 "Update User",
@@ -81,6 +101,48 @@ def layout():
             "z-index": "0",
         },
     )
+
+
+@callback(
+    Output("users-table", "data"),
+    Input("apply-filters-button", "n_clicks"),
+    State("filter-input", "value"),
+    prevent_initial_call=True,
+)
+def apply_filters(n_clicks, filter_input):
+    if not n_clicks:
+        raise PreventUpdate
+
+    filters = {}
+    if filter_input:
+        filter_pairs = filter_input.split(",")
+        for pair in filter_pairs:
+            key, value = pair.split("=")
+            filters[key.strip()] = value.strip()
+
+    session = get_sessionlocal()
+    query = session.query(User)
+
+    for key, value in filters.items():
+        if hasattr(User, key):
+            query = query.filter(getattr(User, key).like(f"%{value}%"))
+
+    users_data = query.all()
+    session.close()
+
+    return [
+        {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "subscription_tier": user.subscription_tier,
+            "subscription_type": user.subscription_type,
+            "renewal_date": str(user.renewal_date),
+            "code_used": user.code_used,
+        }
+        for user in users_data
+    ]
 
 
 @callback(

@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import SubscriptionPages, Pages, SubscriptionTiers
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
+from ninjackalytics.database.models import SubscriptionPages
 
 dash.register_page(__name__, path="/admin_subscriptionpages")
 
@@ -68,6 +69,23 @@ def layout():
                 className="mb-3",
             ),
             html.Div(id="create-subscription-page-feedback", style={"color": "white"}),
+            html.Div(
+                [
+                    dbc.Input(
+                        id="filter-input",
+                        placeholder="Enter filters",
+                        type="text",
+                        className="mb-3",
+                    ),
+                    dbc.Button(
+                        "Apply Filters",
+                        id="apply-filters-button",
+                        color="primary",
+                        className="mb-3",
+                    ),
+                ],
+                className="d-flex justify-content-center",
+            ),
             # -------------Subscription Pages Table-------------
             dash_table.DataTable(
                 id="subscription-pages-table",
@@ -107,6 +125,44 @@ def layout():
             "z-index": "0",
         },
     )
+
+
+@callback(
+    Output("subscription-pages-table", "data"),
+    Input("apply-filters-button", "n_clicks"),
+    State("filter-input", "value"),
+    prevent_initial_call=True,
+)
+def apply_filters(n_clicks, filter_input):
+    if not n_clicks:
+        raise PreventUpdate
+
+    filters = {}
+    if filter_input:
+        filter_pairs = filter_input.split(",")
+        for pair in filter_pairs:
+            key, value = pair.split("=")
+            filters[key.strip()] = value.strip()
+
+    session = get_sessionlocal()
+    subscription_pages_data = (
+        session.query(SubscriptionPages, SubscriptionTiers.tier, Pages.page_name)
+        .join(SubscriptionTiers, SubscriptionPages.sub_tier_id == SubscriptionTiers.id)
+        .join(Pages, SubscriptionPages.page_id == Pages.id)
+        .all()
+    )
+    session.close()
+
+    data = [
+        {
+            "id": subscription_page.id,
+            "subscription_tier": sub_tier,
+            "page": page,
+        }
+        for subscription_page, sub_tier, page in subscription_pages_data
+    ]
+
+    return data
 
 
 @callback(
