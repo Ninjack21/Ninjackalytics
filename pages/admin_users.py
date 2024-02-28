@@ -1,5 +1,5 @@
 import dash
-from dash import html, callback, Output, Input, State, no_update, dash_table
+from dash import html, callback, Output, Input, State, no_update, dash_table, dcc
 import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import User
 from ninjackalytics.database import get_sessionlocal
@@ -40,6 +40,7 @@ def layout():
     return dbc.Container(
         [
             navbar(),
+            dcc.Store(id="users-table-store", data=data),
             html.H1("Manage User", style={"color": "white"}),
             # ------- User Table -------
             dash_table.DataTable(
@@ -86,18 +87,36 @@ def layout():
     Output("update-users-feedback", "children"),
     Input("update-users-button", "n_clicks"),
     State("users-table", "data"),
+    State("users-table-store", "data"),
     prevent_initial_call=True,
 )
-def update_roles(n_clicks, table_data):
+def update_roles(n_clicks, table_data, stored_data):
     if n_clicks is None:
         return no_update
 
+    initial_ids = {row["id"] for row in stored_data}
+    current_ids = {row["id"] for row in table_data}
+
+    # Determine deleted rows
+    deleted_ids = initial_ids - current_ids
+
     with get_sessionlocal() as session:
         try:
+            # Handle deletions
+            for deleted_id in deleted_ids:
+                session.query(User).filter(User.id == deleted_id).delete()
+
+            # Handle updates and additions
             for row in table_data:
-                session.query(User).filter(User.id == row["id"]).update(
-                    {User.role: row["role"], User.description: row["description"]}
-                )
+                # Check if row exists and is not marked for deletion
+                if row["id"] in current_ids - deleted_ids:
+                    session.query(User).filter(User.id == row["id"]).update(
+                        {
+                            User.role: row["role"],
+                            User.description: row["description"],
+                        }
+                    )
+
             session.commit()
             feedback = "User updated successfully."
         except Exception as e:

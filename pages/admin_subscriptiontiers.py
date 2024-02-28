@@ -35,6 +35,7 @@ def layout():
     return dbc.Container(
         [
             navbar(),
+            dcc.Store(id="subscription-tiers-table-store", data=data),
             html.H1("Manage Subscription Tiers", style={"color": "white"}),
             # Add New Subscription Tier Section
             dbc.Row(
@@ -171,25 +172,42 @@ def create_new_subscription_tier(
     Output("update-subscription-tiers-feedback", "children"),
     Input("update-subscription-tiers-button", "n_clicks"),
     State("subscription-tiers-table", "data"),
+    State("subscription-tiers-table-store", "data"),
     prevent_initial_call=True,
 )
-def update_subscription_tiers(n_clicks, table_data):
+def update_subscription_tiers(n_clicks, table_data, stored_data):
     if n_clicks is None:
         return no_update
 
+    stored_ids = {row["id"] for row in stored_data}
+    current_ids = {row["id"] for row in table_data}
+
+    # Determine deleted rows
+    deleted_ids = stored_ids - current_ids
+
     with get_sessionlocal() as session:
         try:
-            for row in table_data:
+            # Handle deletions
+            for deleted_id in deleted_ids:
                 session.query(SubscriptionTiers).filter(
-                    SubscriptionTiers.id == row["id"]
-                ).update(
-                    {
-                        SubscriptionTiers.tier: row["tier"],
-                        SubscriptionTiers.annual_cost: row["annual_cost"],
-                        SubscriptionTiers.monthly_cost: row["monthly_cost"],
-                        SubscriptionTiers.description: row["description"],
-                    }
-                )
+                    SubscriptionTiers.id == deleted_id
+                ).delete()
+
+            # Handle updates and additions
+            for row in table_data:
+                # Check if row exists and is not marked for deletion
+                if row["id"] in current_ids - deleted_ids:
+                    session.query(SubscriptionTiers).filter(
+                        SubscriptionTiers.id == row["id"]
+                    ).update(
+                        {
+                            SubscriptionTiers.tier: row["tier"],
+                            SubscriptionTiers.annual_cost: row["annual_cost"],
+                            SubscriptionTiers.monthly_cost: row["monthly_cost"],
+                            SubscriptionTiers.description: row["description"],
+                        }
+                    )
+
             session.commit()
             feedback = "Subscription tiers updated successfully."
         except Exception as e:

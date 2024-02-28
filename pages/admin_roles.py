@@ -1,5 +1,5 @@
 import dash
-from dash import html, callback, Output, Input, State, no_update, dash_table
+from dash import html, callback, Output, Input, State, no_update, dash_table, dcc
 import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import Roles
 from ninjackalytics.database import get_sessionlocal
@@ -26,6 +26,7 @@ def layout():
     return dbc.Container(
         [
             navbar(),
+            dcc.Store(id="roles-table-store", data=data),
             html.H1("Manage Roles", style={"color": "white"}),
             # ------- Add New Role Section -------
             dbc.Row(
@@ -133,18 +134,35 @@ def create_new_role(n_clicks, role_name, role_description):
     Output("update-roles-feedback", "children"),
     Input("update-roles-button", "n_clicks"),
     State("roles-table", "data"),
+    State("roles-table-store", "data"),
     prevent_initial_call=True,
 )
-def update_roles(n_clicks, table_data):
+def update_roles(n_clicks, table_data, stored_data):
     if n_clicks is None:
         return no_update
 
+    stored_ids = {row["id"] for row in stored_data}
+    current_ids = {row["id"] for row in table_data}
+
+    # Determine deleted rows
+    deleted_ids = stored_ids - current_ids
+
     with get_sessionlocal() as session:
         try:
+            # Handle deletions
+            for deleted_id in deleted_ids:
+                session.query(Roles).filter(Roles.id == deleted_id).delete()
+
+            # Handle updates and additions
             for row in table_data:
-                session.query(Roles).filter(Roles.id == row["id"]).update(
-                    {Roles.role: row["role"], Roles.description: row["description"]}
-                )
+                if row["id"] in current_ids - deleted_ids:
+                    session.query(Roles).filter(Roles.id == row["id"]).update(
+                        {Roles.role: row["role"], Roles.description: row["description"]}
+                    )
+                else:
+                    new_role = Roles(role=row["role"], description=row["description"])
+                    session.add(new_role)
+
             session.commit()
             feedback = "Roles updated successfully."
         except Exception as e:

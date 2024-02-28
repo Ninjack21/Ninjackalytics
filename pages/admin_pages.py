@@ -31,6 +31,7 @@ def layout():
     return dbc.Container(
         [
             navbar(),
+            dcc.Store(id="pages-table-store", data=data),
             html.H1("Manage Pages", style={"color": "white"}),
             # Add New Page Section
             dbc.Row(
@@ -133,21 +134,36 @@ def create_new_page(n_clicks, page_name, page_description):
     Output("update-pages-feedback", "children"),
     Input("update-pages-button", "n_clicks"),
     State("pages-table", "data"),
+    State("pages-table-store", "data"),
     prevent_initial_call=True,
 )
-def update_pages(n_clicks, table_data):
+def update_pages(n_clicks, table_data, table_store_data):
     if n_clicks is None:
         return no_update
 
+    initial_ids = {row["id"] for row in table_store_data}
+    current_ids = {row["id"] for row in table_data}
+
+    # Determine deleted rows
+    deleted_ids = initial_ids - current_ids
+
     with get_sessionlocal() as session:
         try:
+            # Handle deletions
+            for deleted_id in deleted_ids:
+                session.query(Pages).filter(Pages.id == deleted_id).delete()
+
+            # Handle updates and additions
             for row in table_data:
-                session.query(Pages).filter(Pages.id == row["id"]).update(
-                    {
-                        Pages.page_name: row["page_name"],
-                        Pages.page_description: row["page_description"],
-                    }
-                )
+                # Check if row exists and is not marked for deletion
+                if row["id"] in current_ids - deleted_ids:
+                    session.query(Pages).filter(Pages.id == row["id"]).update(
+                        {
+                            Pages.page_name: row["page_name"],
+                            Pages.page_description: row["page_description"],
+                        }
+                    )
+
             session.commit()
             feedback = "Pages updated successfully."
         except Exception as e:
