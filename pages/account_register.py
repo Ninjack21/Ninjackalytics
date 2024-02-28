@@ -4,6 +4,8 @@ import dash_bootstrap_components as dbc
 from werkzeug.security import generate_password_hash
 from ninjackalytics.database.models import (
     User,
+    Roles,
+    SubscriptionTiers,
 )
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
