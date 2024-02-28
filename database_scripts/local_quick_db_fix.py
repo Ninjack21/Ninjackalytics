@@ -14,6 +14,7 @@ from ninjackalytics.database.models import (
     UserSubscription,
     Roles,
     RolePages,
+    Pages,
 )
 
 
@@ -30,6 +31,7 @@ def recreate_tables():
             UserSubscription.__table__,
             Roles.__table__,
             RolePages.__table__,
+            Pages.__table__,
         ],
     )
 
@@ -43,6 +45,7 @@ def recreate_tables():
             UserSubscription.__table__,
             Roles.__table__,
             RolePages.__table__,
+            Pages.__table__,
         ],
     )
 

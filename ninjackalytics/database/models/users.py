@@ -38,12 +38,21 @@ class Roles(Base):
         return f"<Roles(role='{self.role}', description='{self.description}')>"
 
 
+class Pages(Base):
+    __tablename__ = "pages"
+    id = Column(Integer, primary_key=True)
+    page_name = Column(String(length=50), nullable=False)
+    page_description = Column(String(length=255), nullable=False)
+
+    def __repr__(self):
+        return f"<Pages(page_name='{self.page_name}', page_description='{self.page_description}')>"
+
+
 class RolePages(Base):
     __tablename__ = "role_pages"
     id = Column(Integer, primary_key=True)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
-    page_name = Column(String(length=50), nullable=False)
-    page_description = Column(String(length=255), nullable=False)
+    page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
 
     def __repr__(self):
         return f"<RolePages(role_id='{self.role_id}', page_name='{self.page_name}', page_description='{self.page_description}')>"
@@ -63,8 +72,7 @@ class SubscriptionPages(Base):
     __tablename__ = "subscription_pages"
     id = Column(Integer, primary_key=True)
     sub_tier_id = Column(Integer, ForeignKey("subscription_tiers.id"), nullable=False)
-    page_name = Column(String(length=50), nullable=False)
-    page_description = Column(String(length=255), nullable=False)
+    page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
 
 
 class UserSubscription(Base):

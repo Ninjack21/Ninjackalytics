@@ -9,6 +9,7 @@ from ninjackalytics.database.models import (
     SubscriptionTiers,
     SubscriptionPages,
     UserSubscription,
+    Pages,
 )
 from .navbar import navbar
 
@@ -18,6 +19,7 @@ dash.register_page(__name__, path="/admin_home")
 TABLE_MAPPING = {
     "User": User,
     "Roles": Roles,
+    "Pages": Pages,
     "RolePages": RolePages,
     "SubscriptionTiers": SubscriptionTiers,
     "SubscriptionPages": SubscriptionPages,
