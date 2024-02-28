@@ -11,10 +11,10 @@ from ninjackalytics.database.models import (
     User,
     SubscriptionPages,
     SubscriptionTiers,
-    UserSubscription,
     Roles,
     RolePages,
     Pages,
+    DiscountCodes,
 )
 
 
@@ -28,10 +28,10 @@ def recreate_tables():
             User.__table__,
             SubscriptionTiers.__table__,
             SubscriptionPages.__table__,
-            UserSubscription.__table__,
             Roles.__table__,
             RolePages.__table__,
             Pages.__table__,
+            DiscountCodes.__table__,
         ],
     )
 
@@ -42,10 +42,10 @@ def recreate_tables():
             User.__table__,
             SubscriptionTiers.__table__,
             SubscriptionPages.__table__,
-            UserSubscription.__table__,
             Roles.__table__,
             RolePages.__table__,
             Pages.__table__,
+            DiscountCodes.__table__,
         ],
     )
 

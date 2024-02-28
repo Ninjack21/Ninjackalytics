@@ -8,8 +8,8 @@ from ninjackalytics.database.models import (
     RolePages,
     SubscriptionTiers,
     SubscriptionPages,
-    UserSubscription,
     Pages,
+    DiscountCodes,
 )
 from .navbar import navbar
 
@@ -23,7 +23,7 @@ TABLE_MAPPING = {
     "RolePages": RolePages,
     "SubscriptionTiers": SubscriptionTiers,
     "SubscriptionPages": SubscriptionPages,
-    "UserSubscription": UserSubscription,
+    "DiscountCodes": DiscountCodes,
 }
 
 

@@ -21,6 +21,7 @@ class User(Base):
         Integer, ForeignKey("subscription_tiers.id"), nullable=True
     )
     subscription_type = Column(String(length=50), nullable=True)  # annual or monthly
+    subscription_start_date = Column(Date, nullable=True)
     renewal_date = Column(Date, nullable=True)
     code_used = Column(String(length=50), nullable=True)
 
@@ -75,19 +76,12 @@ class SubscriptionPages(Base):
     page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
 
 
-class UserSubscription(Base):
-    __tablename__ = "user_subscription"
+class DiscountCodes(Base):
+    __tablename__ = "discount_codes"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    subscription_id = Column(
-        Integer, ForeignKey("subscription_tiers.id"), nullable=False
-    )
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
-    active = Column(Integer, nullable=False)
-
-    user = relationship("User", backref="user_subscription")
-    subscription = relationship("SubscriptionTiers", backref="user_subscription")
+    code = Column(String(length=50), nullable=False, unique=True)
+    discount = Column(Integer, nullable=False)
+    advertiser = Column(String(length=255), nullable=False)
 
     def __repr__(self):
-        return f"<UserSubscription(user_id='{self.user_id}', subscription_id='{self.subscription_id}', start_date='{self.start_date}', end_date='{self.end_date}', active='{self.active}')>"
+        return f"<DiscountCodes(code='{self.code}', discount='{self.discount}', advertiser='{self.advertiser}')>"
