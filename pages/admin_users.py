@@ -229,31 +229,9 @@ def create_new_user(
 
 
 @callback(
-    Output("create-role-feedback", "children"),
-    Input("create-role-button", "n_clicks"),
-    [State("role-name-input", "value"), State("role-description-input", "value")],
-    prevent_initial_call=True,
-)
-def create_new_role(n_clicks, role_name, role_description):
-    if n_clicks is None or role_name is None or role_description is None:
-        return no_update
-
-    # Insert new role into the database
-    with get_sessionlocal() as session:
-        new_role = User(role=role_name, description=role_description)
-        session.add(new_role)
-        try:
-            session.commit()
-            return "New role created successfully."
-        except Exception as e:
-            session.rollback()
-            return f"Failed to create new role. Error: {e}"
-
-
-@callback(
-    Output("update-roles-feedback", "children"),
-    Input("update-roles-button", "n_clicks"),
-    State("roles-table", "data"),
+    Output("update-users-feedback", "children"),
+    Input("update-users-button", "n_clicks"),
+    State("users-table", "data"),
     prevent_initial_call=True,
 )
 def update_roles(n_clicks, table_data):
