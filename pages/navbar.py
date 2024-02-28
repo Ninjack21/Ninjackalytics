@@ -12,7 +12,8 @@ def navbar():
                 dbc.NavLink("Pre Battle Analysis", href="/pre_battle_analysis")
             ),
             dbc.NavItem(dbc.NavLink("Player Scout", href="/player_scout")),
-            dbc.NavItem(dbc.NavLink("Account", href="/")),
+            dbc.NavItem(dbc.NavLink("Register", href="/register")),
+            dbc.NavItem(dbc.NavLink("Login", href="/login")),
         ],
         brand="Ninjackalytics",
         brand_href="/",
