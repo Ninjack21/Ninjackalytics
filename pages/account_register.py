@@ -1,5 +1,6 @@
+from flask import session
 import dash
-from dash import html, dcc, callback, Output, Input, State, no_update
+from dash import html, callback, Output, Input, State, no_update
 import dash_bootstrap_components as dbc
 from werkzeug.security import generate_password_hash
 from ninjackalytics.database.models import (

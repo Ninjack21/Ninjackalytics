@@ -1,17 +1,24 @@
+from flask import session
 import dash
 from dash import html, callback, Output, Input, State, no_update, dash_table, dcc
 import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import Roles
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
 
 dash.register_page(__name__, path="/admin_roles")
 
 
 def layout():
-    session = get_sessionlocal()
-    roles_data = session.query(Roles).all()
-    session.close()
+    access, div = validate_access_get_alternate_div_if_invalid(session, "/admin_roles")
+    if not access:
+        return div
+    db_session = get_sessionlocal()
+    roles_data = db_session.query(Roles).all()
+    db_session.close()
 
     data = [
         {"id": role.id, "role": role.role, "description": role.description}

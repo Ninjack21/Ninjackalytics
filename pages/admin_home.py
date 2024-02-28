@@ -12,6 +12,9 @@ from ninjackalytics.database.models import (
     DiscountCodes,
 )
 from .navbar import navbar
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
 
 dash.register_page(__name__, path="/admin_home")
 
@@ -28,25 +31,32 @@ TABLE_MAPPING = {
 
 
 def layout():
-    table_options = [{"label": key, "value": key} for key in TABLE_MAPPING.keys()]
-    return dbc.Container(
-        [
-            navbar(),
-            html.H1("Database Management", style={"color": "white"}),
-            dcc.Dropdown(
-                id="table-selector", options=table_options, placeholder="Select a table"
-            ),
-            html.Div(id="navigation-area"),
-        ],
-        fluid=True,
-        style={
-            "background-image": "url('/assets/Background.jpg')",
-            "background-size": "cover",
-            "background-repeat": "no-repeat",
-            "height": "100vh",
-            "z-index": "0",
-        },
-    )
+
+    access, div = validate_access_get_alternate_div_if_invalid(session, "/admin_home")
+    if not access:
+        return div
+    else:
+        table_options = [{"label": key, "value": key} for key in TABLE_MAPPING.keys()]
+        return dbc.Container(
+            [
+                navbar(),
+                html.H1("Database Management", style={"color": "white"}),
+                dcc.Dropdown(
+                    id="table-selector",
+                    options=table_options,
+                    placeholder="Select a table",
+                ),
+                html.Div(id="navigation-area"),
+            ],
+            fluid=True,
+            style={
+                "background-image": "url('/assets/Background.jpg')",
+                "background-size": "cover",
+                "background-repeat": "no-repeat",
+                "height": "100vh",
+                "z-index": "0",
+            },
+        )
 
 
 @callback(Output("navigation-area", "children"), [Input("table-selector", "value")])

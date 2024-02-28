@@ -1,3 +1,4 @@
+from flask import session
 import dash
 from dash import html, dcc, Input, Output, State, callback, no_update
 import plotly.graph_objects as go
@@ -8,6 +9,9 @@ from .page_utilities.general_utility import (
     DatabaseData,
     FormatData,
     WinrateCalculator,
+)
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
 )
 
 dash.register_page(__name__, path="/pre_battle_analysis")
@@ -242,6 +246,11 @@ def display_top_threats(
 
 
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, "/pre_battle_analysis"
+    )
+    if not access:
+        return div
     return html.Div(
         [
             navbar(),

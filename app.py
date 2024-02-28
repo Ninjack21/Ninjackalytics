@@ -1,6 +1,6 @@
 import dash
 import dash_bootstrap_components as dbc
-from flask import Flask
+from flask import Flask, request, make_response
 from datetime import timedelta
 from pages.config import SECRET_KEY
 

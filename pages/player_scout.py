@@ -1,20 +1,21 @@
+from flask import session
 import pandas as pd
 import numpy as np
 from datetime import date
 import dash
-from dash import html, dcc, Input, Output, State, callback, dash_table, no_update
+from dash import html, dcc, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.express as px
-import plotly.colors as pcolors
 from .navbar import navbar
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from .page_utilities.general_utility import (
-    find_closest_sprite,
     DatabaseData,
-    FormatData,
-    WinrateCalculator,
 )
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
+
 
 dash.register_page(__name__, path="/player_scout")
 
@@ -405,6 +406,9 @@ def _get_usage_and_winrate(
 
 
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(session, "/player_scout")
+    if not access:
+        return div
     db_data = DatabaseData()
     viable_formats = db_data.get_viable_formats()
     return html.Div(

@@ -1,3 +1,4 @@
+from flask import session
 import dash
 from dash import html, callback, Output, Input, State, no_update, dash_table, dcc
 from dash.exceptions import PreventUpdate
@@ -5,14 +6,20 @@ import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import User
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
 
 dash.register_page(__name__, path="/admin_user")
 
 
 def layout():
-    session = get_sessionlocal()
-    users_data = session.query(User).all()
-    session.close()
+    access, div = validate_access_get_alternate_div_if_invalid(session, "/admin_user")
+    if not access:
+        return div
+    db_session = get_sessionlocal()
+    users_data = db_session.query(User).all()
+    db_session.close()
 
     data = [
         {

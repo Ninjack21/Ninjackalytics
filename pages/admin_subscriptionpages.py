@@ -1,25 +1,33 @@
 import dash
 from dash import html, dcc, callback, Output, Input, State, no_update, dash_table
 from dash.exceptions import PreventUpdate
-import json
+from flask import session
 import dash_bootstrap_components as dbc
 from ninjackalytics.database.models import SubscriptionPages, Pages, SubscriptionTiers
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
 from ninjackalytics.database.models import SubscriptionPages
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
 
 dash.register_page(__name__, path="/admin_subscriptionpages")
 
 
 def layout():
-    session = get_sessionlocal()
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, "/admin_subscriptionpages"
+    )
+    if not access:
+        return div
+    db_session = get_sessionlocal()
     subscription_pages_data = (
-        session.query(SubscriptionPages, SubscriptionTiers.tier, Pages.page_name)
+        db_session.query(SubscriptionPages, SubscriptionTiers.tier, Pages.page_name)
         .join(SubscriptionTiers, SubscriptionPages.sub_tier_id == SubscriptionTiers.id)
         .join(Pages, SubscriptionPages.page_id == Pages.id)
         .all()
     )
-    session.close()
+    db_session.close()
 
     data = [
         {
