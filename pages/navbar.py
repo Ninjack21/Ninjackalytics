@@ -24,7 +24,7 @@ def navbar():
     # Links for authenticated users
     authenticated_children = [
         dbc.NavItem(dbc.NavLink("Upgrade Subscription", href="/upgrade_account")),
-        dbc.NavItem(dbc.NavLink(f"{username}'s Account", href="/account")),
+        dbc.NavItem(dbc.NavLink(f"{username}", href="/account")),
     ]
 
     # Links for non-authenticated users

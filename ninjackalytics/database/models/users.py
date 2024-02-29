@@ -8,6 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from ninjackalytics.database import Base
 
 
@@ -75,7 +76,9 @@ class UserSubscriptions(Base):
         Date, nullable=False, default=datetime.utcnow().date()
     )
     renewal_date = Column(
-        Date, nullable=False, default=(datetime.utcnow() + timedelta(days=365)).date()
+        Date,
+        nullable=False,
+        default=(datetime.utcnow() + relativedelta(years=1)).date(),
     )
     cancelled = Column(Boolean, nullable=False, default=False)
     code_used = Column(Integer, ForeignKey("discount_codes.id"), nullable=True)

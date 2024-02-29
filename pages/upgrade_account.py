@@ -311,7 +311,7 @@ def upgrade_subscription(n_clicks, selected_tier, selected_sub_type):
                         selected_sub_type,
                         db_session,
                     )
-                    return "Upgrade successful!"
+                    return "Upgrade successful! Thank you and I hope you enjoy the new features!"
                 else:
                     return "Payment failed. Please try again."
             else:

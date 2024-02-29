@@ -184,7 +184,7 @@ def get_error_layout(error_type: str):
                 ),
                 dbc.Button(
                     "Upgrade Subscription",
-                    href="/",  # Placeholder link, replace with your subscription upgrade URL
+                    href="/upgrade_account",
                     color="success",
                     className="mt-3",
                 ),
