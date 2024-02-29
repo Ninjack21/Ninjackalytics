@@ -15,7 +15,7 @@ dash.register_page(__name__, path="/admin_user")
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, f"/{str(__file__).split('/')[-1][:-3]}"
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
     )
     if not access:
         return div
@@ -29,7 +29,6 @@ def layout():
             "username": user.username,
             "email": user.email,
             "role": user.role,
-            "subscription_tier": user.subscription_tier,
         }
         for user in users_data
     ]
@@ -39,7 +38,6 @@ def layout():
         {"name": "Username", "id": "username", "editable": True},
         {"name": "Email", "id": "email", "editable": True},
         {"name": "Role", "id": "role", "editable": True},
-        {"name": "Subscription Tier", "id": "subscription_tier", "editable": True},
     ]
     return dbc.Container(
         [
@@ -139,10 +137,6 @@ def apply_filters(n_clicks, filter_input):
             "username": user.username,
             "email": user.email,
             "role": user.role,
-            "subscription_tier": user.subscription_tier,
-            "subscription_type": user.subscription_type,
-            "renewal_date": str(user.renewal_date),
-            "code_used": user.code_used,
         }
         for user in users_data
     ]
@@ -180,7 +174,6 @@ def update_roles(n_clicks, table_data, stored_data):
                             User.username: row["username"],
                             User.email: row["email"],
                             User.role: row["role"],
-                            User.subscription_tier: row["subscription_tier"],
                         }
                     )
 

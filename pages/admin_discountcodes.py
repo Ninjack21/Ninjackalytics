@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import session
 import dash
 from dash import html, dcc, callback, Output, Input, State, no_update, dash_table
@@ -14,7 +15,7 @@ dash.register_page(__name__, path="/admin_discountcodes")
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, f"/{str(__file__).split('/')[-1][:-3]}"
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
     )
     if not access:
         return div
@@ -29,6 +30,9 @@ def layout():
             "code": discount_code.code,
             "discount": discount_code.discount,
             "advertiser": discount_code.advertiser,
+            "active": discount_code.active,
+            "created_date": discount_code.created_date,
+            "expiration_date": discount_code.expiration_date,
         }
         for discount_code in discount_codes_data
     ]
@@ -38,6 +42,9 @@ def layout():
         {"name": "Code", "id": "code", "editable": True},
         {"name": "Discount", "id": "discount", "editable": True},
         {"name": "Advertiser", "id": "advertiser", "editable": True},
+        {"name": "Active", "id": "active", "editable": True},
+        {"name": "Created Date", "id": "created_date", "editable": False},
+        {"name": "Expiration Date", "id": "expiration_date", "editable": True},
     ]
 
     return dbc.Container(
@@ -144,7 +151,9 @@ def create_new_discount_code(n_clicks, code, discount, advertiser):
         return "Discount code already exists."
 
     new_discount_code = DiscountCodes(
-        code=code, discount=discount, advertiser=advertiser
+        code=code,
+        discount=discount,
+        advertiser=advertiser,
     )
     session.add(new_discount_code)
     try:
@@ -184,6 +193,7 @@ def update_discount_codes(n_clicks, current_table_data, initial_table_data):
 
         # Handle updates and additions
         for row in current_table_data:
+            date_format = "%Y-%m-%d"
             discount_code = (
                 session.query(DiscountCodes)
                 .filter(DiscountCodes.id == row["id"])
@@ -193,13 +203,17 @@ def update_discount_codes(n_clicks, current_table_data, initial_table_data):
                 discount_code.code = row["code"]
                 discount_code.discount = row["discount"]
                 discount_code.advertiser = row["advertiser"]
-            else:
-                new_discount_code = DiscountCodes(
-                    code=row["code"],
-                    discount=row["discount"],
-                    advertiser=row["advertiser"],
+                discount_code.active = (
+                    True if str(row["active"]).lower() == "true" else False
                 )
-                session.add(new_discount_code)
+                discount_code.expiration_date = (
+                    datetime.strptime(row["expiration_date"], date_format)
+                    if row["expiration_date"]
+                    else None
+                )
+                discount_code.created_date = datetime.strptime(
+                    row["created_date"], date_format
+                )
 
         session.commit()
         feedback = "Discount codes updated successfully."

@@ -7,6 +7,7 @@ from ninjackalytics.database.models import (
     User,
     Roles,
     SubscriptionTiers,
+    UserSubscriptions,
 )
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
@@ -109,16 +110,15 @@ def register(n_clicks, username, password, email):
 
         # default subscription tier is Free and role is User
         # get the default sub tier id and default role id
-        sub_id = session.query(SubscriptionTiers).filter_by(tier="Free").first()
         role_id = session.query(Roles).filter_by(role="User").first()
 
         new_user = User(
             username=username,
             hashed_password=hashed_password,
             email=email,
-            subscription_tier=sub_id.id,
             role=role_id.id,
         )
+
         session.add(new_user)
         session.commit()
         return "Account created successfully"

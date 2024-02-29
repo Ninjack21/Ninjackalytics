@@ -434,7 +434,7 @@ def generate_style_data_conditional(columns):
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, f"/{str(__file__).split('/')[-1][:-3]}"
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
     )
     if not access:
         return div

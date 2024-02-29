@@ -1,9 +1,11 @@
 from ninjackalytics.database.models import (
+    User,
     Roles,
     Pages,
     SubscriptionTiers,
     RolePages,
     SubscriptionPages,
+    UserSubscriptions,
 )
 from ninjackalytics.database.database import get_sessionlocal
 from dash import html
@@ -26,17 +28,41 @@ def get_subscription_tier_name(subscription_tier_id):
         return subscription_tier.tier_name if subscription_tier else None
 
 
-def user_has_access(path_name, role_id=None, subscription_tier_id=None):
+def user_has_access(path_name, username=None):
     path_name = path_name.replace("/", "")
     # Start database session
     db_session = get_sessionlocal()
 
-    if not role_id:
-        # if not logged in, assume role is "User" and sub tier is "Free"
+    if not username:
+        # if not logged in, role is "User" and subscription tier is "Free"
         role_id = db_session.query(Roles).filter_by(role="User").first().id
         subscription_tier_id = (
             db_session.query(SubscriptionTiers).filter_by(tier="Free").first().id
         )
+    else:
+        # get the user's role and subscription tier
+        user = db_session.query(User).filter_by(username=username).first()
+        role_id = user.role
+        user_subscription = (
+            db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
+        )
+        # if the user_id is not found in the UserSubscriptions table, then they are a free user
+        if not user_subscription:
+            subscription_tier_id = (
+                db_session.query(SubscriptionTiers).filter_by(tier="Free").first().id
+            )
+        else:
+            # verify that the UserSubscription is active
+            if not user_subscription.active:
+                # free tier if the user's subscription is not active
+                subscription_tier_id = (
+                    db_session.query(SubscriptionTiers)
+                    .filter_by(tier="Free")
+                    .first()
+                    .id
+                )
+            else:
+                subscription_tier_id = user_subscription.subscription_tier_id
 
     role_name = get_role_name(role_id)
     if role_name != "User":
@@ -100,27 +126,18 @@ def determine_access_error_type(role_id, path_name):
         return "generic"
 
 
-def get_security_return(session, pathname: str):
-    role_id = session.get("role_id")
-    subscription_tier_id = session.get("subscription_tier_id")
-
+def get_security_return(session, pathname: str, username):
     # Check if user has access to the current page
-    if not user_has_access(
-        pathname, role_id=role_id, subscription_tier_id=subscription_tier_id
-    ):
+    if not user_has_access(pathname, username):
         return False
     else:
         return True
 
 
-def validate_access_get_alternate_div_if_invalid(session, pathname: str):
+def validate_access_get_alternate_div_if_invalid(session, pathname: str, username):
     role_id = session.get("role_id")
-    subscription_tier_id = session.get("subscription_tier_id")
-
     # Check if user has access to the current page
-    if not user_has_access(
-        pathname, role_id=role_id, subscription_tier_id=subscription_tier_id
-    ):
+    if not user_has_access(pathname, username):
         error_type = determine_access_error_type(role_id, pathname)
         return False, get_error_layout(error_type)
     else:

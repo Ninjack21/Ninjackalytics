@@ -7,7 +7,7 @@ from sqlalchemy import (
     Boolean,
 )
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from ninjackalytics.database import Base
 
 
@@ -18,9 +18,6 @@ class User(Base):
     hashed_password = Column(String(length=255), nullable=False)
     email = Column(String(length=255), nullable=False, unique=True)
     role = Column(Integer, ForeignKey("roles.id"), nullable=False)
-    subscription_tier = Column(
-        Integer, ForeignKey("subscription_tiers.id"), nullable=True
-    )
 
     def __repr__(self):
         return f"<User(username='{self.username}', email='{self.email}', subscription_tier='{self.subscription_tier}')>"
@@ -68,15 +65,21 @@ class SubscriptionTiers(Base):
 class UserSubscriptions(Base):
     __tablename__ = "user_subscriptions"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     subscription_tier_id = Column(
         Integer, ForeignKey("subscription_tiers.id"), nullable=False
     )
-    subscription_type = Column(String(length=50), nullable=False)
-    subscription_start_date = Column(Date, nullable=False)
-    renewal_date = Column(Date, nullable=False)
+    # default is annual subscription so when creating a new one will assume today to next year
+    subscription_type = Column(String(length=50), nullable=False, default="Annual")
+    subscription_start_date = Column(
+        Date, nullable=False, default=datetime.utcnow().date()
+    )
+    renewal_date = Column(
+        Date, nullable=False, default=(datetime.utcnow() + timedelta(days=365)).date()
+    )
     cancelled = Column(Boolean, nullable=False, default=False)
-    code_used = Column(String(length=50), nullable=True)
+    code_used = Column(Integer, ForeignKey("discount_codes.id"), nullable=True)
+    active = Column(Boolean, nullable=False, default=True)
 
     def __repr__(self):
         return f"<UserSubscriptions(user_id='{self.user_id}', subscription_tier_id='{self.subscription_tier_id}', subscription_type='{self.subscription_type}', subscription_start_date='{self.subscription_start_date}', renewal_date='{self.renewal_date}', code_used='{self.code_used}')>"
@@ -98,7 +101,7 @@ class DiscountCodes(Base):
     advertiser = Column(String(length=255), nullable=False)
     active = Column(Boolean, nullable=False, default=True)
     created_date = Column(Date, default=datetime.utcnow, nullable=False)
-    expiration_date = Column(Date, nullable=True)
+    expiration_date = Column(Date, nullable=True, default=None)
 
     def __repr__(self):
         return f"<DiscountCodes(code='{self.code}', discount='{self.discount}', advertiser='{self.advertiser}')>"

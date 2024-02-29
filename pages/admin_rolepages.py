@@ -14,7 +14,7 @@ dash.register_page(__name__, path="/admin_rolepages")
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, f"/{str(__file__).split('/')[-1][:-3]}"
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
     )
     if not access:
         return div
@@ -52,24 +52,16 @@ def layout():
                 [
                     dbc.Col(
                         dbc.Input(
-                            id="role-id-input",
-                            placeholder="Enter Role ID",
+                            id="role-name-input",
+                            placeholder="Enter Role name",
                             className="mb-3",
                         ),
                         width=4,
                     ),
                     dbc.Col(
                         dbc.Input(
-                            id="page-id-input",
-                            placeholder="Enter Page ID",
-                            className="mb-3",
-                        ),
-                        width=4,
-                    ),
-                    dbc.Col(
-                        dbc.Textarea(
-                            id="page-description-input",
-                            placeholder="Enter Page Description",
+                            id="page-name-input",
+                            placeholder="Enter Page name",
                             className="mb-3",
                         ),
                         width=4,
@@ -127,7 +119,7 @@ def layout():
 @callback(
     Output("create-role-page-feedback", "children"),
     Input("create-role-page-button", "n_clicks"),
-    [State("role-name-dropdown", "value"), State("page-name-dropdown", "value")],
+    [State("role-name-input", "value"), State("page-name-input", "value")],
     prevent_initial_call=True,
 )
 def create_new_role_page(n_clicks, role_name, page_name):

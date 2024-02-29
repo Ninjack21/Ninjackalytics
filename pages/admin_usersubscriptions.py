@@ -1,9 +1,15 @@
+from datetime import datetime, timedelta
 import dash
 from dash import html, dcc, callback, Output, Input, State, no_update, dash_table
 from dash.exceptions import PreventUpdate
 from flask import session
 import dash_bootstrap_components as dbc
-from ninjackalytics.database.models import UserSubscriptions, SubscriptionTiers, User
+from ninjackalytics.database.models import (
+    UserSubscriptions,
+    SubscriptionTiers,
+    User,
+    DiscountCodes,
+)
 from ninjackalytics.database import get_sessionlocal
 from .navbar import navbar
 from .page_utilities.session_functions import (
@@ -15,7 +21,7 @@ dash.register_page(__name__, path="/admin_usersubscriptions")
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, f"/{str(__file__).split('/')[-1][:-3]}"
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
     )
     if not access:
         return div
@@ -25,11 +31,20 @@ def layout():
             UserSubscriptions,
             User.username,
             SubscriptionTiers.tier,
+            UserSubscriptions.subscription_type,
+            UserSubscriptions.subscription_start_date,
+            UserSubscriptions.renewal_date,
+            UserSubscriptions.cancelled,
+            DiscountCodes.code,
+            UserSubscriptions.active,
         )
         .join(User, UserSubscriptions.user_id == User.id)
         .join(
             SubscriptionTiers,
             UserSubscriptions.subscription_tier_id == SubscriptionTiers.id,
+        )
+        .join(
+            DiscountCodes, UserSubscriptions.code_used == DiscountCodes.id, isouter=True
         )
         .all()
     )
@@ -45,6 +60,7 @@ def layout():
             "renewal_date": renewal_date,
             "cancelled": cancelled,
             "code_used": code_used,
+            "active": active,
         }
         for (
             user_subscription,
@@ -55,6 +71,7 @@ def layout():
             renewal_date,
             cancelled,
             code_used,
+            active,
         ) in user_subscriptions_data
     ]
 
@@ -71,6 +88,7 @@ def layout():
         {"name": "Renewal Date", "id": "renewal_date", "editable": True},
         {"name": "Cancelled", "id": "cancelled", "editable": True},
         {"name": "Code Used", "id": "code_used", "editable": True},
+        {"name": "Active", "id": "active", "editable": True},
     ]
 
     return dbc.Container(
@@ -195,9 +213,9 @@ def apply_filters(n_clicks, filter_input):
             key, value = pair.split("=")
             filters[key.strip()] = value.strip()
 
-    session = get_sessionlocal()
+    db_session = get_sessionlocal()
     user_subscriptions_data = (
-        session.query(
+        db_session.query(
             UserSubscriptions,
             User.username,
             SubscriptionTiers.tier,
@@ -209,7 +227,7 @@ def apply_filters(n_clicks, filter_input):
         )
         .all()
     )
-    session.close()
+    db_session.close()
 
     data = [
         {
@@ -221,6 +239,7 @@ def apply_filters(n_clicks, filter_input):
             "renewal_date": renewal_date,
             "cancelled": cancelled,
             "code_used": code_used,
+            "active": active,
         }
         for (
             user_subscription,
@@ -231,6 +250,7 @@ def apply_filters(n_clicks, filter_input):
             renewal_date,
             cancelled,
             code_used,
+            active,
         ) in user_subscriptions_data
     ]
 
@@ -258,14 +278,14 @@ def create_new_user_subscription(
     ):
         return no_update
 
-    session = get_sessionlocal()
-    user = session.query(User).filter_by(id=user_id).first()
+    db_session = get_sessionlocal()
+    user = db_session.query(User).filter_by(id=user_id).first()
     sub_tier = (
-        session.query(SubscriptionTiers).filter_by(id=subscription_tier_id).first()
+        db_session.query(SubscriptionTiers).filter_by(id=subscription_tier_id).first()
     )
 
     if not user or not sub_tier:
-        session.close()
+        db_session.close()
         return "Invalid user ID or subscription tier ID."
 
     new_user_subscription = UserSubscriptions(
@@ -273,14 +293,14 @@ def create_new_user_subscription(
         subscription_tier_id=subscription_tier_id,
         subscription_type=subscription_type,
     )
-    session.add(new_user_subscription)
+    db_session.add(new_user_subscription)
     try:
-        session.commit()
+        db_session.commit()
         feedback = "New user subscription created successfully."
     except Exception as e:
-        session.rollback()
+        db_session.rollback()
         feedback = f"Failed to create new user subscription. Error: {e}"
-    session.close()
+    db_session.close()
     return feedback
 
 
@@ -303,48 +323,69 @@ def update_user_subscriptions(n_clicks, current_table_data, initial_table_data):
     # Determine deleted rows
     deleted_ids = initial_ids - current_ids
 
-    session = get_sessionlocal()
+    db_session = get_sessionlocal()
     try:
         # Handle deletions
         for deleted_id in deleted_ids:
-            session.query(UserSubscriptions).filter(
+            db_session.query(UserSubscriptions).filter(
                 UserSubscriptions.id == deleted_id
             ).delete()
 
         # Handle updates and additions
         for row in current_table_data:
-            user_id = (
-                session.query(User.id).filter(User.username == row["user_id"]).scalar()
-            )
-            sub_tier_id = (
-                session.query(SubscriptionTiers.id)
-                .filter(SubscriptionTiers.tier == row["subscription_tier"])
-                .scalar()
-            )
             # Check if row exists and is not marked for deletion
             if row["id"] in current_ids - deleted_ids:
-                session.query(UserSubscriptions).filter(
-                    UserSubscriptions.id == row["id"]
-                ).update(
-                    {
-                        UserSubscriptions.user_id: user_id,
-                        UserSubscriptions.subscription_tier_id: sub_tier_id,
-                        UserSubscriptions.subscription_type: row["subscription_type"],
-                        UserSubscriptions.subscription_start_date: row[
-                            "subscription_start_date"
-                        ],
-                        UserSubscriptions.renewal_date: row["renewal_date"],
-                        UserSubscriptions.cancelled: row["cancelled"],
-                        UserSubscriptions.code_used: row["code_used"],
-                    }
+                user = db_session.query(User).filter_by(username=row["user_id"]).first()
+                subscription_tier = (
+                    db_session.query(SubscriptionTiers)
+                    .filter_by(tier=row["subscription_tier"])
+                    .first()
                 )
+                if row["code_used"]:
+                    discount_code = (
+                        db_session.query(DiscountCodes)
+                        .filter_by(code=row["code_used"])
+                        .first()
+                    )
+                else:
+                    discount_code = None
+                if user and subscription_tier:
+                    date_format = "%Y-%m-%d"
+                    db_session.query(UserSubscriptions).filter(
+                        UserSubscriptions.id == row["id"]
+                    ).update(
+                        {
+                            UserSubscriptions.user_id: user.id,
+                            UserSubscriptions.subscription_tier_id: subscription_tier.id,
+                            UserSubscriptions.subscription_type: row[
+                                "subscription_type"
+                            ],
+                            UserSubscriptions.subscription_start_date: datetime.strptime(
+                                row["subscription_start_date"], date_format
+                            ),
+                            UserSubscriptions.renewal_date: datetime.strptime(
+                                row["renewal_date"], date_format
+                            ),
+                            UserSubscriptions.cancelled: (
+                                True
+                                if str(row["cancelled"]).lower() == "true"
+                                else False
+                            ),
+                            UserSubscriptions.code_used: (
+                                discount_code.id if discount_code else None
+                            ),
+                            UserSubscriptions.active: (
+                                True if str(row["active"]).lower() == "true" else False
+                            ),
+                        }
+                    )
 
-        session.commit()
+        db_session.commit()
         feedback = "User subscriptions updated successfully."
     except Exception as e:
-        session.rollback()
+        db_session.rollback()
         feedback = f"Failed to update user subscriptions. Error: {e}"
     finally:
-        session.close()
+        db_session.close()
 
     return feedback
