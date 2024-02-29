@@ -30,10 +30,6 @@ def layout():
             "email": user.email,
             "role": user.role,
             "subscription_tier": user.subscription_tier,
-            "subscription_type": user.subscription_type,
-            "subscription_start_date": user.subscription_start_date,
-            "renewal_date": user.renewal_date,
-            "code_used": user.code_used,
         }
         for user in users_data
     ]
@@ -44,14 +40,6 @@ def layout():
         {"name": "Email", "id": "email", "editable": True},
         {"name": "Role", "id": "role", "editable": True},
         {"name": "Subscription Tier", "id": "subscription_tier", "editable": True},
-        {"name": "Subscription Type", "id": "subscription_type", "editable": True},
-        {
-            "name": "Subscription Start Date",
-            "id": "subscription_start_date",
-            "editable": True,
-        },
-        {"name": "Renewal Date", "id": "renewal_date", "editable": True},
-        {"name": "Code Used", "id": "code_used", "editable": True},
     ]
     return dbc.Container(
         [
@@ -193,12 +181,6 @@ def update_roles(n_clicks, table_data, stored_data):
                             User.email: row["email"],
                             User.role: row["role"],
                             User.subscription_tier: row["subscription_tier"],
-                            User.subscription_type: row["subscription_type"],
-                            User.subscription_start_date: row[
-                                "subscription_start_date"
-                            ],
-                            User.renewal_date: row["renewal_date"],
-                            User.code_used: row["code_used"],
                         }
                     )
 
