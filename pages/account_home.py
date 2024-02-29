@@ -21,6 +21,7 @@ def manage_account_subscription_layout():
 
     with get_sessionlocal() as db_session:
         user = db_session.query(User).filter_by(username=username).first()
+        show_uncancel_button = False
         if user:
             user_subscription = (
                 db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
@@ -35,7 +36,7 @@ def manage_account_subscription_layout():
                 cancellation_status = (
                     "Cancelled" if user_subscription.cancelled else "Active"
                 )
-                show_uncancel_button = False
+
                 if cancellation_status == "Active":
                     renewal_date_display = user_subscription.renewal_date.strftime(
                         "%B %d, %Y"
@@ -271,6 +272,38 @@ def renew_subscription(n_clicks):
                 db_session.commit()
         return "/"
     return no_update
+
+
+@callback(
+    Output("login-output", "children"),
+    Input("login-button", "n_clicks"),
+    [State("login-username", "value"), State("login-password", "value")],
+    prevent_initial_call=True,
+)
+def login(n_clicks, username, password):
+    if n_clicks is None or n_clicks < 1:
+        return no_update
+    with get_sessionlocal() as db_session:
+        user = db_session.query(User).filter_by(username=username).first()
+        if user and check_password_hash(user.hashed_password, password):
+            user_sub = (
+                db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
+            )
+            session["username"] = user.username
+            session["role_id"] = user.role
+            if user_sub:
+                session["subscription_tier_id"] = user_sub.subscription_tier_id
+            else:
+                session["subscription_tier_id"] = (
+                    db_session.query(SubscriptionTiers)
+                    .filter_by(tier="Free")
+                    .first()
+                    .id
+                )
+            session.permanent = True
+            return dcc.Location(href="/account", id="login-redirect")
+        else:
+            return "Invalid username or password"
 
 
 @callback(
