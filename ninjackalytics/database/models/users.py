@@ -4,6 +4,7 @@ from sqlalchemy import (
     String,
     Date,
     ForeignKey,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -20,10 +21,6 @@ class User(Base):
     subscription_tier = Column(
         Integer, ForeignKey("subscription_tiers.id"), nullable=True
     )
-    subscription_type = Column(String(length=50), nullable=True)  # annual or monthly
-    subscription_start_date = Column(Date, nullable=True)
-    renewal_date = Column(Date, nullable=True)
-    code_used = Column(String(length=50), nullable=True)
 
     def __repr__(self):
         return f"<User(username='{self.username}', email='{self.email}', subscription_tier='{self.subscription_tier}')>"
@@ -68,6 +65,23 @@ class SubscriptionTiers(Base):
     description = Column(String(length=255), nullable=False)
 
 
+class UserSubscriptions(Base):
+    __tablename__ = "user_subscriptions"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    subscription_tier_id = Column(
+        Integer, ForeignKey("subscription_tiers.id"), nullable=False
+    )
+    subscription_type = Column(String(length=50), nullable=False)
+    subscription_start_date = Column(Date, nullable=False)
+    renewal_date = Column(Date, nullable=False)
+    cancelled = Column(Boolean, nullable=False, default=False)
+    code_used = Column(String(length=50), nullable=True)
+
+    def __repr__(self):
+        return f"<UserSubscriptions(user_id='{self.user_id}', subscription_tier_id='{self.subscription_tier_id}', subscription_type='{self.subscription_type}', subscription_start_date='{self.subscription_start_date}', renewal_date='{self.renewal_date}', code_used='{self.code_used}')>"
+
+
 # define the pages that are accessible via each subscription tier ID
 class SubscriptionPages(Base):
     __tablename__ = "subscription_pages"
@@ -82,6 +96,9 @@ class DiscountCodes(Base):
     code = Column(String(length=50), nullable=False, unique=True)
     discount = Column(Integer, nullable=False)
     advertiser = Column(String(length=255), nullable=False)
+    active = Column(Boolean, nullable=False, default=True)
+    created_date = Column(Date, default=datetime.utcnow, nullable=False)
+    expiration_date = Column(Date, nullable=True)
 
     def __repr__(self):
         return f"<DiscountCodes(code='{self.code}', discount='{self.discount}', advertiser='{self.advertiser}')>"

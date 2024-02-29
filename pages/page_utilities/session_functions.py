@@ -1,5 +1,4 @@
 from ninjackalytics.database.models import (
-    User,
     Roles,
     Pages,
     SubscriptionTiers,

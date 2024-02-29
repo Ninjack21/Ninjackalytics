@@ -20,7 +20,7 @@ def create_basic_roles():
     session = get_sessionlocal()
 
     # List of basic roles
-    basic_roles = ["Admin", "User", "Content_Creator"]
+    basic_roles = ["Admin", "Content_Creator", "User"]
 
     # Check if the roles already exist in the database
     for role in basic_roles:
@@ -43,8 +43,8 @@ def create_basic_subscription_tiers():
 
     basic_tiers = [
         {"tier": "Free", "annual_cost": 0, "monthly_cost": 0, "description": ""},
-        {"tier": "Basic", "annual_cost": 60, "monthly_cost": 10, "description": ""},
-        {"tier": "Premium", "annual_cost": 120, "monthly_cost": 20, "description": ""},
+        {"tier": "Basic", "annual_cost": 120, "monthly_cost": 15, "description": ""},
+        {"tier": "Premium", "annual_cost": 240, "monthly_cost": 30, "description": ""},
     ]
 
     # Check if the subscription tiers already exist in the database
@@ -64,7 +64,7 @@ def create_basic_subscription_tiers():
     session.close()
 
 
-def create_pages_entries():
+def initialize_page_entries():
     pages_directory = os.path.join(parent_directory, "pages")
 
     # Initialize database session
@@ -213,6 +213,6 @@ def create_subscription_pages_entries():
 if __name__ == "__main__":
     create_basic_roles()
     create_basic_subscription_tiers()
-    create_pages_entries()
+    initialize_page_entries()
     create_role_pages_entries()
     create_subscription_pages_entries()
