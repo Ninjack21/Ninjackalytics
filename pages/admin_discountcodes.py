@@ -14,7 +14,7 @@ dash.register_page(__name__, path="/admin_discountcodes")
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, "/admin_discountcodes"
+        session, f"/{str(__file__).split('/')[-1][:-3]}"
     )
     if not access:
         return div

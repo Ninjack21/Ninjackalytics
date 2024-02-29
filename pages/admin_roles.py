@@ -13,7 +13,9 @@ dash.register_page(__name__, path="/admin_roles")
 
 
 def layout():
-    access, div = validate_access_get_alternate_div_if_invalid(session, "/admin_roles")
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}"
+    )
     if not access:
         return div
     db_session = get_sessionlocal()

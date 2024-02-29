@@ -34,7 +34,9 @@ TABLE_MAPPING = {
 
 def layout():
 
-    access, div = validate_access_get_alternate_div_if_invalid(session, "/admin_home")
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}"
+    )
     if not access:
         return div
     else:

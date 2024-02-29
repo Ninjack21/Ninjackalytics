@@ -276,7 +276,7 @@ def winrate_data_table():
 
 def layout():
     access, div = validate_access_get_alternate_div_if_invalid(
-        session, "/team_analysis"
+        session, f"/{str(__file__).split('/')[-1][:-3]}"
     )
     if not access:
         return div
