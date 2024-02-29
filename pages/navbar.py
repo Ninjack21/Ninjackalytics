@@ -23,6 +23,7 @@ def navbar():
 
     # Links for authenticated users
     authenticated_children = [
+        dbc.NavItem(dbc.NavLink("Upgrade Subscription", href="/upgrade_account")),
         dbc.NavItem(dbc.NavLink(f"{username}'s Account", href="/account")),
     ]
 
@@ -34,7 +35,7 @@ def navbar():
     # Construct the final list of children based on the user's role
     if role_name == "Admin":
         children = base_children + authenticated_children + admin_children
-    elif "user_id" in session:  # Authenticated user but not admin
+    elif "username" in session:  # Authenticated user but not admin
         children = base_children + authenticated_children
     else:  # Guest user
         children = base_children + guest_children

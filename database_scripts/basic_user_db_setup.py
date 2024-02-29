@@ -41,10 +41,11 @@ def create_basic_subscription_tiers():
 
     session = get_sessionlocal()
 
+    # TODO: update pricing after 3 tiers becomes meaningful (i.e. can distinguish between basic and premium)
     basic_tiers = [
         {"tier": "Free", "annual_cost": 0, "monthly_cost": 0, "description": ""},
-        {"tier": "Basic", "annual_cost": 120, "monthly_cost": 15, "description": ""},
-        {"tier": "Premium", "annual_cost": 240, "monthly_cost": 30, "description": ""},
+        {"tier": "Basic", "annual_cost": 90, "monthly_cost": 12, "description": ""},
+        {"tier": "Premium", "annual_cost": 120, "monthly_cost": 15, "description": ""},
     ]
 
     # Check if the subscription tiers already exist in the database
