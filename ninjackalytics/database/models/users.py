@@ -101,10 +101,10 @@ class SubscriptionPages(Base):
     page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
 
 
-class AdvertiserLinks(Base):
-    __tablename__ = "advertiser_links"
+class PromoCodeLinks(Base):
+    __tablename__ = "promo_code_links"
     id = Column(Integer, primary_key=True)
-    link = Column(String(length=255), nullable=False, unique=True)
+    promo_code = Column(String(length=255), nullable=False, unique=True)
     advertiser = Column(String(length=255), nullable=False)
     subscription_tier_id = Column(
         Integer, ForeignKey("subscription_tiers.id"), nullable=False

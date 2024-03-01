@@ -22,7 +22,12 @@ def layout():
         return div
     db_session = get_sessionlocal()
     subscription_pages_data = (
-        db_session.query(SubscriptionPages, SubscriptionTiers.tier, Pages.page_name)
+        db_session.query(
+            SubscriptionPages,
+            SubscriptionTiers.product,
+            SubscriptionTiers.plan,
+            Pages.page_name,
+        )
         .join(SubscriptionTiers, SubscriptionPages.sub_tier_id == SubscriptionTiers.id)
         .join(Pages, SubscriptionPages.page_id == Pages.id)
         .all()
@@ -32,15 +37,17 @@ def layout():
     data = [
         {
             "id": subscription_page.id,
-            "subscription_tier": sub_tier,
+            "product": product,
+            "plan": plan,
             "page": page,
         }
-        for subscription_page, sub_tier, page in subscription_pages_data
+        for subscription_page, product, plan, page in subscription_pages_data
     ]
 
     columns = [
         {"name": "ID", "id": "id", "editable": False},
-        {"name": "Subscription Tier", "id": "subscription_tier", "editable": True},
+        {"name": "Product", "id": "product", "editable": True},
+        {"name": "Plan", "id": "plan", "editable": True},
         {"name": "Page", "id": "page", "editable": True},
     ]
 
@@ -154,7 +161,12 @@ def apply_filters(n_clicks, filter_input):
 
     session = get_sessionlocal()
     subscription_pages_data = (
-        session.query(SubscriptionPages, SubscriptionTiers.tier, Pages.page_name)
+        session.query(
+            SubscriptionPages,
+            SubscriptionTiers.product,
+            SubscriptionTiers.plan,
+            Pages.page_name,
+        )
         .join(SubscriptionTiers, SubscriptionPages.sub_tier_id == SubscriptionTiers.id)
         .join(Pages, SubscriptionPages.page_id == Pages.id)
         .all()
@@ -164,10 +176,11 @@ def apply_filters(n_clicks, filter_input):
     data = [
         {
             "id": subscription_page.id,
-            "subscription_tier": sub_tier,
+            "product": product,
+            "plan": plan,
             "page": page,
         }
-        for subscription_page, sub_tier, page in subscription_pages_data
+        for subscription_page, product, plan, page in subscription_pages_data
     ]
 
     return data
@@ -232,22 +245,20 @@ def update_subscription_pages(n_clicks, current_table_data, initial_table_data):
 
         # Handle updates and additions
         for row in current_table_data:
-            sub_tier_id = (
-                session.query(SubscriptionTiers.id)
-                .filter(SubscriptionTiers.tier == row["subscription_tier"])
-                .scalar()
+            sub_tier = (
+                session.query(SubscriptionTiers)
+                .filter_by(product=row["product"], plan=row["plan"])
+                .first()
             )
-            page_id = (
-                session.query(Pages.id).filter(Pages.page_name == row["page"]).scalar()
-            )
+            page = session.query(Pages).filter_by(page_name=row["page"]).first()
             # Check if row exists and is not marked for deletion
             if row["id"] in current_ids - deleted_ids:
                 session.query(SubscriptionPages).filter(
                     SubscriptionPages.id == row["id"]
                 ).update(
                     {
-                        SubscriptionPages.sub_tier_id: sub_tier_id,
-                        SubscriptionPages.page_id: page_id,
+                        SubscriptionPages.sub_tier_id: sub_tier.id,
+                        SubscriptionPages.page_id: page.id,
                     }
                 )
 

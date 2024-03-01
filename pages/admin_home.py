@@ -9,8 +9,8 @@ from ninjackalytics.database.models import (
     SubscriptionTiers,
     SubscriptionPages,
     Pages,
-    AdvertiserLinks,
     UserSubscriptions,
+    PromoCodeLinks,
 )
 from .navbar import navbar
 from .page_utilities.session_functions import (
@@ -27,7 +27,7 @@ TABLE_MAPPING = {
     "RolePages": RolePages,
     "SubscriptionTiers": SubscriptionTiers,
     "SubscriptionPages": SubscriptionPages,
-    "AdvertiserLinks": AdvertiserLinks,
+    "PromoCodeLinks": PromoCodeLinks,
     "UserSubscriptions": UserSubscriptions,
 }
 

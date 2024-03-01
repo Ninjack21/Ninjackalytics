@@ -25,20 +25,16 @@ def layout():
     data = [
         {
             "id": tier.id,
-            "tier": tier.tier,
-            "annual_cost": tier.annual_cost,
-            "monthly_cost": tier.monthly_cost,
-            "description": tier.description,
+            "product": tier.product,
+            "plan": tier.plan,
         }
         for tier in subscription_tiers_data
     ]
 
     columns = [
         {"name": "ID", "id": "id", "editable": False},
-        {"name": "Tier", "id": "tier", "editable": True},
-        {"name": "Annual Cost", "id": "annual_cost", "editable": True},
-        {"name": "Monthly Cost", "id": "monthly_cost", "editable": True},
-        {"name": "Description", "id": "description", "editable": True},
+        {"name": "Product", "id": "product", "editable": True},
+        {"name": "Plan", "id": "plan", "editable": True},
     ]
 
     return dbc.Container(
@@ -52,7 +48,7 @@ def layout():
                     dbc.Col(
                         dbc.Input(
                             id="tier-name-input",
-                            placeholder="Enter Tier Name",
+                            placeholder="Enter Product Name",
                             className="mb-3",
                         ),
                         width=4,
@@ -60,33 +56,11 @@ def layout():
                     dbc.Col(
                         dbc.Input(
                             id="tier-annual-cost-input",
-                            placeholder="Enter Annual Cost",
-                            type="number",
+                            placeholder="Enter Plan Name",
                             className="mb-3",
                         ),
                         width=4,
                     ),
-                    dbc.Col(
-                        dbc.Input(
-                            id="tier-monthly-cost-input",
-                            placeholder="Enter Monthly Cost",
-                            type="number",
-                            className="mb-3",
-                        ),
-                        width=4,
-                    ),
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.Textarea(
-                            id="tier-description-input",
-                            placeholder="Enter Tier Description",
-                            className="mb-3",
-                        ),
-                        width={"size": 6, "offset": 3},
-                    )
                 ]
             ),
             dbc.Button(
@@ -143,30 +117,18 @@ def layout():
     [
         State("tier-name-input", "value"),
         State("tier-annual-cost-input", "value"),
-        State("tier-monthly-cost-input", "value"),
-        State("tier-description-input", "value"),
     ],
     prevent_initial_call=True,
 )
-def create_new_subscription_tier(
-    n_clicks, tier_name, annual_cost, monthly_cost, tier_description
-):
-    if (
-        n_clicks is None
-        or not tier_name
-        or annual_cost is None
-        or monthly_cost is None
-        or not tier_description
-    ):
+def create_new_subscription_tier(n_clicks, product_name, plan_name):
+    if n_clicks is None or not product_name or not plan_name:
         return no_update
 
     # Insert new subscription tier into the database
     with get_sessionlocal() as session:
         new_tier = SubscriptionTiers(
-            tier=tier_name,
-            annual_cost=annual_cost,
-            monthly_cost=monthly_cost,
-            description=tier_description,
+            product=product_name,
+            plan=plan_name,
         )
         session.add(new_tier)
         try:
@@ -210,10 +172,8 @@ def update_subscription_tiers(n_clicks, table_data, stored_data):
                         SubscriptionTiers.id == row["id"]
                     ).update(
                         {
-                            SubscriptionTiers.tier: row["tier"],
-                            SubscriptionTiers.annual_cost: row["annual_cost"],
-                            SubscriptionTiers.monthly_cost: row["monthly_cost"],
-                            SubscriptionTiers.description: row["description"],
+                            SubscriptionTiers.product: row["product"],
+                            SubscriptionTiers.plan: row["plan"],
                         }
                     )
 
