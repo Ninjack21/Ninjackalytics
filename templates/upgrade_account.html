@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upgrade Account</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-image: url('/assets/Background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            z-index: 0;
+            margin: 0; /* Removes default margin provided by browsers */
+            padding: 0; /* Removes default padding */
+            overflow: hidden; /* Ensures the background covers the whole page */
+            color: white;
+        }
+    </style>
+    <script src="https://www.paypal.com/sdk/js?client-id=ATo8TdF8rFxQeWL-SCdLvjx0jQD8MdA8Oo8hGrj6MTapLrboeuy-ukWGVLbOQXApjtk4OEQDJl0iFhj6&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Ninjackalytics</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/team_analysis">Team Builder</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/meta_analysis">Meta Analysis</a>
+                </li>
+                <!-- Add other nav items here -->
+                {% if session['username'] %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/account">{{ session['username'] }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <h1>Choose the Plan Below!</h1>
+    <h2>Premium Plans</h2>
+    <p>
+        This plan gets you access to all tools of Ninjackalytics. In the future I plan to double this base rate but 
+        it is low right now as an early adopter bonus! You will get first access to all new features as they are 
+        developed this year! The reason the price is slightly higher than the Basic plan, though, is because as a 
+        Premium subscriber you will get all new content developed during your subscription period! This is somewhat 
+        speculative, though, because I am an independent developer and dad with a full time job outside of this tool 
+        and so I cannot guarantee any number of new features. That said, I have many, many, many ideas... 😊 
+        and the more people that sign up the more I will be able to hire help to enable me to bring them to life! 
+        Also, I did technically knock out the pre battle analysis, player scout, and overall meta analysis pages in 
+        2 days, so when I get a chunk of free time I'm definitely capable of rapid development 😉
+    </p>
+    <h3>Annual - $10 / month</h3>
+    <div id="paypal-button-container-P-8RH37805AV2036307MXQSQQA"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'horizontal',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+            return actions.subscription.create({
+            /* Creates the subscription */
+            plan_id: 'P-8RH37805AV2036307MXQSQQA'
+            });
+        },
+        onApprove: function(data, actions) {
+            alert(data.subscriptionID); // You can add optional success message for the subscriber here
+        }
+    }).render('#paypal-button-container-P-8RH37805AV2036307MXQSQQA'); // Renders the PayPal button
+    </script>
+    <h3>Monthly - $15 / month</h3>
+    <div id="paypal-button-container-P-4MN17572UV9605119MXQSPHI"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'horizontal',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+            return actions.subscription.create({
+            /* Creates the subscription */
+            plan_id: 'P-4MN17572UV9605119MXQSPHI'
+            });
+        },
+        onApprove: function(data, actions) {
+            alert(data.subscriptionID); // You can add optional success message for the subscriber here
+        }
+    }).render('#paypal-button-container-P-4MN17572UV9605119MXQSPHI'); // Renders the PayPal button
+    </script>
+    <h2>Basic Plans</h2>
+    <p>
+        This plan gets you access to all of the current Ninjackalytics tools. In this sense, it is hardly different 
+        than t he premium plan, but the slightly reduced price is because premium subscribers will get priority for 
+        all future developed tools whereas basic subscribers will have to wait longer for future developed tools to 
+        be opened up to them, if they are opened up at all.
+    </p>
+    <h3>Annual - $7.50 / month</h3>
+    <div id="paypal-button-container-P-635981865W060122PMXQSROY"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'horizontal',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+            return actions.subscription.create({
+            /* Creates the subscription */
+            plan_id: 'P-635981865W060122PMXQSROY'
+            });
+        },
+        onApprove: function(data, actions) {
+            alert(data.subscriptionID); // You can add optional success message for the subscriber here
+        }
+    }).render('#paypal-button-container-P-635981865W060122PMXQSROY'); // Renders the PayPal button
+    </script>
+    <h3>Monthly - $10 / month</h3>
+    <div id="paypal-button-container-P-9DH46628EK366430NMXQSSAA"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'horizontal',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+            return actions.subscription.create({
+            /* Creates the subscription */
+            plan_id: 'P-9DH46628EK366430NMXQSSAA'
+            });
+        },
+        onApprove: function(data, actions) {
+            alert(data.subscriptionID); // You can add optional success message for the subscriber here
+        }
+    }).render('#paypal-button-container-P-9DH46628EK366430NMXQSSAA'); // Renders the PayPal button
+    </script>
+
+
+
+
+</body>
+</html>

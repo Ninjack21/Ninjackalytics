@@ -43,21 +43,24 @@ def create_basic_subscription_tiers():
 
     # TODO: update pricing after 3 tiers becomes meaningful (i.e. can distinguish between basic and premium)
     basic_tiers = [
-        {"tier": "Free", "annual_cost": 0, "monthly_cost": 0, "description": ""},
-        {"tier": "Basic", "annual_cost": 90, "monthly_cost": 12, "description": ""},
-        {"tier": "Premium", "annual_cost": 120, "monthly_cost": 15, "description": ""},
+        {"product": "Free", "plan": "Annual"},
+        {"product": "Basic", "plan": "Annual"},
+        {"product": "Premium", "plan": "Annual"},
+        {"product": "Free", "plan": "Monthly"},
+        {"product": "Basic", "plan": "Monthly"},
+        {"product": "Premium", "plan": "Monthly"},
     ]
 
     # Check if the subscription tiers already exist in the database
     for tier in basic_tiers:
         existing_tier = (
-            session.query(SubscriptionTiers).filter_by(tier=tier["tier"]).first()
+            session.query(SubscriptionTiers).filter_by(product=tier["product"]).first()
         )
         if not existing_tier:
             # Create a new SubscriptionTiers entry
             new_tier = SubscriptionTiers(**tier)
             session.add(new_tier)
-            print(f"Added new subscription tier: {tier['tier']}")
+            print(f"Added new subscription tier: {tier['product']} - {tier['plan']}")
 
     # Commit changes to the database
     session.commit()
@@ -148,7 +151,7 @@ def create_subscription_pages_entries():
     pages = session.query(Pages).all()
 
     for tier in tiers:
-        if tier.tier == "Free":
+        if tier.product == "Free":
             for page in pages:
                 # free does not have access to admin, basic, or premium prefix'd pages
                 if (
@@ -167,10 +170,10 @@ def create_subscription_pages_entries():
                         )
                         session.add(new_subscription_page)
                         print(
-                            f"Added new SubscriptionPages entry: {tier.tier} - {page.page_name}"
+                            f"Added new SubscriptionPages entry: {tier.product} - {page.page_name}"
                         )
 
-        elif tier.tier == "Basic":
+        elif tier.product == "Basic":
             for page in pages:
                 # basic does not have access to admin or premium prefix'd pages
                 if "admin" not in page.page_name and "premium" not in page.page_name:
@@ -185,9 +188,9 @@ def create_subscription_pages_entries():
                         )
                         session.add(new_subscription_page)
                         print(
-                            f"Added new SubscriptionPages entry: {tier.tier} - {page.page_name}"
+                            f"Added new SubscriptionPages entry: {tier.product} - {page.page_name}"
                         )
-        elif tier.tier == "Premium":
+        elif tier.product == "Premium":
             for page in pages:
                 # premium does not have access to admin prefix'd pages
                 if "admin" not in page.page_name:
@@ -202,7 +205,7 @@ def create_subscription_pages_entries():
                         )
                         session.add(new_subscription_page)
                         print(
-                            f"Added new SubscriptionPages entry: {tier.tier} - {page.page_name}"
+                            f"Added new SubscriptionPages entry: {tier.product} - {page.page_name}"
                         )
 
     # Commit changes to the database

@@ -236,6 +236,12 @@ def layout():
                     id="login-output", className="mt-3", style={"color": "white"}
                 ),
                 html.Br(),
+                html.A(
+                    "Forgot Password?",
+                    href="/request_password_reset",
+                    style={"color": "white"},
+                ),
+                html.Br(),
                 dbc.Button(
                     "Create Account",
                     href="/register",
@@ -296,7 +302,8 @@ def login(n_clicks, username, password):
             else:
                 session["subscription_tier_id"] = (
                     db_session.query(SubscriptionTiers)
-                    .filter_by(tier="Free")
+                    # technically should have plan name too but not relevant for this
+                    .filter_by(product="Free")
                     .first()
                     .id
                 )

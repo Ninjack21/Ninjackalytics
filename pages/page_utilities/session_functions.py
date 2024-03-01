@@ -8,7 +8,7 @@ from ninjackalytics.database.models import (
     UserSubscriptions,
 )
 from ninjackalytics.database.database import get_sessionlocal
-from dash import html
+from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
@@ -37,7 +37,7 @@ def user_has_access(path_name, username=None):
         # if not logged in, role is "User" and subscription tier is "Free"
         role_id = db_session.query(Roles).filter_by(role="User").first().id
         subscription_tier_id = (
-            db_session.query(SubscriptionTiers).filter_by(tier="Free").first().id
+            db_session.query(SubscriptionTiers).filter_by(product="Free").first().id
         )
     else:
         # get the user's role and subscription tier
@@ -49,7 +49,7 @@ def user_has_access(path_name, username=None):
         # if the user_id is not found in the UserSubscriptions table, then they are a free user
         if not user_subscription:
             subscription_tier_id = (
-                db_session.query(SubscriptionTiers).filter_by(tier="Free").first().id
+                db_session.query(SubscriptionTiers).filter_by(product="Free").first().id
             )
         else:
             # verify that the UserSubscription is active
@@ -57,7 +57,7 @@ def user_has_access(path_name, username=None):
                 # free tier if the user's subscription is not active
                 subscription_tier_id = (
                     db_session.query(SubscriptionTiers)
-                    .filter_by(tier="Free")
+                    .filter_by(product="Free")
                     .first()
                     .id
                 )
@@ -182,11 +182,9 @@ def get_error_layout(error_type: str):
                     "You do not have access to this page. Please upgrade your subscription.",
                     style=base_style,
                 ),
-                dbc.Button(
+                dcc.Link(
                     "Upgrade Subscription",
                     href="/upgrade_account",
-                    color="success",
-                    className="mt-3",
                 ),
             ],
             style={
