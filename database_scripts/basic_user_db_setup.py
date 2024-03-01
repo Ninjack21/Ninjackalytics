@@ -111,18 +111,9 @@ def create_role_pages_entries():
     # will have security features in app first check for role based access but if role == "User"
     # then will default to checking for subscription based access
     for role in roles:
-        if role.role == "Admin":
-            for page in pages:
-                existing_role_page = (
-                    session.query(RolePages)
-                    .filter_by(role_id=role.id, page_id=page.id)
-                    .first()
-                )
-                if not existing_role_page:
-                    new_role_page = RolePages(role_id=role.id, page_id=page.id)
-                    session.add(new_role_page)
-                    print(f"Added new RolePages entry: {role.role} - {page.page_name}")
-        elif role.role == "Content_Creator":
+        # Admin has hard coded all pages access in session_functions.py and only Content_Creator gets elevated role
+        # based permissions right now
+        if role.role == "Content_Creator":
             for page in pages:
                 if "admin" not in page.page_name:
                     existing_role_page = (

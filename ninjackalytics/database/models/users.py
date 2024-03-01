@@ -105,6 +105,7 @@ class PromoCodeLinks(Base):
     __tablename__ = "promo_code_links"
     id = Column(Integer, primary_key=True)
     promo_code = Column(String(length=255), nullable=False, unique=True)
+    paypal_link = Column(String(length=255), nullable=False, unique=True)
     advertiser = Column(String(length=255), nullable=False)
     subscription_tier_id = Column(
         Integer, ForeignKey("subscription_tiers.id"), nullable=False

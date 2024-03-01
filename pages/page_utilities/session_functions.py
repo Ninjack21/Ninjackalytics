@@ -43,6 +43,11 @@ def user_has_access(path_name, username=None):
         # get the user's role and subscription tier
         user = db_session.query(User).filter_by(username=username).first()
         role_id = user.role
+        role_name = get_role_name(role_id)
+        if role_name == "Admin":
+            # Admins have access to all pages
+            return True
+
         user_subscription = (
             db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
         )
