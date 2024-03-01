@@ -93,7 +93,6 @@ class UserSubscriptions(Base):
     active = Column(Boolean, nullable=False, default=True)
 
 
-# define the pages that are accessible via each subscription tier ID
 class SubscriptionPages(Base):
     __tablename__ = "subscription_pages"
     id = Column(Integer, primary_key=True)
@@ -106,7 +105,9 @@ class PromoCodeLinks(Base):
     id = Column(Integer, primary_key=True)
     promo_code = Column(String(length=255), nullable=False, unique=True)
     paypal_link = Column(String(length=255), nullable=False, unique=True)
+    paypal_button_code = Column(String(length=5000), nullable=False, unique=True)
     advertiser = Column(String(length=255), nullable=False)
+    paypal_sub_id = Column(String(length=255), nullable=False, unique=True)
     subscription_tier_id = Column(
         Integer, ForeignKey("subscription_tiers.id"), nullable=False
     )
