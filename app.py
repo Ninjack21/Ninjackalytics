@@ -2,11 +2,12 @@ import dash
 import dash_bootstrap_components as dbc
 from flask import Flask, request, jsonify
 from datetime import timedelta
-from pages.config import SECRET_KEY, EMAIL_PASSWORD
+from pages.config import SECRET_KEY, EMAIL_PASSWORD, CLIENT_ID, SECRET
 from ninjackalytics.database.database import get_sessionlocal
 from ninjackalytics.database.models.users import User
 from flask_routes import init_flask_routes
 from flask_mail import Mail
+import paypalrestsdk
 
 server = Flask(__name__)
 server.secret_key = SECRET_KEY
@@ -32,6 +33,13 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
+paypalrestsdk.configure(
+    {
+        "mode": "sandbox",  # "sandbox" or "live"
+        "client_id": CLIENT_ID,
+        "client_secret": SECRET,
+    }
+)
 
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 

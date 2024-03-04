@@ -1,28 +1,36 @@
-from flask import render_template, session, redirect, url_for, request
+from flask import render_template, session, redirect, url_for, request, jsonify
 from ninjackalytics.database.database import get_sessionlocal
-from ninjackalytics.database.models.users import SubscriptionTiers, User
+from ninjackalytics.database.models.users import (
+    SubscriptionTiers,
+    User,
+    UserSubscriptions,
+    PromoCodeLinks,
+)
 from flask_mail import Message
-from pages.config import SECRET_KEY
+from pages.config import SECRET_KEY, CLIENT_ID, SECRET
 from werkzeug.security import generate_password_hash
+import requests
+import paypalrestsdk
+from flask_wtf.csrf import generate_csrf
 
 
 def init_flask_routes(server, mail):
 
-    @server.route("/upgrade_account", methods=["GET", "POST"])
+    @server.route("/upgrade_account_flask", methods=["GET", "POST"])
     def upgrade_account():
-        # Check if user is logged in
         if "username" in session:
-            # User is logged in, fetch subscription tiers and display options
+            username = session["username"]
+            # Assuming you're fetching `subscription_tiers` from your database as before
             db_session = get_sessionlocal()
             subscription_tiers = db_session.query(SubscriptionTiers).all()
             db_session.close()
-
-            # Render a template that includes the PayPal button and subscription options
+            # Pass `username` along with `subscription_tiers` to the template
             return render_template(
-                "upgrade_account.html", subscription_tiers=subscription_tiers
+                "upgrade_account.html",
+                username=username,
+                subscription_tiers=subscription_tiers,
             )
         else:
-            # User is not logged in, redirect to login page
             return redirect("/account")
 
     def send_reset_email(email, token):
@@ -108,3 +116,107 @@ def init_flask_routes(server, mail):
         """.format(
             token=token
         )
+
+    @server.route("/handle_subscription", methods=["POST"])
+    def handle_subscription():
+        # Verify CSRF token
+        token_sent = request.headers.get("X-CSRF-Token")
+        token_stored = session.get("csrf_token")
+
+        if not token_sent or token_sent != token_stored:
+            return jsonify({"error": "CSRF token mismatch"}), 403
+
+        # Verify user is logged in
+        if "username" not in session:
+            return jsonify({"error": "Unauthorized"}), 401
+
+        data = request.json
+        subscription_id = data.get("subscriptionID")
+        plan_id = data.get("planID")
+        username = data.get("username")
+
+        # verify subscription with PayPal
+        if not verify_subscription(subscription_id):
+            return jsonify({"error": "Invalid subscription"}), 400
+
+        if session.get("username") != username:
+            return jsonify({"error": "Username mismatch"}), 400
+
+        return update_user_subscription(username, plan_id, subscription_id)
+
+    @server.route("/get_csrf_token")
+    def get_csrf_token():
+        return generate_csrf()
+
+
+# ------------------- Backend DB Functions -------------------
+def update_user_subscription(username, paypal_plan_id, paypal_subscription_id):
+    with get_sessionlocal() as db_session:
+        user = db_session.query(User).filter_by(username=username).first()
+        promocodelink = (
+            db_session.query(PromoCodeLinks)
+            .filter_by(paypal_plan_id=paypal_plan_id)
+            .first()
+        )
+        if promocodelink:
+            sub_tier_id = promocodelink.subscription_tier_id
+        else:
+            return (
+                jsonify(
+                    {
+                        "error": "subscription not found in database - email ninjack.pokemon@gmail.com about this"
+                    }
+                ),
+                400,
+            )
+
+        user_subscription = (
+            db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
+        )
+        if user_subscription:
+            user_subscription.subscription_tier_id = sub_tier_id
+            user_subscription.active = True
+            user_subscription.paypal_subscription_id = paypal_subscription_id
+        else:
+            new_user_subscription = UserSubscriptions(
+                user_id=user.id,
+                paypal_subscription_id=paypal_subscription_id,
+                subscription_tier_id=sub_tier_id,
+                active=True,
+            )
+            db_session.add(new_user_subscription)
+        db_session.commit()
+
+    return jsonify({"success": True})
+
+
+# ------------------- PayPal SDK Functions -------------------
+def get_paypal_access_token(client_id, secret):
+    auth_response = requests.post(
+        "https://api.sandbox.paypal.com/v1/oauth2/token",
+        auth=(client_id, secret),
+        headers={"Accept": "application/json"},
+        data={"grant_type": "client_credentials"},
+    )
+    if auth_response.status_code == 200:
+        return auth_response.json()["access_token"]
+    else:
+        return None
+
+
+def get_subscription_details(subscription_id):
+    try:
+        subscription = paypalrestsdk.Subscription.find(subscription_id)
+        return subscription
+    except paypalrestsdk.ResourceNotFound:
+        return None
+
+
+def verify_subscription(subscription_id):
+    subscription = get_subscription_details(subscription_id)
+    if subscription is None:
+        print("Subscription not found.")
+        return False
+
+    else:
+        return True

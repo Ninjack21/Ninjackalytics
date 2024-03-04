@@ -79,82 +79,33 @@
             });
         },
         onApprove: function(data, actions) {
-            alert(data.subscriptionID); // You can add optional success message for the subscriber here
+            fetch('/get_csrf_token')
+            .then(response => response.json())
+            .then(tokenData => {
+                fetch('/handle_subscription', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': tokenData.csrf_token  // Include CSRF token in request headers
+                    },
+                    body: JSON.stringify({
+                        subscriptionID: data.subscriptionID,
+                        planID: 'P-8RH37805AV2036307MXQSQQA',
+                        username: '{{ username }}'
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Handle response
+                })
+                .catch((error) => {
+                    // Handle error
+                });
+            });
         }
     }).render('#paypal-button-container-P-8RH37805AV2036307MXQSQQA'); // Renders the PayPal button
     </script>
-    <h3>Monthly - $15 / month</h3>
-    <div id="paypal-button-container-P-4MN17572UV9605119MXQSPHI"></div>
-    <script>
-    paypal.Buttons({
-        style: {
-            shape: 'rect',
-            color: 'gold',
-            layout: 'horizontal',
-            label: 'subscribe'
-        },
-        createSubscription: function(data, actions) {
-            return actions.subscription.create({
-            /* Creates the subscription */
-            plan_id: 'P-4MN17572UV9605119MXQSPHI'
-            });
-        },
-        onApprove: function(data, actions) {
-            alert(data.subscriptionID); // You can add optional success message for the subscriber here
-        }
-    }).render('#paypal-button-container-P-4MN17572UV9605119MXQSPHI'); // Renders the PayPal button
-    </script>
-    <h2>Basic Plans</h2>
-    <p>
-        This plan gets you access to all of the current Ninjackalytics tools. In this sense, it is hardly different 
-        than t he premium plan, but the slightly reduced price is because premium subscribers will get priority for 
-        all future developed tools whereas basic subscribers will have to wait longer for future developed tools to 
-        be opened up to them, if they are opened up at all.
-    </p>
-    <h3>Annual - $7.50 / month</h3>
-    <div id="paypal-button-container-P-635981865W060122PMXQSROY"></div>
-    <script>
-    paypal.Buttons({
-        style: {
-            shape: 'rect',
-            color: 'gold',
-            layout: 'horizontal',
-            label: 'subscribe'
-        },
-        createSubscription: function(data, actions) {
-            return actions.subscription.create({
-            /* Creates the subscription */
-            plan_id: 'P-635981865W060122PMXQSROY'
-            });
-        },
-        onApprove: function(data, actions) {
-            alert(data.subscriptionID); // You can add optional success message for the subscriber here
-        }
-    }).render('#paypal-button-container-P-635981865W060122PMXQSROY'); // Renders the PayPal button
-    </script>
-    <h3>Monthly - $10 / month</h3>
-    <div id="paypal-button-container-P-9DH46628EK366430NMXQSSAA"></div>
-    <script>
-    paypal.Buttons({
-        style: {
-            shape: 'rect',
-            color: 'gold',
-            layout: 'horizontal',
-            label: 'subscribe'
-        },
-        createSubscription: function(data, actions) {
-            return actions.subscription.create({
-            /* Creates the subscription */
-            plan_id: 'P-9DH46628EK366430NMXQSSAA'
-            });
-        },
-        onApprove: function(data, actions) {
-            alert(data.subscriptionID); // You can add optional success message for the subscriber here
-        }
-    }).render('#paypal-button-container-P-9DH46628EK366430NMXQSSAA'); // Renders the PayPal button
-    </script>
-
-
+    
 
 
 </body>
