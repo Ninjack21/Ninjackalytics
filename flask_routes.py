@@ -12,6 +12,9 @@ from werkzeug.security import generate_password_hash
 import requests
 import paypalrestsdk
 from flask_wtf.csrf import generate_csrf
+import logging
+
+logging.basicConfig(filename="app.log", level=logging.DEBUG)
 
 
 def init_flask_routes(server, mail):
@@ -119,34 +122,45 @@ def init_flask_routes(server, mail):
 
     @server.route("/handle_subscription", methods=["POST"])
     def handle_subscription():
-        # Verify CSRF token
-        token_sent = request.headers.get("X-CSRF-Token")
-        token_stored = session.get("csrf_token")
+        try:
+            logging.debug("route called.")
+            # Verify CSRF token
+            token_sent = request.headers.get("X-CSRF-Token")
+            token_stored = session.get("csrf_token")
 
-        if not token_sent or token_sent != token_stored:
-            return jsonify({"error": "CSRF token mismatch"}), 403
+            if not token_sent or token_sent != token_stored:
+                return jsonify({"error": "CSRF token mismatch"}), 403
 
-        # Verify user is logged in
-        if "username" not in session:
-            return jsonify({"error": "Unauthorized"}), 401
+            # Verify user is logged in
+            if "username" not in session:
+                return jsonify({"error": "Unauthorized"}), 401
 
-        data = request.json
-        subscription_id = data.get("subscriptionID")
-        plan_id = data.get("planID")
-        username = data.get("username")
+            print("beginning to handle subscriptions")
+            data = request.json
+            subscription_id = data.get("subscriptionID")
+            plan_id = data.get("planID")
+            username = data.get("username")
 
-        # verify subscription with PayPal
-        if not verify_subscription(subscription_id):
-            return jsonify({"error": "Invalid subscription"}), 400
+            # verify subscription with PayPal
+            if not verify_subscription(subscription_id):
+                print("Invalid subscription")
+                return jsonify({"error": "Invalid subscription"}), 400
 
-        if session.get("username") != username:
-            return jsonify({"error": "Username mismatch"}), 400
+            if session.get("username") != username:
+                print("Username mismatch")
+                return jsonify({"error": "Username mismatch"}), 400
 
-        return update_user_subscription(username, plan_id, subscription_id)
+            print("we about to hit success!")
+            return update_user_subscription(username, plan_id, subscription_id)
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            return jsonify({"error": "An error occurred"}), 500
 
     @server.route("/get_csrf_token")
     def get_csrf_token():
-        return generate_csrf()
+        token = generate_csrf()
+        session["csrf_token"] = token
+        return jsonify({"csrf_token": token})
 
 
 # ------------------- Backend DB Functions -------------------
@@ -204,11 +218,14 @@ def get_paypal_access_token(client_id, secret):
         return None
 
 
+# NOTE: update this function and figure out how to properly utilize the API
 def get_subscription_details(subscription_id):
     try:
         subscription = paypalrestsdk.Subscription.find(subscription_id)
+        print(f"succesfully found subscription: {subscription.id}")
         return subscription
     except paypalrestsdk.ResourceNotFound:
+        print(f"subscription not found: {subscription_id}")
         return None
 
 

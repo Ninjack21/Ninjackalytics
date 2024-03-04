@@ -60,7 +60,7 @@ def layout():
         {"name": "Product", "id": "product"},
         {"name": "Plan", "id": "plan"},
         {"name": "PayPal Subscription ID", "id": "paypal_subscription_id"},
-        {"name": "Active", "id": "active", "type": "boolean"},
+        {"name": "Active", "id": "active", "type": "any"},
     ]
 
     return dbc.Container(
