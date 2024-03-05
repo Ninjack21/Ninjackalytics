@@ -12,26 +12,33 @@ from werkzeug.security import generate_password_hash
 import requests
 import paypalrestsdk
 from flask_wtf.csrf import generate_csrf
-import logging
-
-logging.basicConfig(filename="app.log", level=logging.DEBUG)
 
 
 def init_flask_routes(server, mail):
 
+    # NOTE: handle what happens if navigated to here without a promo code (use default ninjackalytics sign ups)
+    # NOTE: update dash app to behave like this
     @server.route("/upgrade_account_flask", methods=["GET", "POST"])
     def upgrade_account():
         if "username" in session:
             username = session["username"]
-            # Assuming you're fetching `subscription_tiers` from your database as before
+            promo_code = session["promo_code"]
+            # now remove the promo code from the session
+            session.pop("promo_code", None)
+            # now get the plan_id from the PromoCodeLinks table
             db_session = get_sessionlocal()
-            subscription_tiers = db_session.query(SubscriptionTiers).all()
+            promo_code_link = (
+                db_session.query(PromoCodeLinks)
+                .filter_by(promo_code=promo_code)
+                .first()
+            ).paypal_plan_id
+
             db_session.close()
-            # Pass `username` along with `subscription_tiers` to the template
+            # Pass `username` along with `paypal plan id` to the template
             return render_template(
                 "upgrade_account.html",
                 username=username,
-                subscription_tiers=subscription_tiers,
+                plan_id=promo_code_link,
             )
         else:
             return redirect("/account")
@@ -123,7 +130,6 @@ def init_flask_routes(server, mail):
     @server.route("/handle_subscription", methods=["POST"])
     def handle_subscription():
         try:
-            logging.debug("route called.")
             # Verify CSRF token
             token_sent = request.headers.get("X-CSRF-Token")
             token_stored = session.get("csrf_token")
@@ -135,7 +141,6 @@ def init_flask_routes(server, mail):
             if "username" not in session:
                 return jsonify({"error": "Unauthorized"}), 401
 
-            print("beginning to handle subscriptions")
             data = request.json
             subscription_id = data.get("subscriptionID")
             plan_id = data.get("planID")
@@ -143,17 +148,13 @@ def init_flask_routes(server, mail):
 
             # verify subscription with PayPal
             if not verify_subscription(subscription_id):
-                print("Invalid subscription")
                 return jsonify({"error": "Invalid subscription"}), 400
 
             if session.get("username") != username:
-                print("Username mismatch")
                 return jsonify({"error": "Username mismatch"}), 400
 
-            print("we about to hit success!")
             return update_user_subscription(username, plan_id, subscription_id)
         except Exception as e:
-            logging.error(f"Error: {e}")
             return jsonify({"error": "An error occurred"}), 500
 
     @server.route("/get_csrf_token")
@@ -220,19 +221,29 @@ def get_paypal_access_token(client_id, secret):
 
 # NOTE: update this function and figure out how to properly utilize the API
 def get_subscription_details(subscription_id):
-    try:
-        subscription = paypalrestsdk.Subscription.find(subscription_id)
-        print(f"succesfully found subscription: {subscription.id}")
-        return subscription
-    except paypalrestsdk.ResourceNotFound:
-        print(f"subscription not found: {subscription_id}")
+    access_token = get_paypal_access_token(CLIENT_ID, SECRET)
+    if access_token is None:
         return None
+    else:
+        url = (
+            f"https://api.sandbox.paypal.com/v1/billing/subscriptions/{subscription_id}"
+        )
+        response = requests.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+            },
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return None
 
 
 def verify_subscription(subscription_id):
     subscription = get_subscription_details(subscription_id)
     if subscription is None:
-        print("Subscription not found.")
         return False
 
     else:

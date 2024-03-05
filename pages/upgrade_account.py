@@ -25,6 +25,7 @@ def layout():
     tier_options = [
         {"label": f"{tier.product} - {tier.plan}", "value": f"{tier.id}"}
         for tier in subscription_tiers
+        if tier.product != "Free"
     ]
 
     return html.Div(
@@ -44,8 +45,6 @@ def layout():
                         "Submit Promo Code", id="submit-promo-code", n_clicks=0
                     ),
                     html.Div(id="promo-code-feedback", style={"color": "white"}),
-                    # Placeholder for PayPal buttons (iFrame)
-                    html.Div(id="paypal-buttons-container"),
                 ],
                 style={"margin-bottom": "50px"},  # Add some spacing between sections
             ),
@@ -58,8 +57,12 @@ def layout():
                         id="subscription-tier-dropdown",
                         options=tier_options,
                         className="mb-3",
+                        style={
+                            "width": "50%",
+                            "color": "black",
+                            "align": "left",
+                        },
                     ),
-                    # Placeholder for future tier selection handling
                     html.Div(id="tier-selection-feedback", style={"color": "white"}),
                 ]
             ),
@@ -78,7 +81,6 @@ def layout():
 @callback(
     [
         Output("promo-code-feedback", "children"),
-        Output("paypal-buttons-container", "children"),
     ],
     Input("submit-promo-code", "n_clicks"),
     State("promo-code-input", "value"),
@@ -92,8 +94,46 @@ def process_promo_code_submission(n_clicks, promo_code):
                 .first()
             )
             if promo_code_link:
-                # iFrame to render PayPal buttons
-                return "Promo code applied successfully."
+                # store promo code in session and redirect to paypal
+                session["promo_code"] = promo_code
+                return (
+                    html.A(
+                        "Promo code accepted! Click here to upgrade your account.",
+                        href=f"/upgrade_account_flask",
+                        style={"color": "white"},
+                    ),
+                )
             else:
-                return "Invalid promo code. Please try again.", None
-    return no_update, no_update
+                return ("Invalid promo code. Please try again.",)
+
+    return no_update
+
+
+@callback(
+    [
+        Output("tier-selection-feedback", "children"),
+    ],
+    Input("subscription-tier-dropdown", "value"),
+)
+def process_tier_selection(tier_id):
+    if tier_id:
+        with get_sessionlocal() as db_session:
+            promo_code_link = (
+                db_session.query(PromoCodeLinks)
+                .filter_by(subscription_tier_id=tier_id, advertiser="Default")
+                .first()
+            )
+        if promo_code_link:
+            # store promo code in session and redirect to paypal
+            session["promo_code"] = promo_code_link.promo_code
+            return (
+                html.A(
+                    "Click here to upgrade your account.",
+                    href=f"/upgrade_account_flask",
+                    style={"color": "white"},
+                ),
+            )
+        else:
+            return ("Something went wrong, please try again or submit a ticket",)
+
+    return no_update

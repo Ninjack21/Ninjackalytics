@@ -18,9 +18,8 @@ def fetch_promo_code_links():
             db_session.query(
                 PromoCodeLinks.id,
                 PromoCodeLinks.promo_code,
-                PromoCodeLinks.paypal_link,
-                PromoCodeLinks.paypal_button_code,
                 PromoCodeLinks.advertiser,
+                PromoCodeLinks.paypal_plan_id,
                 SubscriptionTiers.product,
                 SubscriptionTiers.plan,
             )
@@ -35,9 +34,8 @@ def fetch_promo_code_links():
         {
             "id": link.id,
             "promo_code": link.promo_code,
-            "paypal_link": link.paypal_link,
-            "paypal_button_code": link.paypal_button_code,
             "advertiser": link.advertiser,
+            "paypal_plan_id": link.paypal_plan_id,
             "product": link.product,
             "plan": link.plan,
         }
@@ -47,9 +45,8 @@ def fetch_promo_code_links():
     columns = [
         {"name": "ID", "id": "id", "editable": False},
         {"name": "Promo Code", "id": "promo_code", "editable": True},
-        {"name": "Paypal Link", "id": "paypal_link", "editable": True},
-        {"name": "Paypal Button Code", "id": "paypal_button_code", "editable": True},
         {"name": "Advertiser", "id": "advertiser", "editable": True},
+        {"name": "Paypal Plan ID", "id": "paypal_plan_id", "editable": True},
         {"name": "Product", "id": "product", "editable": False},
         {"name": "Plan", "id": "plan", "editable": False},
     ]
@@ -85,30 +82,6 @@ def layout():
                 [
                     dbc.Col(
                         dbc.Input(
-                            id="paypal-link-input",
-                            placeholder="Enter Paypal Link",
-                            className="mb-3",
-                        ),
-                        width={"size": 6, "offset": 3},
-                    )
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.Input(
-                            id="paypal-button-code-input",
-                            placeholder="Enter Paypal Button Code",
-                            className="mb-3",
-                        ),
-                        width={"size": 6, "offset": 3},
-                    )
-                ]
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.Input(
                             id="advertiser-input",
                             placeholder="Enter Advertiser",
                             className="mb-3",
@@ -121,8 +94,8 @@ def layout():
                 [
                     dbc.Col(
                         dbc.Input(
-                            id="paypal-sub-id-input",
-                            placeholder="Enter Paypal Sub ID",
+                            id="paypal-plan-id-input",
+                            placeholder="Enter Paypal Plan ID",
                             className="mb-3",
                         ),
                         width={"size": 6, "offset": 3},
@@ -133,8 +106,8 @@ def layout():
                 [
                     dbc.Col(
                         dbc.Input(
-                            id="product-input",
-                            placeholder="Enter Product (e.g., Basic, Premium)",
+                            id="subscription-tier-product",
+                            placeholder="Enter Product (Premium or Basic)",
                             className="mb-3",
                         ),
                         width={"size": 6, "offset": 3},
@@ -145,8 +118,8 @@ def layout():
                 [
                     dbc.Col(
                         dbc.Input(
-                            id="plan-input",
-                            placeholder="Enter Plan (e.g., Annual, Monthly)",
+                            id="subscription-tier-plan",
+                            placeholder="Enter Plan (Annual or Monthly)",
                             className="mb-3",
                         ),
                         width={"size": 6, "offset": 3},
@@ -212,69 +185,62 @@ def layout():
     Input("create-promo-code-link-button", "n_clicks"),
     [
         State("promo-code-input", "value"),
-        State("paypal-link-input", "value"),
-        State("paypal-button-code-input", "value"),
         State("advertiser-input", "value"),
-        State("paypal-sub-id-input", "value"),
-        State("product-input", "value"),
-        State("plan-input", "value"),
+        State("paypal-plan-id-input", "value"),
+        State("subscription-tier-product", "value"),
+        State("subscription-tier-plan", "value"),
     ],
     prevent_initial_call=True,
 )
 def create_new_promo_code_link(
     n_clicks,
     promo_code,
-    paypal_link,
-    paypal_button_code,
     advertiser,
-    paypal_sub_id,
-    product,
-    plan,
+    paypal_plan_id,
+    subscription_tier_product,
+    subscription_tier_plan,
 ):
     if any(
         v is None
         for v in [
             n_clicks,
             promo_code,
-            paypal_link,
-            paypal_button_code,
             advertiser,
-            paypal_sub_id,
-            product,
-            plan,
+            paypal_plan_id,
+            subscription_tier_product,
+            subscription_tier_plan,
         ]
     ):
         return no_update
 
-    with get_sessionlocal() as session:
-        # Find the subscription tier by product and plan
+    with get_sessionlocal() as db_session:
+        # Find the subscription tier by ID
         subscription_tier = (
-            session.query(SubscriptionTiers)
-            .filter_by(product=product, plan=plan)
+            db_session.query(SubscriptionTiers)
+            .filter_by(product=subscription_tier_product, plan=subscription_tier_plan)
             .first()
         )
         if subscription_tier is None:
-            return "Subscription tier not found. Please check the product and plan."
+            return "Subscription tier not found. Please check the Product and Plan entered."
 
         new_promo_code_link = PromoCodeLinks(
             promo_code=promo_code,
-            paypal_link=paypal_link,
-            paypal_button_code=paypal_button_code,
             advertiser=advertiser,
-            paypal_sub_id=paypal_sub_id,
-            subscription_tier_id=subscription_tier.id,  # Use the found tier's ID
+            paypal_plan_id=paypal_plan_id,
+            subscription_tier_id=subscription_tier.id,
         )
-        session.add(new_promo_code_link)
+        db_session.add(new_promo_code_link)
         try:
-            session.commit()
+            db_session.commit()
             return "New promo code link created successfully."
         except Exception as e:
-            session.rollback()
+            db_session.rollback()
             return f"Failed to create new promo code link. Error: {e}"
 
 
 @callback(
     Output("update-promo-code-links-feedback", "children"),
+    Output("promo-code-links-table-store", "data"),
     Input("update-promo-code-links-button", "n_clicks"),
     State("promo-code-links-table", "data"),
     State("promo-code-links-table-store", "data"),
@@ -282,50 +248,46 @@ def create_new_promo_code_link(
 )
 def update_promo_code_links(n_clicks, table_data, stored_data):
     if n_clicks is None:
-        return no_update
+        return no_update, no_update
 
-    with get_sessionlocal() as session:
+    with get_sessionlocal() as db_session:
         try:
-            # Handle updates and additions
-            for row in table_data:
-                # Fetch the corresponding SubscriptionTier based on product and plan
-                subscription_tier = (
-                    session.query(SubscriptionTiers)
-                    .filter_by(product=row["product"], plan=row["plan"])
-                    .first()
+            stored_ids = [row["id"] for row in stored_data if "id" in row]
+            table_ids = [row["id"] for row in table_data if "id" in row]
+            deleted_ids = list(set(stored_ids) - set(table_ids))
+            for deleted_id in deleted_ids:
+                promo_code_link = (
+                    db_session.query(PromoCodeLinks).filter_by(id=deleted_id).first()
                 )
-
-                if not subscription_tier:
-                    continue  # Or handle the error as you see fit
-
-                if "id" in row and row["id"]:  # Existing PromoCodeLink
-                    session.query(PromoCodeLinks).filter(
-                        PromoCodeLinks.id == row["id"]
-                    ).update(
-                        {
-                            PromoCodeLinks.promo_code: row["promo_code"],
-                            PromoCodeLinks.paypal_link: row["paypal_link"],
-                            PromoCodeLinks.paypal_button_code: row[
-                                "paypal_button_code"
-                            ],
-                            PromoCodeLinks.advertiser: row["advertiser"],
-                            PromoCodeLinks.subscription_tier_id: subscription_tier.id,
-                        }
+                if promo_code_link:
+                    db_session.delete(promo_code_link)
+            # Handle updates
+            for row in table_data:
+                if "id" in row and row["id"] not in deleted_ids:
+                    promo_code_link = (
+                        db_session.query(PromoCodeLinks).filter_by(id=row["id"]).first()
                     )
-                else:  # New PromoCodeLink
-                    new_promo_code_link = PromoCodeLinks(
-                        promo_code=row["promo_code"],
-                        paypal_link=row["paypal_link"],
-                        paypal_button_code=row["paypal_button_code"],
-                        advertiser=row["advertiser"],
-                        subscription_tier_id=subscription_tier.id,
-                    )
-                    session.add(new_promo_code_link)
+                    if promo_code_link:
+                        promo_code_link.promo_code = row["promo_code"]
+                        promo_code_link.advertiser = row["advertiser"]
+                        promo_code_link.paypal_plan_id = row["paypal_plan_id"]
 
-            session.commit()
+                        # Find the subscription tier by ID
+                        subscription_tier = (
+                            db_session.query(SubscriptionTiers)
+                            .filter_by(product=row["product"], plan=row["plan"])
+                            .first()
+                        )
+                        if subscription_tier is None:
+                            return "Subscription tier not found. Please check the Product and Plan entered."
+                        promo_code_link.subscription_tier_id = subscription_tier.id
+
+            # Delete rows that are no longer present
+
+            db_session.commit()
             feedback = "Promo code links updated successfully."
         except Exception as e:
-            session.rollback()
+            db_session.rollback()
             feedback = f"Failed to update promo code links. Error: {e}"
 
-    return feedback
+    return feedback, table_data

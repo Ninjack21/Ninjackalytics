@@ -63,7 +63,7 @@
         2 days, so when I get a chunk of free time I'm definitely capable of rapid development 😉
     </p>
     <h3>Annual - $10 / month</h3>
-    <div id="paypal-button-container-P-8RH37805AV2036307MXQSQQA"></div>
+    <div id="paypal-button-container"></div>
     <script>
     paypal.Buttons({
         style: {
@@ -75,7 +75,7 @@
         createSubscription: function(data, actions) {
             return actions.subscription.create({
             /* Creates the subscription */
-            plan_id: 'P-8RH37805AV2036307MXQSQQA'
+            plan_id: '{{ plan_id }}'
             });
         },
         onApprove: function(data, actions) {
@@ -90,7 +90,7 @@
                     },
                     body: JSON.stringify({
                         subscriptionID: data.subscriptionID,
-                        planID: 'P-8RH37805AV2036307MXQSQQA',
+                        planID: '{{ plan_id }}',
                         username: '{{ username }}'
                     }),
                 })
@@ -103,7 +103,7 @@
                 });
             });
         }
-    }).render('#paypal-button-container-P-8RH37805AV2036307MXQSQQA'); // Renders the PayPal button
+    }).render('#paypal-button-container'); // Renders the PayPal button
     </script>
 </body>
 </html>

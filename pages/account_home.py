@@ -32,85 +32,20 @@ def manage_account_subscription_layout():
                     .filter_by(id=user_subscription.subscription_tier_id)
                     .first()
                 )
-                subscription_type_display = user_subscription.subscription_type
-                cancellation_status = (
-                    "Cancelled" if user_subscription.cancelled else "Active"
+                subscription_type_display = (
+                    db_session.query(SubscriptionTiers)
+                    .filter_by(id=user_subscription.subscription_tier_id)
+                    .first()
+                    .plan
                 )
-
-                if cancellation_status == "Active":
-                    renewal_date_display = user_subscription.renewal_date.strftime(
-                        "%B %d, %Y"
-                    )
-                    renewal_cost = (
-                        f"${subscription_tier.monthly_cost}"
-                        if user_subscription.subscription_type == "Monthly"
-                        else f"${subscription_tier.annual_cost}"
-                    )
-                else:
-                    show_uncancel_button = True
-                    renewal_cost = "N/A"
-                    renewal_date_display = (
-                        "Your subscription will end on: "
-                        + f"{user_subscription.renewal_date.strftime('%B %d, %Y')}"
-                    )
-                subscription_tier_display = (
-                    subscription_tier.tier if subscription_tier else "Unknown tier"
+                cancellation_status = (
+                    "Cancelled" if not user_subscription.active else "Active"
                 )
 
     if show_uncancel_button:
         return dbc.Container(
             [
-                html.Div(
-                    [
-                        html.H2(
-                            "Manage Subscription",
-                            style={"color": "white", "marginBottom": "20px"},
-                        ),
-                        html.Div(
-                            f"Subscription Tier: {subscription_tier_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Payment Frequency: {subscription_type_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Renewal Cost: {renewal_cost}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Subscription End / Renewal Date: {renewal_date_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Status: {cancellation_status}",
-                            style={"color": "white", "marginBottom": "20px"},
-                        ),
-                        dbc.Button(
-                            "Upgrade Subscription! 🥳",
-                            href="/upgrade_account",
-                            className="mt-3",
-                            color="success",
-                        ),
-                        dbc.Button(
-                            "Cancel Subscription | bye, friend 😔",
-                            href="/cancel_subscription",
-                            className="mt-3",
-                            color="danger",
-                        ),
-                        dbc.Button(
-                            "Renew Subscription | Welcome back, friend 🥲",
-                            id="renew-subscription-button",
-                            className="mt-3",
-                            color="success",
-                        ),
-                    ],
-                    style={
-                        "padding": "20px",
-                        "borderRadius": "5px",
-                        "background": "#000000a0",
-                    },
-                ),
+                html.Div("Update me with link to paypal subscriptions"),
             ],
             fluid=True,
             className="mt-3",
@@ -119,49 +54,7 @@ def manage_account_subscription_layout():
         return dbc.Container(
             [
                 html.Div(
-                    [
-                        html.H2(
-                            "Manage Subscription",
-                            style={"color": "white", "marginBottom": "20px"},
-                        ),
-                        html.Div(
-                            f"Subscription Tier: {subscription_tier_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Payment Frequency: {subscription_type_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Renewal Cost: {renewal_cost}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Subscription End / Renewal Date: {renewal_date_display}",
-                            style={"color": "white", "marginBottom": "10px"},
-                        ),
-                        html.Div(
-                            f"Status: {cancellation_status}",
-                            style={"color": "white", "marginBottom": "20px"},
-                        ),
-                        dbc.Button(
-                            "Upgrade Subscription! 🥳",
-                            href="/upgrade_account",
-                            className="mt-3",
-                            color="success",
-                        ),
-                        dbc.Button(
-                            "Cancel Subscription | bye, friend 😔",
-                            href="/cancel_subscription",
-                            className="mt-3",
-                            color="danger",
-                        ),
-                    ],
-                    style={
-                        "padding": "20px",
-                        "borderRadius": "5px",
-                        "background": "#000000a0",
-                    },
+                    "update me with link to paypal subscriptions this is the else return"
                 ),
             ],
             fluid=True,
