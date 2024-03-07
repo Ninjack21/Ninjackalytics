@@ -12,54 +12,62 @@ dash.register_page(__name__, path="/account")
 
 def manage_account_subscription_layout():
     username = session.get("username")
-    # Initialize variables to avoid reference errors in case of missing subscription data
-    subscription_tier_display = "No active subscription"
-    subscription_type_display = "N/A"
-    renewal_date_display = "N/A"
-    cancellation_status = "N/A"
-    renewal_cost = "N/A"
-
     with get_sessionlocal() as db_session:
         user = db_session.query(User).filter_by(username=username).first()
-        show_uncancel_button = False
-        if user:
-            user_subscription = (
-                db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
-            )
-            if user_subscription and user_subscription.active:
+        user_sub = (
+            db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
+        )
+        if user_sub:
+            if user_sub.active:
                 subscription_tier = (
                     db_session.query(SubscriptionTiers)
-                    .filter_by(id=user_subscription.subscription_tier_id)
+                    .filter_by(id=user_sub.subscription_tier_id)
                     .first()
                 )
-                subscription_type_display = (
-                    db_session.query(SubscriptionTiers)
-                    .filter_by(id=user_subscription.subscription_tier_id)
-                    .first()
-                    .plan
+                return html.Div(
+                    [
+                        html.H3(
+                            f"Your current subscription tier: {subscription_tier.product}-{subscription_tier.plan}",
+                            style={"color": "white"},
+                        ),
+                        html.A(
+                            "Manage my Subscription (PayPal)",
+                            href="https://www.paypal.com/myaccount/autopay/",
+                        ),
+                    ]
                 )
-                cancellation_status = (
-                    "Cancelled" if not user_subscription.active else "Active"
+            else:
+                return html.Div(
+                    [
+                        html.H3(
+                            "You do not have an active subscription",
+                            style={"color": "white"},
+                        ),
+                        dbc.Button(
+                            "Subscribe",
+                            id="subscribe-button",
+                            className="mt-3",
+                            color="secondary",
+                            href="/upgrade_account",
+                        ),
+                    ]
                 )
-
-    if show_uncancel_button:
-        return dbc.Container(
-            [
-                html.Div("Update me with link to paypal subscriptions"),
-            ],
-            fluid=True,
-            className="mt-3",
-        )
-    else:
-        return dbc.Container(
-            [
-                html.Div(
-                    "update me with link to paypal subscriptions this is the else return"
-                ),
-            ],
-            fluid=True,
-            className="mt-3",
-        )
+        else:
+            return html.Div(
+                [
+                    html.H3(
+                        "You do not have a subscription",
+                        style={"color": "white"},
+                    ),
+                    dbc.Button(
+                        "Subscribe",
+                        id="subscribe-button",
+                        className="mt-3",
+                        color="secondary",
+                        href="/upgrade_account",
+                    ),
+                ]
+            )
 
 
 def layout():
@@ -151,26 +159,6 @@ def layout():
                 "z-index": "0",
             },
         )
-
-
-@callback(
-    Output("renew-redirect", "pathname"),
-    Input("renew-subscription-button", "n_clicks"),
-    prevent_initial_call=True,
-)
-def renew_subscription(n_clicks):
-    if n_clicks:
-        with get_sessionlocal() as db_session:
-            username = session["username"]
-            user = db_session.query(User).filter_by(username=username).first()
-            user_subscription = (
-                db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
-            )
-            if user_subscription:
-                user_subscription.cancelled = False
-                db_session.commit()
-        return "/"
-    return no_update
 
 
 @callback(

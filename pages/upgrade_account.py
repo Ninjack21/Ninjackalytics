@@ -2,7 +2,11 @@ from flask import session
 import dash
 from dash import html, dcc, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
-from ninjackalytics.database.models import SubscriptionTiers, PromoCodeLinks
+from ninjackalytics.database.models import (
+    SubscriptionTiers,
+    PromoCodeLinks,
+    UserSubscriptions,
+)
 from ninjackalytics.database.database import get_sessionlocal
 from .navbar import navbar
 from .page_utilities.session_functions import (
@@ -20,8 +24,29 @@ def layout():
     if not access:
         return div
 
+    if not session.get("username"):
+        return html.Div(
+            [
+                navbar(),
+                html.H1(
+                    "You must be logged in to upgrade your account",
+                    style={"color": "white"},
+                ),
+                dbc.Button("Login", href="/login", color="primary"),
+            ],
+            style={
+                "background-image": "url('/assets/Background.jpg')",
+                "background-size": "cover",
+                "background-repeat": "no-repeat",
+                "height": "100vh",
+                "z-index": "0",
+                "color": "white",
+            },
+        )
+
     with get_sessionlocal() as db_session:
         subscription_tiers = db_session.query(SubscriptionTiers).all()
+
     tier_options = [
         {"label": f"{tier.product} - {tier.plan}", "value": f"{tier.id}"}
         for tier in subscription_tiers
@@ -96,6 +121,18 @@ def process_promo_code_submission(n_clicks, promo_code):
             if promo_code_link:
                 # store promo code in session and redirect to paypal
                 session["promo_code"] = promo_code
+                already_have_active_subscription = check_for_active_subscription(
+                    session.get("user_id")
+                )
+                if already_have_active_subscription:
+                    return (
+                        "You already have an active subscription."
+                        + " Please cancel your current subscription before applying a new promo code."
+                        + " Also, please note that at this time we do not have a way to upgrade a subscription"
+                        + " from a lower tier to a higher tier. If you would like to, submit a contact us ticket"
+                        + " and we will see what we can do. Thank you!",
+                    )
+
                 return (
                     html.A(
                         "Promo code accepted! Click here to upgrade your account.",
@@ -137,3 +174,20 @@ def process_tier_selection(tier_id):
             return ("Something went wrong, please try again or submit a ticket",)
 
     return no_update
+
+
+# --------------- helper functions ----------------
+def check_for_active_subscription(user_id):
+    with get_sessionlocal() as db_session:
+        user_sub = (
+            db_session.query(UserSubscriptions).filter_by(user_id=user_id).first()
+        )
+        return user_sub.active
+
+
+def get_user_subscription_tier_id(user_id):
+    with get_sessionlocal() as db_session:
+        user_sub = (
+            db_session.query(UserSubscriptions).filter_by(user_id=user_id).first()
+        )
+        return user_sub.subscription_tier_id
