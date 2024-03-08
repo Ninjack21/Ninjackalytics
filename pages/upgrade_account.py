@@ -6,6 +6,7 @@ from ninjackalytics.database.models import (
     SubscriptionTiers,
     PromoCodeLinks,
     UserSubscriptions,
+    User,
 )
 from ninjackalytics.database.database import get_sessionlocal
 from .navbar import navbar
@@ -122,7 +123,7 @@ def process_promo_code_submission(n_clicks, promo_code):
                 # store promo code in session and redirect to paypal
                 session["promo_code"] = promo_code
                 already_have_active_subscription = check_for_active_subscription(
-                    session.get("user_id")
+                    session.get("username")
                 )
                 if already_have_active_subscription:
                     return (
@@ -162,7 +163,21 @@ def process_tier_selection(tier_id):
             )
         if promo_code_link:
             # store promo code in session and redirect to paypal
+            # NOTE: all paypal links have a "promo code" but these will select those
+            # associated with the advertiser Default, which is yours truly
             session["promo_code"] = promo_code_link.promo_code
+            already_have_active_subscription = check_for_active_subscription(
+                session.get("username")
+            )
+            if already_have_active_subscription:
+                return (
+                    "You already have an active subscription."
+                    + " Please cancel your current subscription before applying a new promo code."
+                    + " Also, please note that at this time we do not have a way to upgrade a subscription"
+                    + " from a lower tier to a higher tier. If you would like to, submit a contact us ticket"
+                    + " and we will see what we can do. Thank you!",
+                )
+
             return (
                 html.A(
                     "Click here to upgrade your account.",
@@ -177,11 +192,16 @@ def process_tier_selection(tier_id):
 
 
 # --------------- helper functions ----------------
-def check_for_active_subscription(user_id):
+def check_for_active_subscription(username):
     with get_sessionlocal() as db_session:
+        user = db_session.query(User).filter_by(username=username).first()
         user_sub = (
-            db_session.query(UserSubscriptions).filter_by(user_id=user_id).first()
+            db_session.query(UserSubscriptions).filter_by(user_id=user.id).first()
         )
+        print(user_sub)
+        if user_sub is None:
+            return False
+        print(user_sub.active)
         return user_sub.active
 
 
