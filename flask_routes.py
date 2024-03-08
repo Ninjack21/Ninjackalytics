@@ -1,4 +1,12 @@
-from flask import render_template, session, redirect, url_for, request, jsonify
+from flask import (
+    render_template,
+    session,
+    redirect,
+    url_for,
+    request,
+    jsonify,
+    Response,
+)
 from ninjackalytics.database.database import get_sessionlocal
 from ninjackalytics.database.models.users import (
     SubscriptionTiers,
@@ -163,6 +171,20 @@ def init_flask_routes(server, mail):
         session["csrf_token"] = token
         return jsonify({"csrf_token": token})
 
+    @server.route("/paypal-webhook", methods=["POST"])
+    def paypal_webhook():
+        # PayPal sends event notifications as POST requests to this endpoint
+        webhook_event = request.json
+
+        # Log or process the event as needed
+        # For example, check if the subscription is no longer active
+        if webhook_event["event_type"] == "BILLING.SUBSCRIPTION.CANCELLED":
+            # Handle the subscription cancellation event
+            pass
+
+        # Respond with a 200 OK to acknowledge receipt of the event notification
+        return Response(status=200)
+
 
 # ------------------- Backend DB Functions -------------------
 def update_user_subscription(username, paypal_plan_id, paypal_subscription_id):
@@ -219,7 +241,6 @@ def get_paypal_access_token(client_id, secret):
         return None
 
 
-# NOTE: update this function and figure out how to properly utilize the API
 def get_subscription_details(subscription_id):
     access_token = get_paypal_access_token(CLIENT_ID, SECRET)
     if access_token is None:
