@@ -30,7 +30,7 @@ def get_showdown_mon_images():
         # Parse the page content using beautifulsoup4
         soup = BeautifulSoup(content, "html.parser")
 
-        # Find all the a tags that contain .gif in their href attribute
+        # Find all the a tags that contain .gif or .png in their href attribute
         img_links = soup.find_all(
             "a",
             href=lambda href: href and href.endswith(".gif") or href.endswith(".png"),
