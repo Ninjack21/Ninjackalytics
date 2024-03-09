@@ -50,25 +50,27 @@ def check_subscription_status(subscription_id, access_token):
 
 
 def update_subscription_statuses():
-    access_token = get_paypal_access_token()
+    access_token = get_paypal_access_token(CLIENT_ID, SECRET)
     if access_token:
-        db = SessionLocal()
-        try:
-            subscriptions = db.query(UserSubscriptions).all()
-            for subscription in subscriptions:
-                is_active = check_subscription_status(
-                    subscription.paypal_subscription_id, access_token
-                )
-                if subscription.active != is_active:
-                    subscription.active = is_active
-                    db.commit()
-                    print(
-                        f"Updated subscription {subscription.id} to {'active' if is_active else 'inactive'}"
+        with get_sessionlocal() as db:
+            try:
+                subscriptions = db.query(UserSubscriptions).all()
+                for subscription in subscriptions:
+                    print(f"Checking subscription for user {subscription.user_id}")
+                    paypal_active = check_subscription_status(
+                        subscription.paypal_subscription_id, access_token
                     )
-        except Exception as e:
-            print(f"Error updating subscription statuses: {e}")
-        finally:
-            db.close()
+                    print(f"Paypal active: {paypal_active}")
+                    # if the paypal_active is not the same as the db, update the db
+                    if subscription.active != paypal_active:
+                        subscription.active = paypal_active
+                        db.commit()
+                        print(
+                            f"Updated subscription {subscription.id} to {'active' if paypal_active else 'inactive'}"
+                        )
+
+            except Exception as e:
+                print(f"Error updating subscription statuses: {e}")
     else:
         print("No access token available, cannot update subscription statuses.")
 
