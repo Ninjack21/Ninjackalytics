@@ -436,7 +436,7 @@ def layout():
             ),
             dcc.ConfirmDialog(
                 id="fill-all-fields-error-dialog",
-                message="Please fill in all fields before searching.",
+                message="Please fill in the player name and format fields before clicking search.",
             ),
         ],
         style={
@@ -469,7 +469,7 @@ def update_dynamic_content(n_clicks, player_name, fmat, date):
     if n_clicks is None:
         return no_update, no_update, no_update
 
-    if player_name is None or fmat is None or date is None:
+    if player_name is None or fmat is None:
         # If any of the fields are empty, show the error dialog for an empty field
         return no_update, False, True
 

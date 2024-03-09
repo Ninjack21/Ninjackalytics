@@ -6,7 +6,7 @@ from pages.config import SECRET_KEY, EMAIL_PASSWORD, CLIENT_ID, SECRET
 from ninjackalytics.database.database import get_sessionlocal
 from ninjackalytics.database.models.users import User
 from flask_routes import init_flask_routes
-from flask_mail import Mail
+from extensions import mail
 import paypalrestsdk
 
 server = Flask(__name__)
@@ -20,7 +20,7 @@ server.config["MAIL_USERNAME"] = "ninjackalytics.application@gmail.com"
 server.config["MAIL_PASSWORD"] = EMAIL_PASSWORD
 server.config["MAIL_DEFAULT_SENDER"] = "ninjackalytics.application@gmail.com"
 
-mail = Mail(server)  # Initialize Flask-Mail with your Flask server
+mail.init_app(server)  # Initialize Flask-Mail with your Flask server
 
 init_flask_routes(server, mail)
 

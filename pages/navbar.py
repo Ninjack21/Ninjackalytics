@@ -22,22 +22,17 @@ def navbar():
         dbc.NavItem(dbc.NavLink("Admin", href="/admin_home")),
     ]
 
-    link_style = {
-        "textDecoration": "none",  # Removes underline
-        "color": "white",  # Set the color to match your navbar theme
-        "padding": "8px",  # Adjust padding to vertically center and add some space
-        "display": "block",  # Helps in aligning and making the entire area clickable
-    }
-
     # Links for authenticated users
     authenticated_children = [
         dbc.NavItem(dbc.NavLink("Upgrade Subscription", href="/upgrade_account")),
         dbc.NavItem(dbc.NavLink(f"{username}", href="/account")),
+        dbc.NavItem(dbc.NavLink("Contact Us", href="/contact")),
     ]
 
     # Links for non-authenticated users
     guest_children = [
         dbc.NavItem(dbc.NavLink("Account", href="/account")),
+        dbc.NavItem(dbc.NavLink("Contact Us", href="/contact")),
     ]
 
     # Construct the final list of children based on the user's role
