@@ -44,4 +44,4 @@ paypalrestsdk.configure(
 server.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()
