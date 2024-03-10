@@ -1,16 +1,17 @@
+from flask import session
 import dash
-from dash import html, dcc, Input, Output, callback, dash_table, no_update
+from dash import html, dcc, Input, Output, State, callback, dash_table, no_update
 import dash_bootstrap_components as dbc
 from .navbar import navbar
 from .page_utilities.general_utility import find_closest_sprite
-from .page_utilities.team_analysis_funcs import (
-    get_viable_pokemon,
-)
 from .page_utilities.team_classes import (
     DatabaseData,
     FormatData,
     TeamSolver,
     DisplayTeam,
+)
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
 )
 
 dash.register_page(__name__, path="/team_analysis")
@@ -274,6 +275,11 @@ def winrate_data_table():
 
 
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
+    )
+    if not access:
+        return div
     db_data = DatabaseData()
     viable_formats = db_data.viable_formats
 
@@ -292,9 +298,7 @@ def layout():
                         id="dynamic-content",
                     ),
                 ],
-                type="circle",
                 fullscreen=False,  # Change to `True` for fullscreen loading indicator
-                color="#FFFFFF",
             ),
         ],
         className="bg-dark",
@@ -302,7 +306,7 @@ def layout():
             "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
-            "height": "100vh",
+            "min-height": "100vh",
             "z-index": "0",
             "color": "white",
         },
@@ -311,8 +315,8 @@ def layout():
 
 # dynamically load content once viable format is selected
 @callback(
-    dash.dependencies.Output("dynamic-content", "children"),
-    [dash.dependencies.Input("format-selector", "value")],
+    Output("dynamic-content", "children"),
+    [Input("format-selector", "value")],
     order=1,
 )
 def update_dynamic_content(selected_format):
@@ -348,10 +352,10 @@ def update_dynamic_content(selected_format):
 
 # pokemon selector options
 @callback(
-    [dash.dependencies.Output(f"pokemon-selector-{i}", "options") for i in range(6)],
-    [dash.dependencies.Input(f"dont-use-pokemon-selector", "value")],
-    dash.dependencies.State("viable-pokemon-store", "data"),
-    [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
+    [Output(f"pokemon-selector-{i}", "options") for i in range(6)],
+    [Input(f"dont-use-pokemon-selector", "value")],
+    State("viable-pokemon-store", "data"),
+    [Input(f"pokemon-selector-{i}", "value") for i in range(6)],
     prevent_initial_call=True,  # Prevents the callback from running on initial load
     order=2,
 )
@@ -381,8 +385,8 @@ def update_pokemon_options(ignore_mons, viable_mons, *selected_mons):
 
 # pokemon sprites updates
 @callback(
-    [dash.dependencies.Output(f"pokemon-sprite-{i}", "src") for i in range(6)],
-    [dash.dependencies.Input(f"pokemon-selector-{i}", "value") for i in range(6)],
+    [Output(f"pokemon-sprite-{i}", "src") for i in range(6)],
+    [Input(f"pokemon-selector-{i}", "value") for i in range(6)],
     order=3,
 )
 def update_pokemon_sprites(*pokemon_names):
@@ -400,15 +404,15 @@ def update_pokemon_sprites(*pokemon_names):
 
 # update format data, viable mons, and mon selectors upon format change
 @callback(
-    [dash.dependencies.Output("viable-pokemon-store", "data")],
-    [dash.dependencies.Output(f"pokemon-selector-0", "value")],
-    [dash.dependencies.Output(f"pokemon-selector-1", "value")],
-    [dash.dependencies.Output(f"pokemon-selector-2", "value")],
-    [dash.dependencies.Output(f"pokemon-selector-3", "value")],
-    [dash.dependencies.Output(f"pokemon-selector-4", "value")],
-    [dash.dependencies.Output(f"pokemon-selector-5", "value")],
-    [dash.dependencies.Output(f"dont-use-pokemon-selector", "options")],
-    [dash.dependencies.Input("format-selector", "value")],
+    [Output("viable-pokemon-store", "data")],
+    [Output(f"pokemon-selector-0", "value")],
+    [Output(f"pokemon-selector-1", "value")],
+    [Output(f"pokemon-selector-2", "value")],
+    [Output(f"pokemon-selector-3", "value")],
+    [Output(f"pokemon-selector-4", "value")],
+    [Output(f"pokemon-selector-5", "value")],
+    [Output(f"dont-use-pokemon-selector", "options")],
+    [Input("format-selector", "value")],
     prevent_initial_call=True,  # Prevents the callback from running on initial load
     order=0,
 )
@@ -442,18 +446,18 @@ def update_viable_pokemon_store(selected_format):
 
 # build team script
 @callback(
-    [dash.dependencies.Output(f"team-mon-{i}", "value") for i in range(6)]
-    + [dash.dependencies.Output(f"team-sprite-{i}", "src") for i in range(6)]
+    [Output(f"team-mon-{i}", "value") for i in range(6)]
+    + [Output(f"team-sprite-{i}", "src") for i in range(6)]
     + [
-        dash.dependencies.Output("avg-popularity", "children"),
-        dash.dependencies.Output("expected-winrate", "children"),
-        dash.dependencies.Output("winrate-data", "data"),
+        Output("avg-popularity", "children"),
+        Output("expected-winrate", "children"),
+        Output("winrate-data", "data"),
     ]
-    + [dash.dependencies.Input("build-team-button", "n_clicks")]
-    + [dash.dependencies.State("creativity-input", "value")]
-    + [dash.dependencies.State("dont-use-pokemon-selector", "value")]
-    + [dash.dependencies.State("format-selector", "value")]
-    + [dash.dependencies.State(f"pokemon-selector-{i}", "value") for i in range(6)],
+    + [Input("build-team-button", "n_clicks")]
+    + [State("creativity-input", "value")]
+    + [State("dont-use-pokemon-selector", "value")]
+    + [State("format-selector", "value")]
+    + [State(f"pokemon-selector-{i}", "value") for i in range(6)],
 )
 def update_suggested_team(
     n_clicks, creativity, ignore_mons, battle_format, *selected_pokemon

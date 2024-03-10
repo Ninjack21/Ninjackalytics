@@ -1,20 +1,21 @@
+from flask import session
 import pandas as pd
 import numpy as np
 from datetime import date
 import dash
-from dash import html, dcc, Input, Output, State, callback, dash_table, no_update
+from dash import html, dcc, Input, Output, State, callback, no_update
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.express as px
-import plotly.colors as pcolors
 from .navbar import navbar
 from ninjackalytics.services.database_interactors.table_accessor import TableAccessor
 from .page_utilities.general_utility import (
-    find_closest_sprite,
     DatabaseData,
-    FormatData,
-    WinrateCalculator,
 )
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
+)
+
 
 dash.register_page(__name__, path="/player_scout")
 
@@ -405,6 +406,11 @@ def _get_usage_and_winrate(
 
 
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
+    )
+    if not access:
+        return div
     db_data = DatabaseData()
     viable_formats = db_data.get_viable_formats()
     return html.Div(
@@ -430,14 +436,14 @@ def layout():
             ),
             dcc.ConfirmDialog(
                 id="fill-all-fields-error-dialog",
-                message="Please fill in all fields before searching.",
+                message="Please fill in the player name and format fields before clicking search.",
             ),
         ],
         style={
             "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
-            "height": "100vh",
+            "min-height": "100vh",
             "z-index": "0",
             "color": "white",
         },
@@ -463,7 +469,7 @@ def update_dynamic_content(n_clicks, player_name, fmat, date):
     if n_clicks is None:
         return no_update, no_update, no_update
 
-    if player_name is None or fmat is None or date is None:
+    if player_name is None or fmat is None:
         # If any of the fields are empty, show the error dialog for an empty field
         return no_update, False, True
 

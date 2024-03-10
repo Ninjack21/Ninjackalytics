@@ -1,7 +1,7 @@
+from flask import session
 import dash
-from dash import html, dcc, Input, Output, callback
+from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
-import random
 from .navbar import navbar
 from .page_utilities.general_utility import get_random_sprite
 
@@ -22,22 +22,21 @@ sprite_dir = os.path.join(current_dir, "assets/showdown_sprites")
 sprites = os.listdir(sprite_dir)
 
 
-def layout():
-    def submit_battle():
-        input_value = dcc.Input(
-            id="input-url",
-            placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
-            type="text",
-            value="",
-        ).value
-        if input_value:
-            parsed_battle_id = input_value.split(".com/")[1]
-            return dcc.Location(
-                pathname=f"/battle/{parsed_battle_id}", id="battle-page"
-            )
-        else:
-            return html.Div("Please enter a valid URL")
+def submit_battle():
+    input_value = dcc.Input(
+        id="input-url",
+        placeholder="https://replay.pokemonshowdown.com/gen9ou-123",
+        type="text",
+        value="",
+    ).value
+    if input_value:
+        parsed_battle_id = input_value.split(".com/")[1]
+        return dcc.Location(pathname=f"/battle/{parsed_battle_id}", id="battle-page")
+    else:
+        return html.Div("Please enter a valid URL")
 
+
+def layout():
     return html.Div(
         [
             navbar(),
@@ -239,9 +238,9 @@ def layout():
 
 
 @callback(
-    dash.dependencies.Output("output-div", "children"),
-    [dash.dependencies.Input("submit-button", "n_clicks")],
-    [dash.dependencies.State("input-url", "value")],
+    Output("output-div", "children"),
+    [Input("submit-button", "n_clicks")],
+    [State("input-url", "value")],
 )
 def update_output(n_clicks, input_value):
     if n_clicks > 0:

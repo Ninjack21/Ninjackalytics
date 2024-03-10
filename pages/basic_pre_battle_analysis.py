@@ -1,3 +1,4 @@
+from flask import session
 import dash
 from dash import html, dcc, Input, Output, State, callback, no_update
 import plotly.graph_objects as go
@@ -8,6 +9,9 @@ from .page_utilities.general_utility import (
     DatabaseData,
     FormatData,
     WinrateCalculator,
+)
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
 )
 
 dash.register_page(__name__, path="/pre_battle_analysis")
@@ -201,12 +205,12 @@ def display_top_threats(
         fig1.update_layout(
             template="plotly_dark",
             title=f"{p1_name}'s Threats Defined by Expected Winrate<br>against Enemy Team"
-            + "<br>White=100, Dark Blue=0",
+            + "<br>Pure White = 100% WR Expectation, Darker Blues = Lower WR Expectation",
         )
         fig2.update_layout(
             template="plotly_dark",
             title=f"{p2_name}'s Threats Defined by Expected Winrate<br>against Enemy Team"
-            + "<br>White=100, Dark Blue=0",
+            + "<br>Pure White = 100% WR Expectation, Darker Blues = Lower WR Expectation",
         )
 
         expected_winrate_text = (
@@ -241,7 +245,16 @@ def display_top_threats(
         )
 
 
+def display_mid_battle_analysis():
+    return html.Div("This is the mid-battle analysis content")
+
+
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
+    )
+    if not access:
+        return div
     return html.Div(
         [
             navbar(),
@@ -256,13 +269,19 @@ def layout():
                 style={"width": "50%", "margin": "auto"},
             ),
             dcc.Loading(
-                id="loading-dynamic-content",
+                id="loading-team-preview-content",
                 children=[
                     # Placeholder for dynamic content. This Div will be updated via callbacks.
                     html.Div(id="dynamic-content-pre-battle-analysis")
                 ],
-                type="circle",  # Choose the spinner style
-                color="#FFFFFF",  # Customize the spinner color
+                fullscreen=False,  # Set True for fullscreen loading, if needed
+            ),
+            dcc.Loading(
+                id="loading-mid-battle-content",
+                children=[
+                    # Placeholder for dynamic content. This Div will be updated via callbacks.
+                    html.Div(id="dynamic-content-mid-battle-analysis")
+                ],
                 fullscreen=False,  # Set True for fullscreen loading, if needed
             ),
             dcc.ConfirmDialog(
@@ -274,7 +293,7 @@ def layout():
             "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
-            "height": "100vh",
+            "min-height": "100vh",
             "z-index": "0",
             "color": "white",
         },

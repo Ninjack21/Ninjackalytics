@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upgrade Account</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-image: url('/assets/Background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            height: 100vh;
+            z-index: 0;
+            margin: 0; /* Removes default margin provided by browsers */
+            padding: 0; /* Removes default padding */
+            overflow: hidden; /* Ensures the background covers the whole page */
+            color: white;
+        }
+    </style>
+    <script src="https://www.paypal.com/sdk/js?client-id={{ client_id }}&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Ninjackalytics</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/team_analysis">Team Builder</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/meta_analysis">Meta Analysis</a>
+                </li>
+                <!-- Add other nav items here -->
+                {% if session['username'] %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/account">{{ session['username'] }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <h1>Use the Below Link to Subscribe via Paypal to Upgrade your Account!</h1>
+    <div id="paypal-button-container"></div>
+    <script>
+    paypal.Buttons({
+        style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'horizontal',
+            label: 'subscribe'
+        },
+        createSubscription: function(data, actions) {
+            return actions.subscription.create({
+            /* Creates the subscription */
+            plan_id: '{{ plan_id }}'
+            });
+        },
+        onApprove: function(data, actions) {
+            fetch('/get_csrf_token')
+            .then(response => response.json())
+            .then(tokenData => {
+                fetch('/handle_subscription', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': tokenData.csrf_token  // Include CSRF token in request headers
+                    },
+                    body: JSON.stringify({
+                        subscriptionID: data.subscriptionID,
+                        planID: '{{ plan_id }}',
+                        username: '{{ username }}'
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Handle response
+                })
+                .catch((error) => {
+                    // Handle error
+                });
+            });
+        }
+    }).render('#paypal-button-container'); // Renders the PayPal button
+    </script>
+</body>
+</html>

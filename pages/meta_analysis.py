@@ -1,3 +1,4 @@
+from flask import session
 import pandas as pd
 import dash
 from dash import html, dcc, Input, Output, callback, dash_table, no_update
@@ -6,6 +7,9 @@ from .navbar import navbar
 from .page_utilities.general_utility import (
     find_closest_sprite,
     DatabaseData,
+)
+from .page_utilities.session_functions import (
+    validate_access_get_alternate_div_if_invalid,
 )
 
 dash.register_page(__name__, path="/meta_analysis")
@@ -216,7 +220,7 @@ def calculate_matchups(pvpmetadata, pokemonmetadata, pokemon):
 def find_best_worst_matchups(
     pvpmetadata, pokemonmetadata, current_mon, mon1_df, mon2_df
 ):
-    
+
     mon1_df = pvpmetadata[pvpmetadata["Pokemon1"] == current_mon]
     mon2_df = pvpmetadata[pvpmetadata["Pokemon2"] == current_mon]
     # P1 vs P2 is the winrate displayed, so look at each df's first and last idxs
@@ -429,6 +433,12 @@ def generate_style_data_conditional(columns):
 
 
 def layout():
+    access, div = validate_access_get_alternate_div_if_invalid(
+        session, f"/{str(__file__).split('/')[-1][:-3]}", session.get("username")
+    )
+    if not access:
+        return div
+
     db_data = DatabaseData()
     viable_formats = db_data.viable_formats
     # simple layout with navbar and a title
