@@ -136,7 +136,7 @@ def layout():
             "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
-            "height": "100vh",
+            "min-height": "100vh",
             "z-index": "0",
         },
     )

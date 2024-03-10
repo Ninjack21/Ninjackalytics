@@ -20,6 +20,7 @@ from werkzeug.security import generate_password_hash
 import requests
 import paypalrestsdk
 from flask_wtf.csrf import generate_csrf
+import os
 
 
 def init_flask_routes(server, mail):
@@ -47,6 +48,7 @@ def init_flask_routes(server, mail):
                 "upgrade_account.html",
                 username=username,
                 plan_id=promo_code_link,
+                client_id=CLIENT_ID,
             )
         else:
             return redirect("/account")
@@ -141,7 +143,6 @@ def init_flask_routes(server, mail):
             # Verify CSRF token
             token_sent = request.headers.get("X-CSRF-Token")
             token_stored = session.get("csrf_token")
-
             if not token_sent or token_sent != token_stored:
                 return jsonify({"error": "CSRF token mismatch"}), 403
 
@@ -228,9 +229,9 @@ def update_user_subscription(username, paypal_plan_id, paypal_subscription_id):
 
 
 # ------------------- PayPal SDK Functions -------------------
-def get_paypal_access_token(client_id, secret):
+def get_paypal_access_token(client_id, secret, paypal_api_uri):
     auth_response = requests.post(
-        "https://api.sandbox.paypal.com/v1/oauth2/token",
+        f"{paypal_api_uri}/v1/oauth2/token",
         auth=(client_id, secret),
         headers={"Accept": "application/json"},
         data={"grant_type": "client_credentials"},
@@ -242,13 +243,23 @@ def get_paypal_access_token(client_id, secret):
 
 
 def get_subscription_details(subscription_id):
-    access_token = get_paypal_access_token(CLIENT_ID, SECRET)
+    # first determine which api we are calling in this context
+    # if production, real one, if not, sandbox one
+
+    flask_env = os.environ.get("FLASK_ENV")
+    if flask_env:
+        if "production" in flask_env.lower():
+            paypal_api_uri = "https://api.paypal.com"
+        else:
+            paypal_api_uri = "https://api.sandbox.paypal.com"
+    else:
+        paypal_api_uri = "https://api.sandbox.paypal.com"
+
+    access_token = get_paypal_access_token(CLIENT_ID, SECRET, paypal_api_uri)
     if access_token is None:
         return None
     else:
-        url = (
-            f"https://api.sandbox.paypal.com/v1/billing/subscriptions/{subscription_id}"
-        )
+        url = f"{paypal_api_uri}/v1/billing/subscriptions/{subscription_id}"
         response = requests.get(
             url,
             headers={

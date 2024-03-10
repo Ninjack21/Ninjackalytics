@@ -34,6 +34,33 @@ def manage_account_subscription_layout():
                             "Manage my Subscription (PayPal)",
                             href="https://www.paypal.com/myaccount/autopay/",
                         ),
+                        html.P(
+                            "To cancel your subscription, follow these steps:",
+                            style={"color": "white"},
+                        ),
+                        html.Ol(
+                            [
+                                html.Li(
+                                    "In the active section of your autopay, find 'Ninjackalytics'",
+                                    style={"color": "white"},
+                                ),
+                                html.Li(
+                                    "Click on it and scroll all the way to the bottom and select 'Remove PayPal as payment method'",
+                                    style={"color": "white"},
+                                ),
+                                html.Li(
+                                    "Confirm the removal", style={"color": "white"}
+                                ),
+                                html.Li(
+                                    "NOTE: Do not click the link on PayPal to manage subscription at Ninjackalytics",
+                                    style={"color": "white"},
+                                ),
+                                html.Li(
+                                    "NOTE: This will not remove your access to the pages on Ninjackalytics until the subscription expires",
+                                    style={"color": "white"},
+                                ),
+                            ]
+                        ),
                     ]
                 )
             else:

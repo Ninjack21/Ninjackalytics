@@ -298,9 +298,7 @@ def layout():
                         id="dynamic-content",
                     ),
                 ],
-                type="circle",
                 fullscreen=False,  # Change to `True` for fullscreen loading indicator
-                color="#FFFFFF",
             ),
         ],
         className="bg-dark",
@@ -308,7 +306,7 @@ def layout():
             "background-image": "url('/assets/Background.jpg')",
             "background-size": "cover",
             "background-repeat": "no-repeat",
-            "height": "100vh",
+            "min-height": "100vh",
             "z-index": "0",
             "color": "white",
         },

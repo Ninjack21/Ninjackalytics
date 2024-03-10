@@ -24,7 +24,7 @@ SUBSCRIPTION_URL = f"{PAYPAL_API_URL}/v1/billing/subscriptions"
 
 def get_paypal_access_token(client_id, secret):
     auth_response = requests.post(
-        "https://api.sandbox.paypal.com/v1/oauth2/token",
+        f"{PAYPAL_API_URL}/v1/oauth2/token",
         auth=(client_id, secret),
         headers={"Accept": "application/json"},
         data={"grant_type": "client_credentials"},
@@ -43,7 +43,12 @@ def check_subscription_status(subscription_id, access_token):
     response = requests.get(f"{SUBSCRIPTION_URL}/{subscription_id}", headers=headers)
     if response.status_code == 200:
         subscription_status = response.json().get("status")
-        return subscription_status == "ACTIVE" or subscription_status == "APPROVED"
+        print(subscription_status)
+        return (
+            subscription_status == "ACTIVE"
+            or subscription_status == "APPROVED"
+            or subscription_status == "CANCELLED"
+        )
     else:
         print(f"Failed to fetch subscription status for {subscription_id}")
         return False

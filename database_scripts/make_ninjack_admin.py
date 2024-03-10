@@ -20,7 +20,7 @@ def make_ninjack_admin():
         raise Exception("The Admin role does not exist in the database.")
 
     # find ninjack user and update their role to Admin
-    ninjack_user = session.query(User).filter_by(username="ninjack").first()
+    ninjack_user = session.query(User).filter_by(username="Ninjack").first()
     if not ninjack_user:
         raise Exception("The ninjack user does not exist in the database.")
 

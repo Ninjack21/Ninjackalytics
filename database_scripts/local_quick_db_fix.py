@@ -54,5 +54,12 @@ def recreate_tables():
 
 
 if __name__ == "__main__":
-    recreate_tables()
-    print("Tables dropped and recreated successfully.")
+    flask_env = os.environ.get("FLASK_ENV")
+    if "production" in flask_env.lower():
+        print(
+            "This script is not intended to be run in a production environment. Exiting."
+        )
+        sys.exit(1)
+    else:
+        recreate_tables()
+        print("Tables dropped and recreated successfully.")
